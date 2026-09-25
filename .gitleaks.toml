@@ -1,0 +1,11 @@
+title = "Layer gitleaks config"
+
+[extend]
+useDefault = true
+
+# Only this exact fake value is allowed: the test-only BETTER_AUTH_SECRET in
+# apps/web/tests/support/config.ts, also quoted in the Phase 0 plan. Any other
+# secret still fails the scan.
+[allowlist]
+description = "Known fake test secret"
+regexes = ['''^test-secret-that-is-at-least-32-characters-long$''']
