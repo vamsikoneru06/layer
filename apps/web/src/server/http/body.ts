@@ -35,7 +35,8 @@ function parseWith<S extends z.ZodType>(schema: S, data: unknown, where: "body" 
   return result.data;
 }
 
-async function readText(req: Request, maxBytes: number): Promise<string> {
+/** Reads at most `maxBytes` of the body (413 beyond that), strictly decoded as UTF-8. */
+export async function readText(req: Request, maxBytes: number): Promise<string> {
   if (!req.body) return "";
   const reader = req.body.getReader();
   const chunks: Uint8Array[] = [];
