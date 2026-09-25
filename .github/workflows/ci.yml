@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: layer
+          POSTGRES_PASSWORD: layer
+          POSTGRES_DB: layer
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U layer"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://layer:layer@localhost:5432/layer
+      APP_ORIGIN: http://localhost:3000
+      BETTER_AUTH_SECRET: ci-only-secret-used-nowhere-else-0000000000
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - name: Migrations apply to real Postgres 17
+        run: pnpm db:migrate
+      - run: pnpm build
