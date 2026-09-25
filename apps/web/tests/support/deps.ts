@@ -24,3 +24,9 @@ export function testDeps(db: Db, overrides: Partial<Deps> = {}): Deps {
     ...overrides,
   };
 }
+
+/** A clock that advances one second per call, so rows created in sequence get distinct, ordered timestamps. */
+export function tickingClock(start = Date.parse("2026-09-25T09:00:00.000Z")): () => Date {
+  let tick = 0;
+  return () => new Date(start + tick++ * 1000);
+}

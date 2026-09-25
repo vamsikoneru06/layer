@@ -4,6 +4,7 @@ import { createAuthenticator } from "./auth/current-user";
 import { consoleMailer, resendMailer } from "./auth/mailer";
 import { loadConfig } from "./config";
 import { createDb } from "./db/client";
+import { folderHandlers } from "./folders/handlers";
 import type { Deps } from "./deps";
 import { healthHandlers } from "./health/handlers";
 import type { Handler } from "./http/types";
@@ -20,6 +21,7 @@ function build() {
   return {
     auth: createAuthRoute(auth, config),
     health: healthHandlers(deps),
+    folders: folderHandlers(deps),
   };
 }
 
