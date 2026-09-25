@@ -59,6 +59,9 @@ export async function updateProfile(db: Db, userId: string, patch: ProfilePatch,
 /** One transaction: queue object deletions, record the deletion, then cascade every owned row. */
 export async function deleteAccount(db: Db, userId: string, now: Date): Promise<void> {
   await db.transaction(async (tx) => {
+    // FOR UPDATE conflicts with the FK share-lock an asset insert takes on its owner, so no asset can
+    // appear after the SELECT below and be cascade-deleted without its storage key being queued.
+    await tx.select({ id: user.id }).from(user).where(eq(user.id, userId)).for("update");
     const owned = await tx.select({ storageKey: assets.storageKey, visibility: assets.visibility }).from(assets).where(eq(assets.ownerId, userId));
     if (owned.length > 0) {
       await tx.insert(storageDeletions).values(owned.map((a) => ({ bucket: a.visibility, storageKey: a.storageKey, createdAt: now })));

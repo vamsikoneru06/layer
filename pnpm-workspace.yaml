@@ -4,3 +4,6 @@ packages:
 
 allowBuilds:
   esbuild: true
+
+overrides:
+  "@esbuild-kit/core-utils>esbuild": "^0.25.12"
