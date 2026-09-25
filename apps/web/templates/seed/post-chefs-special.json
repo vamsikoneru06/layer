@@ -1,0 +1,244 @@
+{
+  "schemaVersion": 1,
+  "id": "post-chefs-special",
+  "kind": "template",
+  "meta": {
+    "title": "Chef's Special",
+    "category": "food",
+    "tags": [
+      "menu",
+      "restaurant",
+      "dark",
+      "special"
+    ],
+    "format": "ig-post"
+  },
+  "artboard": {
+    "width": 1080,
+    "height": 1080,
+    "background": {
+      "type": "solid",
+      "color": "#1F3A2E"
+    }
+  },
+  "root": [
+    "photo",
+    "eyebrow",
+    "dish",
+    "divider",
+    "description",
+    "badge",
+    "price"
+  ],
+  "nodes": {
+    "photo": {
+      "id": "photo",
+      "name": "Dish photo",
+      "transform": {
+        "x": 370,
+        "y": 540,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 620,
+      "height": 960,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 32
+      },
+      "content": null,
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "eyebrow": {
+      "id": "eyebrow",
+      "name": "Eyebrow",
+      "transform": {
+        "x": 880,
+        "y": 128,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 320,
+      "height": 36,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "CHEF'S SPECIAL",
+      "font": {
+        "family": "Inter",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 22,
+      "color": "#E9C46A",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 6,
+      "fit": "shrink",
+      "maxChars": 28
+    },
+    "dish": {
+      "id": "dish",
+      "name": "Dish name",
+      "transform": {
+        "x": 880,
+        "y": 335,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 320,
+      "height": 330,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Roasted tomato & basil pasta",
+      "font": {
+        "family": "Playfair Display",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 58,
+      "color": "#F7F3E8",
+      "align": "left",
+      "lineHeight": 1.1,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 60
+    },
+    "divider": {
+      "id": "divider",
+      "name": "Divider",
+      "transform": {
+        "x": 750,
+        "y": 532,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 60,
+      "height": 4,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#E9C46A"
+      },
+      "stroke": null
+    },
+    "description": {
+      "id": "description",
+      "name": "Description",
+      "transform": {
+        "x": 880,
+        "y": 645,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 320,
+      "height": 170,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Slow-roasted tomatoes, garden basil, parmesan and a squeeze of lemon.",
+      "font": {
+        "family": "Inter",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 22,
+      "color": "#CFD8CF",
+      "align": "left",
+      "lineHeight": 1.45,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 140
+    },
+    "badge": {
+      "id": "badge",
+      "name": "Price badge",
+      "transform": {
+        "x": 880,
+        "y": 890,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 200,
+      "height": 200,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#E9C46A"
+      },
+      "stroke": null
+    },
+    "price": {
+      "id": "price",
+      "name": "Price",
+      "transform": {
+        "x": 880,
+        "y": 890,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 200,
+      "height": 70,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "₹249",
+      "font": {
+        "family": "Archivo Black",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 54,
+      "color": "#1F3A2E",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 8
+    }
+  },
+  "assets": {}
+}

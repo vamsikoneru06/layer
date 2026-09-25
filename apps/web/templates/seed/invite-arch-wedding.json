@@ -1,0 +1,307 @@
+{
+  "schemaVersion": 1,
+  "id": "invite-arch-wedding",
+  "kind": "template",
+  "meta": {
+    "title": "Arch Wedding",
+    "category": "events",
+    "tags": [
+      "wedding",
+      "invitation",
+      "arch",
+      "elegant"
+    ],
+    "format": "invitation"
+  },
+  "artboard": {
+    "width": 1500,
+    "height": 2100,
+    "background": {
+      "type": "solid",
+      "color": "#FBF7F0"
+    }
+  },
+  "root": [
+    "border",
+    "intro",
+    "photo",
+    "names",
+    "request",
+    "divider",
+    "date",
+    "venue",
+    "rsvp"
+  ],
+  "nodes": {
+    "border": {
+      "id": "border",
+      "name": "Border",
+      "transform": {
+        "x": 750,
+        "y": 1050,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1380,
+      "height": 1980,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "fill": null,
+      "stroke": {
+        "color": "#C8A96A",
+        "width": 3
+      }
+    },
+    "intro": {
+      "id": "intro",
+      "name": "Intro",
+      "transform": {
+        "x": 750,
+        "y": 190,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1000,
+      "height": 60,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Together with their families",
+      "font": {
+        "family": "Lora",
+        "weight": 400,
+        "style": "italic"
+      },
+      "size": 40,
+      "color": "#7A6A58",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 50
+    },
+    "photo": {
+      "id": "photo",
+      "name": "Couple photo",
+      "transform": {
+        "x": 750,
+        "y": 730,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 700,
+      "height": 900,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "path",
+        "d": "M0 1 L0 0.5 A0.5 0.5 0 0 1 1 0.5 L1 1 Z"
+      },
+      "content": null,
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "names": {
+      "id": "names",
+      "name": "Names",
+      "transform": {
+        "x": 750,
+        "y": 1330,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1300,
+      "height": 200,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Ananya & Rohan",
+      "font": {
+        "family": "Dancing Script",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 150,
+      "color": "#5B4636",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 36
+    },
+    "request": {
+      "id": "request",
+      "name": "Request",
+      "transform": {
+        "x": 750,
+        "y": 1480,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1100,
+      "height": 60,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "request the pleasure of your company",
+      "font": {
+        "family": "Lora",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 42,
+      "color": "#7A6A58",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 60
+    },
+    "divider": {
+      "id": "divider",
+      "name": "Divider",
+      "transform": {
+        "x": 750,
+        "y": 1551.5,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 120,
+      "height": 3,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#C8A96A"
+      },
+      "stroke": null
+    },
+    "date": {
+      "id": "date",
+      "name": "Date",
+      "transform": {
+        "x": 750,
+        "y": 1640,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1200,
+      "height": 80,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Sunday, 14 December",
+      "font": {
+        "family": "Playfair Display",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 56,
+      "color": "#3E3228",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 40
+    },
+    "venue": {
+      "id": "venue",
+      "name": "Venue",
+      "transform": {
+        "x": 750,
+        "y": 1730,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1200,
+      "height": 60,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "The Palms Garden · 6:30 in the evening",
+      "font": {
+        "family": "Lora",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 40,
+      "color": "#7A6A58",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 60
+    },
+    "rsvp": {
+      "id": "rsvp",
+      "name": "RSVP",
+      "transform": {
+        "x": 750,
+        "y": 1882,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 700,
+      "height": 44,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "RSVP by 1 December",
+      "font": {
+        "family": "Inter",
+        "weight": 600,
+        "style": "normal"
+      },
+      "size": 30,
+      "color": "#C8A96A",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 6,
+      "fit": "shrink",
+      "maxChars": 40
+    }
+  },
+  "assets": {}
+}

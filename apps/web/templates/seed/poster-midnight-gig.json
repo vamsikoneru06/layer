@@ -1,0 +1,226 @@
+{
+  "schemaVersion": 1,
+  "id": "poster-midnight-gig",
+  "kind": "template",
+  "meta": {
+    "title": "Midnight Gig",
+    "category": "events",
+    "tags": [
+      "music",
+      "concert",
+      "night",
+      "gig"
+    ],
+    "format": "poster"
+  },
+  "artboard": {
+    "width": 1240,
+    "height": 1754,
+    "background": {
+      "type": "linear",
+      "angle": 180,
+      "stops": [
+        {
+          "offset": 0,
+          "color": "#1B0B3A"
+        },
+        {
+          "offset": 1,
+          "color": "#07030F"
+        }
+      ]
+    }
+  },
+  "root": [
+    "glow",
+    "kicker",
+    "photo",
+    "title",
+    "lineup",
+    "details"
+  ],
+  "nodes": {
+    "glow": {
+      "id": "glow",
+      "name": "Glow",
+      "transform": {
+        "x": 620,
+        "y": 680,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1000,
+      "height": 1000,
+      "opacity": 0.35,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#7B2FF7"
+      },
+      "stroke": null
+    },
+    "kicker": {
+      "id": "kicker",
+      "name": "Kicker",
+      "transform": {
+        "x": 620,
+        "y": 175,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 900,
+      "height": 50,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "LIVE TONIGHT",
+      "font": {
+        "family": "Inter",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 36,
+      "color": "#C9B6FF",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 12,
+      "fit": "shrink",
+      "maxChars": 24
+    },
+    "photo": {
+      "id": "photo",
+      "name": "Artist photo",
+      "transform": {
+        "x": 620,
+        "y": 680,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 700,
+      "height": 700,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "ellipse"
+      },
+      "content": null,
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "title": {
+      "id": "title",
+      "name": "Title",
+      "transform": {
+        "x": 620,
+        "y": 1230,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1100,
+      "height": 300,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "MIDNIGHT FREQUENCIES",
+      "font": {
+        "family": "Bebas Neue",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 150,
+      "color": "#FFFFFF",
+      "align": "center",
+      "lineHeight": 0.95,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 30
+    },
+    "lineup": {
+      "id": "lineup",
+      "name": "Lineup",
+      "transform": {
+        "x": 620,
+        "y": 1430,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1100,
+      "height": 60,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Aria · The Low Tides · DJ Kavi",
+      "font": {
+        "family": "Space Grotesk",
+        "weight": 500,
+        "style": "normal"
+      },
+      "size": 40,
+      "color": "#E4DBFF",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 60
+    },
+    "details": {
+      "id": "details",
+      "name": "Details",
+      "transform": {
+        "x": 620,
+        "y": 1622,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1100,
+      "height": 44,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Fri 8 PM · Warehouse 9 · Tickets at the door",
+      "font": {
+        "family": "Inter",
+        "weight": 500,
+        "style": "normal"
+      },
+      "size": 30,
+      "color": "#A99BD6",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 70
+    }
+  },
+  "assets": {}
+}

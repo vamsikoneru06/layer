@@ -1,0 +1,379 @@
+{
+  "schemaVersion": 1,
+  "id": "story-weekend-dump",
+  "kind": "template",
+  "meta": {
+    "title": "Weekend Photo Dump",
+    "category": "travel",
+    "tags": [
+      "photo dump",
+      "polaroid",
+      "collage",
+      "weekend"
+    ],
+    "format": "ig-story"
+  },
+  "artboard": {
+    "width": 1080,
+    "height": 1920,
+    "background": {
+      "type": "solid",
+      "color": "#EDE6DA"
+    }
+  },
+  "root": [
+    "title",
+    "p1-card",
+    "p1-photo",
+    "p1-caption",
+    "p2-card",
+    "p2-photo",
+    "p2-caption",
+    "p3-card",
+    "p3-photo",
+    "p3-caption",
+    "dates"
+  ],
+  "nodes": {
+    "title": {
+      "id": "title",
+      "name": "Title",
+      "transform": {
+        "x": 540,
+        "y": 180,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 900,
+      "height": 140,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "weekend dump",
+      "font": {
+        "family": "Caveat",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 110,
+      "color": "#2B2B2B",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 30
+    },
+    "p1-card": {
+      "id": "p1-card",
+      "name": "Polaroid card",
+      "transform": {
+        "x": 400,
+        "y": 640,
+        "rotation": -6,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 520,
+      "height": 600,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#FFFFFF"
+      },
+      "stroke": null
+    },
+    "p1-photo": {
+      "id": "p1-photo",
+      "name": "Photo",
+      "transform": {
+        "x": 395.82,
+        "y": 600.22,
+        "rotation": -6,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 460,
+      "height": 460,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "content": null,
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "p1-caption": {
+      "id": "p1-caption",
+      "name": "Caption",
+      "transform": {
+        "x": 425.61,
+        "y": 883.66,
+        "rotation": -6,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 440,
+      "height": 60,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "day one",
+      "font": {
+        "family": "Caveat",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 48,
+      "color": "#2B2B2B",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 24
+    },
+    "p2-card": {
+      "id": "p2-card",
+      "name": "Polaroid card",
+      "transform": {
+        "x": 700,
+        "y": 1100,
+        "rotation": 5,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 520,
+      "height": 600,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#FFFFFF"
+      },
+      "stroke": null
+    },
+    "p2-photo": {
+      "id": "p2-photo",
+      "name": "Photo",
+      "transform": {
+        "x": 703.49,
+        "y": 1060.15,
+        "rotation": 5,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 460,
+      "height": 460,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "content": null,
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "p2-caption": {
+      "id": "p2-caption",
+      "name": "Caption",
+      "transform": {
+        "x": 678.65,
+        "y": 1344.07,
+        "rotation": 5,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 440,
+      "height": 60,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "golden hour",
+      "font": {
+        "family": "Caveat",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 48,
+      "color": "#2B2B2B",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 24
+    },
+    "p3-card": {
+      "id": "p3-card",
+      "name": "Polaroid card",
+      "transform": {
+        "x": 430,
+        "y": 1480,
+        "rotation": -3,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 520,
+      "height": 600,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#FFFFFF"
+      },
+      "stroke": null
+    },
+    "p3-photo": {
+      "id": "p3-photo",
+      "name": "Photo",
+      "transform": {
+        "x": 427.91,
+        "y": 1440.05,
+        "rotation": -3,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 460,
+      "height": 460,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "content": null,
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "p3-caption": {
+      "id": "p3-caption",
+      "name": "Caption",
+      "transform": {
+        "x": 442.82,
+        "y": 1724.66,
+        "rotation": -3,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 440,
+      "height": 60,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "last swim",
+      "font": {
+        "family": "Caveat",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 48,
+      "color": "#2B2B2B",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 24
+    },
+    "dates": {
+      "id": "dates",
+      "name": "Dates",
+      "transform": {
+        "x": 540,
+        "y": 1822,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 500,
+      "height": 44,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "JUNE 14–16",
+      "font": {
+        "family": "Inter",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 30,
+      "color": "#2B2B2B",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 6,
+      "fit": "shrink",
+      "maxChars": 24
+    }
+  },
+  "assets": {}
+}

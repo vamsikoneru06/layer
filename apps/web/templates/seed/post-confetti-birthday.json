@@ -1,0 +1,354 @@
+{
+  "schemaVersion": 1,
+  "id": "post-confetti-birthday",
+  "kind": "template",
+  "meta": {
+    "title": "Confetti Birthday",
+    "category": "birthday",
+    "tags": [
+      "birthday",
+      "confetti",
+      "pastel",
+      "party"
+    ],
+    "format": "ig-post"
+  },
+  "artboard": {
+    "width": 1080,
+    "height": 1080,
+    "background": {
+      "type": "linear",
+      "angle": 135,
+      "stops": [
+        {
+          "offset": 0,
+          "color": "#FFD6E0"
+        },
+        {
+          "offset": 1,
+          "color": "#FFE9C7"
+        }
+      ]
+    }
+  },
+  "root": [
+    "confetti-1",
+    "confetti-2",
+    "confetti-3",
+    "confetti-4",
+    "confetti-5",
+    "confetti-6",
+    "ring",
+    "photo",
+    "title",
+    "name",
+    "details"
+  ],
+  "nodes": {
+    "confetti-1": {
+      "id": "confetti-1",
+      "name": "Confetti",
+      "transform": {
+        "x": 128,
+        "y": 138,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 36,
+      "height": 36,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#FF7AA2"
+      },
+      "stroke": null
+    },
+    "confetti-2": {
+      "id": "confetti-2",
+      "name": "Confetti",
+      "transform": {
+        "x": 922,
+        "y": 172,
+        "rotation": 20,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 44,
+      "height": 44,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "polygon",
+        "sides": 3
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#6C63FF"
+      },
+      "stroke": null
+    },
+    "confetti-3": {
+      "id": "confetti-3",
+      "name": "Confetti",
+      "transform": {
+        "x": 192,
+        "y": 910,
+        "rotation": -30,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 24,
+      "height": 60,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 12
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#FFB020"
+      },
+      "stroke": null
+    },
+    "confetti-4": {
+      "id": "confetti-4",
+      "name": "Confetti",
+      "transform": {
+        "x": 944,
+        "y": 874,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 28,
+      "height": 28,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#3DD6B5"
+      },
+      "stroke": null
+    },
+    "confetti-5": {
+      "id": "confetti-5",
+      "name": "Confetti",
+      "transform": {
+        "x": 865,
+        "y": 535,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 30,
+      "height": 30,
+      "opacity": 0.8,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "polygon",
+        "sides": 6
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#FF7AA2"
+      },
+      "stroke": null
+    },
+    "confetti-6": {
+      "id": "confetti-6",
+      "name": "Confetti",
+      "transform": {
+        "x": 81,
+        "y": 571,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 22,
+      "height": 22,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#6C63FF"
+      },
+      "stroke": null
+    },
+    "ring": {
+      "id": "ring",
+      "name": "Photo ring",
+      "transform": {
+        "x": 540,
+        "y": 360,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 420,
+      "height": 420,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#FFFFFF"
+      },
+      "stroke": null
+    },
+    "photo": {
+      "id": "photo",
+      "name": "Birthday photo",
+      "transform": {
+        "x": 540,
+        "y": 360,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 380,
+      "height": 380,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "ellipse"
+      },
+      "content": null,
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "title": {
+      "id": "title",
+      "name": "Title",
+      "transform": {
+        "x": 540,
+        "y": 675,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 900,
+      "height": 150,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Happy Birthday",
+      "font": {
+        "family": "Pacifico",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 92,
+      "color": "#E23E70",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 24
+    },
+    "name": {
+      "id": "name",
+      "name": "Name",
+      "transform": {
+        "x": 540,
+        "y": 792,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 800,
+      "height": 64,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Maya turns 25",
+      "font": {
+        "family": "Poppins",
+        "weight": 600,
+        "style": "normal"
+      },
+      "size": 44,
+      "color": "#3B2F5B",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 32
+    },
+    "details": {
+      "id": "details",
+      "name": "Details",
+      "transform": {
+        "x": 540,
+        "y": 862,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 800,
+      "height": 44,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Saturday · 7 PM · Rooftop",
+      "font": {
+        "family": "Poppins",
+        "weight": 500,
+        "style": "normal"
+      },
+      "size": 28,
+      "color": "#6B5B7B",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 48
+    }
+  },
+  "assets": {}
+}

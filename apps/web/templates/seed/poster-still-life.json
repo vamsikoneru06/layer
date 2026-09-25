@@ -1,0 +1,217 @@
+{
+  "schemaVersion": 1,
+  "id": "poster-still-life",
+  "kind": "template",
+  "meta": {
+    "title": "Still Life",
+    "category": "minimal",
+    "tags": [
+      "exhibition",
+      "gallery",
+      "minimal",
+      "art"
+    ],
+    "format": "poster"
+  },
+  "artboard": {
+    "width": 1240,
+    "height": 1754,
+    "background": {
+      "type": "solid",
+      "color": "#FAFAF7"
+    }
+  },
+  "root": [
+    "number",
+    "photo",
+    "title",
+    "dot",
+    "subtitle",
+    "venue"
+  ],
+  "nodes": {
+    "number": {
+      "id": "number",
+      "name": "Number",
+      "transform": {
+        "x": 370,
+        "y": 140,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 300,
+      "height": 40,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "N° 07",
+      "font": {
+        "family": "Inter",
+        "weight": 600,
+        "style": "normal"
+      },
+      "size": 26,
+      "color": "#6B6B6B",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 24
+    },
+    "photo": {
+      "id": "photo",
+      "name": "Photo",
+      "transform": {
+        "x": 620,
+        "y": 750,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 800,
+      "height": 1100,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "content": null,
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "title": {
+      "id": "title",
+      "name": "Title",
+      "transform": {
+        "x": 590,
+        "y": 1415,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 740,
+      "height": 130,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Still Life",
+      "font": {
+        "family": "Playfair Display",
+        "weight": 400,
+        "style": "italic"
+      },
+      "size": 110,
+      "color": "#1A1A1A",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 30
+    },
+    "dot": {
+      "id": "dot",
+      "name": "Dot",
+      "transform": {
+        "x": 1000,
+        "y": 1412,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 40,
+      "height": 40,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#BC361B"
+      },
+      "stroke": null
+    },
+    "subtitle": {
+      "id": "subtitle",
+      "name": "Subtitle",
+      "transform": {
+        "x": 620,
+        "y": 1512,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 800,
+      "height": 44,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Photographs 2019—2025",
+      "font": {
+        "family": "Inter",
+        "weight": 500,
+        "style": "normal"
+      },
+      "size": 30,
+      "color": "#6B6B6B",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 2,
+      "fit": "shrink",
+      "maxChars": 40
+    },
+    "venue": {
+      "id": "venue",
+      "name": "Venue",
+      "transform": {
+        "x": 820,
+        "y": 1660,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 400,
+      "height": 40,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Gallery 3 · Opens 4 Nov",
+      "font": {
+        "family": "Inter",
+        "weight": 500,
+        "style": "normal"
+      },
+      "size": 26,
+      "color": "#1A1A1A",
+      "align": "right",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 40
+    }
+  },
+  "assets": {}
+}

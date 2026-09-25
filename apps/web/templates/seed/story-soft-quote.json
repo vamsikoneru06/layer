@@ -1,0 +1,211 @@
+{
+  "schemaVersion": 1,
+  "id": "story-soft-quote",
+  "kind": "template",
+  "meta": {
+    "title": "Soft Gradient Quote",
+    "category": "quotes",
+    "tags": [
+      "quote",
+      "pastel",
+      "gradient",
+      "self-care"
+    ],
+    "format": "ig-story"
+  },
+  "artboard": {
+    "width": 1080,
+    "height": 1920,
+    "background": {
+      "type": "linear",
+      "angle": 180,
+      "stops": [
+        {
+          "offset": 0,
+          "color": "#FDE2E4"
+        },
+        {
+          "offset": 1,
+          "color": "#CDE7F0"
+        }
+      ]
+    }
+  },
+  "root": [
+    "blob-1",
+    "blob-2",
+    "quote",
+    "line",
+    "note",
+    "handle"
+  ],
+  "nodes": {
+    "blob-1": {
+      "id": "blob-1",
+      "name": "Blob",
+      "transform": {
+        "x": 140,
+        "y": 440,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 520,
+      "height": 520,
+      "opacity": 0.35,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#FFFFFF"
+      },
+      "stroke": null
+    },
+    "blob-2": {
+      "id": "blob-2",
+      "name": "Blob",
+      "transform": {
+        "x": 950,
+        "y": 1600,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 500,
+      "height": 500,
+      "opacity": 0.35,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#FFFFFF"
+      },
+      "stroke": null
+    },
+    "quote": {
+      "id": "quote",
+      "name": "Quote",
+      "transform": {
+        "x": 540,
+        "y": 900,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 860,
+      "height": 520,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Be gentle with yourself. You’re growing.",
+      "font": {
+        "family": "Lora",
+        "weight": 400,
+        "style": "italic"
+      },
+      "size": 88,
+      "color": "#2E2A3B",
+      "align": "center",
+      "lineHeight": 1.25,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 90
+    },
+    "line": {
+      "id": "line",
+      "name": "Line",
+      "transform": {
+        "x": 540,
+        "y": 1221.5,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 100,
+      "height": 3,
+      "opacity": 0.5,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#2E2A3B"
+      },
+      "stroke": null
+    },
+    "note": {
+      "id": "note",
+      "name": "Note",
+      "transform": {
+        "x": 540,
+        "y": 1285,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 700,
+      "height": 50,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "a note for today",
+      "font": {
+        "family": "Inter",
+        "weight": 500,
+        "style": "normal"
+      },
+      "size": 32,
+      "color": "#5A5470",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 3,
+      "fit": "shrink",
+      "maxChars": 32
+    },
+    "handle": {
+      "id": "handle",
+      "name": "Handle",
+      "transform": {
+        "x": 540,
+        "y": 1780,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 500,
+      "height": 40,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "@yourhandle",
+      "font": {
+        "family": "Inter",
+        "weight": 500,
+        "style": "normal"
+      },
+      "size": 28,
+      "color": "#5A5470",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 24
+    }
+  },
+  "assets": {}
+}

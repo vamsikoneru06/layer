@@ -1,0 +1,222 @@
+{
+  "schemaVersion": 1,
+  "id": "poster-now-open",
+  "kind": "template",
+  "meta": {
+    "title": "Now Open",
+    "category": "business",
+    "tags": [
+      "cafe",
+      "opening",
+      "arch",
+      "warm"
+    ],
+    "format": "poster"
+  },
+  "artboard": {
+    "width": 1240,
+    "height": 1754,
+    "background": {
+      "type": "solid",
+      "color": "#F7EFE5"
+    }
+  },
+  "root": [
+    "kicker",
+    "photo",
+    "name",
+    "when",
+    "offer",
+    "where"
+  ],
+  "nodes": {
+    "kicker": {
+      "id": "kicker",
+      "name": "Kicker",
+      "transform": {
+        "x": 620,
+        "y": 145,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 900,
+      "height": 50,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "NOW OPEN",
+      "font": {
+        "family": "Inter",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 34,
+      "color": "#8C5A3C",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 10,
+      "fit": "shrink",
+      "maxChars": 24
+    },
+    "photo": {
+      "id": "photo",
+      "name": "Arch photo",
+      "transform": {
+        "x": 620,
+        "y": 660,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 700,
+      "height": 880,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "path",
+        "d": "M0 1 L0 0.5 A0.5 0.5 0 0 1 1 0.5 L1 1 Z"
+      },
+      "content": null,
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "name": {
+      "id": "name",
+      "name": "Business name",
+      "transform": {
+        "x": 620,
+        "y": 1225,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1100,
+      "height": 150,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Little Fig Café",
+      "font": {
+        "family": "DM Serif Display",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 120,
+      "color": "#2F2A26",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 30
+    },
+    "when": {
+      "id": "when",
+      "name": "When",
+      "transform": {
+        "x": 620,
+        "y": 1350,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1000,
+      "height": 60,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Grand opening · Saturday, 9 AM",
+      "font": {
+        "family": "Inter",
+        "weight": 500,
+        "style": "normal"
+      },
+      "size": 40,
+      "color": "#5A4A3F",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 50
+    },
+    "offer": {
+      "id": "offer",
+      "name": "Offer",
+      "transform": {
+        "x": 620,
+        "y": 1470,
+        "rotation": -3,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 800,
+      "height": 100,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "First coffee on us",
+      "font": {
+        "family": "Caveat",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 72,
+      "color": "#C0613B",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 30
+    },
+    "where": {
+      "id": "where",
+      "name": "Where",
+      "transform": {
+        "x": 620,
+        "y": 1622,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 800,
+      "height": 44,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "12 Lake View Road",
+      "font": {
+        "family": "Inter",
+        "weight": 500,
+        "style": "normal"
+      },
+      "size": 30,
+      "color": "#8C5A3C",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 50
+    }
+  },
+  "assets": {}
+}
