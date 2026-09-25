@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { LIMITS, parseDoc, type Doc } from "@layer/schema";
 import { findUnusableAssets } from "../assets/repository";
+import { isForeignKeyViolation } from "../db/errors";
 import type { Db } from "../db/types";
 import { folderExists } from "../folders/repository";
 import { conflict, notFound, unprocessable } from "../http/problem";
@@ -20,9 +21,19 @@ async function checkDoc(db: Db, ownerId: string, raw: unknown, designId: string)
   return doc;
 }
 
+const folderMissing = () => unprocessable("folderId does not refer to one of your folders.");
+
 async function assertFolder(db: Db, ownerId: string, folderId: string | null | undefined): Promise<void> {
-  if (folderId && !(await folderExists(db, ownerId, folderId))) {
-    throw unprocessable("folderId does not refer to one of your folders.");
+  if (folderId && !(await folderExists(db, ownerId, folderId))) throw folderMissing();
+}
+
+/** The folder can be deleted between assertFolder and the write; the FK then fails and it's still the caller's 422. */
+async function writingFolder<T>(write: Promise<T>): Promise<T> {
+  try {
+    return await write;
+  } catch (err) {
+    if (isForeignKeyViolation(err)) throw folderMissing();
+    throw err;
   }
 }
 
@@ -36,7 +47,7 @@ export async function createDesign(
   if (input.title !== undefined) doc.meta = { ...doc.meta, title: input.title };
   await assertFolder(ctx.db, ownerId, input.folderId);
   const now = ctx.now();
-  return repo.insertDesign(ctx.db, { id, ownerId, folderId: input.folderId ?? null, title: doc.meta.title, doc, createdAt: now, updatedAt: now });
+  return writingFolder(repo.insertDesign(ctx.db, { id, ownerId, folderId: input.folderId ?? null, title: doc.meta.title, doc, createdAt: now, updatedAt: now }));
 }
 
 export async function saveDesignDoc(ctx: ServiceContext, ownerId: string, id: string, input: { doc: unknown; version: number }): Promise<repo.DesignRow> {
@@ -57,7 +68,7 @@ export async function updateDesignMeta(
 ): Promise<repo.DesignRow> {
   if ((await repo.getDesignVersion(ctx.db, ownerId, id)) === undefined) throw notFound();
   await assertFolder(ctx.db, ownerId, patch.folderId);
-  const row = await repo.updateDesignMeta(ctx.db, ownerId, id, patch, ctx.now());
+  const row = await writingFolder(repo.updateDesignMeta(ctx.db, ownerId, id, patch, ctx.now()));
   if (!row) throw notFound();
   return row;
 }

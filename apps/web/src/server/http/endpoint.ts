@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { CurrentUser, Deps } from "../deps";
 import { consume, type RateLimitRule } from "../rate-limit/limiter";
-import { clientIp } from "./client-ip";
+import { clientIp, rateLimitSubject } from "./client-ip";
 import { HttpError, problem } from "./problem";
 import type { Handler } from "./types";
 
@@ -74,7 +74,7 @@ async function enforceRateLimit(
   limit: NonNullable<EndpointOptions<AuthMode>["rateLimit"]>,
   user: CurrentUser | null,
 ): Promise<void> {
-  const subject = limit.by === "user" && user ? `user:${user.id}` : `ip:${clientIp(req, deps.config.trustProxy) ?? "unknown"}`;
+  const subject = limit.by === "user" && user ? `user:${user.id}` : `ip:${rateLimitSubject(clientIp(req, deps.config.trustProxy))}`;
   const verdict = await consume(deps.db, `${limit.name}:${subject}`, limit.rule, deps.now());
   if (!verdict.allowed) {
     throw new HttpError(

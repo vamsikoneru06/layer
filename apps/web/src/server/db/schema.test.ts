@@ -42,6 +42,7 @@ describe("database schema", () => {
     await t.db.insert(auditLog).values({ actorId: "u1", action: "test", targetType: "user", targetId: "u1" });
     expect(await dbErrorMessage(t.db.update(auditLog).set({ action: "tampered" }))).toMatch(/append-only/);
     expect(await dbErrorMessage(t.db.delete(auditLog))).toMatch(/append-only/);
+    expect(await dbErrorMessage(t.db.execute(sql`truncate audit_log`))).toMatch(/append-only/);
   });
 
   it("rejects roles outside user/admin at the database level", async () => {

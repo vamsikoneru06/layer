@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { clientIp } from "./client-ip";
+import { clientIp, rateLimitSubject } from "./client-ip";
+
+describe("rateLimitSubject", () => {
+  it("keys IPv4 per address and IPv6 per /64, so rotating within one allocation doesn't help", () => {
+    expect(rateLimitSubject("203.0.113.7")).toBe("203.0.113.7");
+    expect(rateLimitSubject("2001:db8:1:2::1")).toBe("2001:db8:1:2::/64");
+    expect(rateLimitSubject("2001:0db8:0001:0002:ffff:eeee:dddd:cccc")).toBe("2001:db8:1:2::/64");
+    expect(rateLimitSubject("::ffff:203.0.113.7")).toBe("203.0.113.7");
+    expect(rateLimitSubject(null)).toBe("unknown");
+  });
+});
 
 const req = (xff?: string) => new Request("http://localhost/", { headers: xff === undefined ? {} : { "x-forwarded-for": xff } });
 

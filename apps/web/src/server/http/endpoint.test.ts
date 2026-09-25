@@ -4,6 +4,7 @@ import { testDeps } from "../../../tests/support/deps";
 import { createUser } from "../../../tests/support/factories";
 import { call } from "../../../tests/support/invoke";
 import { captureLogger } from "../../../tests/support/logger";
+import { createLogger } from "../logging";
 import { endpoint } from "./endpoint";
 import { HttpError } from "./problem";
 
@@ -54,15 +55,21 @@ describe("endpoint()", () => {
   });
 
   it("hides unexpected errors from the client and logs them without secrets", async () => {
-    const logger = captureLogger();
+    const lines: string[] = [];
+    const logger = createLogger((line) => lines.push(line));
     const h = endpoint(testDeps(t.db, { logger }), { auth: "none" }, async () => {
-      throw new Error("connect ECONNREFUSED postgres://layer:hunter2@db\nparams: riya@example.test");
+      const err = new Error('Failed query: select * from "user" where email = $1\nparams: riya@example.test');
+      err.name = "DrizzleQueryError";
+      (err as Error & { cause?: unknown }).cause = new Error("connect ECONNREFUSED postgres://layer:hunter2@db:5432/layer");
+      throw err;
     });
     const res = await call(h);
     expect(res.status).toBe(500);
     expect(JSON.stringify(res.body)).not.toMatch(/hunter2|ECONNREFUSED|riya/);
-    const failure = logger.entries.find((e) => e.event === "request.failed");
-    expect(failure?.fields.requestId).toBe(res.body.requestId);
+    const logged = lines.join("\n");
+    expect(logged).toContain(res.body.requestId);
+    expect(logged).toContain("ECONNREFUSED");
+    expect(logged).not.toMatch(/hunter2|riya@example|select \* from/);
   });
 
   it("rate-limits per user and per IP with Retry-After", async () => {

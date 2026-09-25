@@ -9,7 +9,7 @@ import type { AppConfig } from "../config";
 import { authSchema } from "../db/schema";
 import type { Db } from "../db/types";
 import { readText } from "../http/body";
-import { clientIp } from "../http/client-ip";
+import { clientIp, rateLimitSubject } from "../http/client-ip";
 import { HttpError, problem } from "../http/problem";
 import { betterAuthRateLimitStorage, consume } from "../rate-limit/limiter";
 import { RATE_LIMITS } from "../rate-limit/rules";
@@ -92,7 +92,7 @@ export function createAuth({ db, config, mailer, now }: AuthDeps) {
         if (body.name !== undefined && (typeof body.name !== "string" || body.name.length > LIMITS.nameChars)) {
           throw new APIError("BAD_REQUEST", { message: `name must be at most ${LIMITS.nameChars} characters.` });
         }
-        const ip = (ctx.request && clientIp(ctx.request, config.trustProxy)) ?? "unknown";
+        const ip = rateLimitSubject(ctx.request ? clientIp(ctx.request, config.trustProxy) : null);
         if (!(await consume(db, `magic-link:ip:${ip}`, RATE_LIMITS.magicLinkPerIp, now())).allowed) throw tooMany();
         if (typeof body.email === "string") {
           const emailKey = createHash("sha256").update(body.email.trim().toLowerCase()).digest("hex");

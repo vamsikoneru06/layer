@@ -24,6 +24,12 @@ describe("createLogger", () => {
     });
   });
 
+  it("redacts sensitive keys nested deeper than the traversal limit", () => {
+    const { logger, lines } = capture();
+    logger.info("x", { a: { b: { c: { d: { e: { f: { token: "deep-secret" } } } } } } });
+    expect(JSON.stringify(lines[0])).not.toContain("deep-secret");
+  });
+
   it("logs errors without SQL parameters", () => {
     const { logger, lines } = capture();
     const err = new Error('Failed query: select * from "user" where email = $1\nparams: riya@example.test');
