@@ -10,6 +10,7 @@ import type { Deps } from "./deps";
 import { healthHandlers } from "./health/handlers";
 import type { Handler } from "./http/types";
 import { createLogger } from "./logging";
+import { meHandlers } from "./me/handlers";
 
 function build() {
   const config = loadConfig(process.env);
@@ -24,6 +25,7 @@ function build() {
     health: healthHandlers(deps),
     folders: folderHandlers(deps),
     designs: designHandlers(deps),
+    me: meHandlers(deps),
   };
 }
 
