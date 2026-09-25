@@ -35,6 +35,9 @@ const EnvSchema = z
     if (env.NODE_ENV === "production") {
       if (!env.RESEND_API_KEY) ctx.addIssue({ code: "custom", path: ["RESEND_API_KEY"], message: "required in production" });
       if (!env.APP_ORIGIN.startsWith("https://")) ctx.addIssue({ code: "custom", path: ["APP_ORIGIN"], message: "must use https in production" });
+      if (env.TRUST_PROXY !== "true") {
+        ctx.addIssue({ code: "custom", path: ["TRUST_PROXY"], message: "must be true in production, or every client shares one rate-limit bucket" });
+      }
     }
   });
 

@@ -47,10 +47,11 @@ describe("loadConfig", () => {
     expect(errorOf({ ...base, GOOGLE_CLIENT_ID: "id" })).toContain("GOOGLE_CLIENT_SECRET");
   });
 
-  it("requires https and a real mailer in production", () => {
+  it("requires https, a real mailer and a trusted proxy in production", () => {
     const message = errorOf({ ...base, NODE_ENV: "production" });
     expect(message).toContain("RESEND_API_KEY");
     expect(message).toContain("APP_ORIGIN");
+    expect(message).toContain("TRUST_PROXY");
   });
 
   it("enables Resend when a key and sender are present", () => {

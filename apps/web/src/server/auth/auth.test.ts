@@ -107,3 +107,62 @@ describe("magic-link sign-in", () => {
     expect(await createAuthenticator(auth, t.db)(new Request(`${origin}/api/me`))).toBeNull();
   });
 });
+
+describe("magic-link abuse controls", () => {
+  const countVerifications = async () => (await t.db.select().from(verification)).length;
+
+  it("rejects an over-limit email before storing a verification row", async () => {
+    for (let i = 0; i < 5; i++) await requestLink({ email: "store@example.test" }, `192.0.2.${i + 1}`);
+    const before = await countVerifications();
+    expect((await requestLink({ email: "store@example.test" }, "192.0.2.99")).status).toBe(429);
+    expect(await countVerifications()).toBe(before);
+  });
+
+  it("rejects over-long names and oversized bodies without storing anything", async () => {
+    const before = await countVerifications();
+    expect((await requestLink({ email: "long@example.test", name: "x".repeat(81) }, "192.0.2.150")).status).toBe(400);
+    const huge = await route.POST(
+      new Request(`${origin}/api/auth/sign-in/magic-link`, {
+        method: "POST",
+        headers: { "content-type": "application/json", origin, "x-forwarded-for": "192.0.2.151" },
+        body: JSON.stringify({ email: "huge@example.test", name: "x".repeat(20_000) }),
+      }),
+    );
+    expect(huge.status).toBe(413);
+    expect(await countVerifications()).toBe(before);
+  });
+
+  it("still limits links per client when no proxy is trusted (shared bucket, fail closed)", async () => {
+    const untrusted = createAuthRoute(
+      createAuth({ db: t.db, config: { ...testConfig, trustProxy: false }, mailer, now: () => new Date() }),
+      testConfig,
+    );
+    const statuses = [];
+    for (let i = 0; i < 21; i++) {
+      const res = await untrusted.POST(
+        new Request(`${origin}/api/auth/sign-in/magic-link`, {
+          method: "POST",
+          headers: { "content-type": "application/json", origin, "x-forwarded-for": `198.18.0.${i + 1}` },
+          body: JSON.stringify({ email: `nat${i}@example.test`, callbackURL: "/home" }),
+        }),
+      );
+      statuses.push(res.status);
+    }
+    expect(statuses.slice(0, 20).every((s) => s === 200)).toBe(true);
+    expect(statuses[20]).toBe(429);
+  });
+
+  it.each(["/update-user", "/delete-user", "/change-email", "/sign-up/email", "/sign-in/email", "/request-password-reset", "/get-access-token"])(
+    "does not expose %s, which would bypass Layer's own rules",
+    async (path) => {
+      const res = await route.POST(
+        new Request(`${origin}/api/auth${path}`, {
+          method: "POST",
+          headers: { "content-type": "application/json", origin, "x-forwarded-for": "192.0.2.200" },
+          body: JSON.stringify({ name: "x".repeat(500), image: "javascript:alert(1)", email: "a@b.test", password: "password123" }),
+        }),
+      );
+      expect(res.status).toBe(404);
+    },
+  );
+});
