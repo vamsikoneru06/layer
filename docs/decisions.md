@@ -1,4 +1,4 @@
-# Layer — Decisions Log
+# VASH — Decisions Log
 
 Running log of decisions made during brainstorming. The full PRD/spec will live in
 `docs/superpowers/specs/` once every design section is approved.
@@ -25,5 +25,9 @@ Running log of decisions made during brainstorming. The full PRD/spec will live 
 | 18 | 2026-09-25 | **Admin endpoints answer 403 to non-admins;** owner-scoped resources answer 404 to non-owners. | The admin API's existence is public; a resource's existence is not. |
 | 19 | 2026-09-25 | **Design title mirrors `doc.meta.title`;** renaming rewrites both and bumps `version`, so an open editor gets 409 → conflict dialog. | One source of truth, no silent overwrite of a rename by a stale autosave. |
 | 20 | 2026-09-25 | **Magic-link POST also passes our strict Origin check,** in addition to Better Auth's own checks. | Stops other sites from triggering sign-in emails (email bombing, login CSRF). |
-| 21 | 2026-09-25 | **Only the Better Auth routes Layer uses are exposed.** `update-user`, `delete-user`, password, email-change, provider-token and account-linking routes are disabled; profile writes and deletion go through `/api/me` (validated, audited). Magic-link limits and the `name` length check run in a `hooks.before` so rejected requests store nothing; auth POST bodies are capped at 8 KB. | Found in final review: those routes bypassed validation, the audit log and the storage-deletion queue. |
+| 21 | 2026-09-25 | **Only the Better Auth routes VASH uses are exposed.** `update-user`, `delete-user`, password, email-change, provider-token and account-linking routes are disabled; profile writes and deletion go through `/api/me` (validated, audited). Magic-link limits and the `name` length check run in a `hooks.before` so rejected requests store nothing; auth POST bodies are capped at 8 KB. | Found in final review: those routes bypassed validation, the audit log and the storage-deletion queue. |
 | 22 | 2026-09-25 | **Every page renders dynamically** (`await connection()` in the root layout). | A per-request CSP nonce can't be baked into prerendered HTML; with `'strict-dynamic'` the scripts would be blocked. |
+| 23 | 2026-09-26 | **Product renamed from Layer to VASH** (packages `@vash/*`). | Distinct name for the portfolio; "layer" stays a term for editor layers. |
+| 24 | 2026-09-26 | **Gmail SMTP as a free mailer** (`GMAIL_USER` + `GMAIL_APP_PASSWORD`, ~500/day) alongside Resend; either satisfies the production mailer check. SMTP errors are replaced with a fixed message. Free services are listed in `docs/free-stack.md`. | Resend's free plan only delivers to the account owner until a domain is verified; the project runs on a zero-cost stack. |
+| 25 | 2026-09-26 | **Per-user quotas and two extra rate limits beyond spec §9.6:** 500 designs and 100 folders per user (count + insert under the owner's row lock); design create/duplicate 100/hour; account export 5/hour. | Bounds storage per account (each design ≤ 1 MB) and stops create/export from being used to exhaust the database. |
+| 26 | 2026-09-26 | **Account export streams** designs a page at a time; account deletion also expires the session cookies. | Memory stays flat regardless of account size; the browser is signed out immediately after deletion. |

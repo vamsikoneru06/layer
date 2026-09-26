@@ -8,7 +8,10 @@ export interface AppConfig {
   authSecret: string;
   trustProxy: boolean;
   google: { clientId: string; clientSecret: string } | null;
-  mail: { kind: "console" } | { kind: "resend"; apiKey: string; from: string };
+  mail:
+    | { kind: "console" }
+    | { kind: "resend"; apiKey: string; from: string }
+    | { kind: "gmail"; user: string; appPassword: string; from: string };
 }
 
 const optional = z.preprocess((v) => (v === "" ? undefined : v), z.string().trim().min(1).optional());
@@ -24,16 +27,24 @@ const EnvSchema = z
     GOOGLE_CLIENT_SECRET: optional,
     RESEND_API_KEY: optional,
     MAIL_FROM: optional,
+    // Free: a Google account plus an App Password (myaccount.google.com/apppasswords).
+    GMAIL_USER: optional,
+    GMAIL_APP_PASSWORD: optional,
   })
   .superRefine((env, ctx) => {
     if (Boolean(env.GOOGLE_CLIENT_ID) !== Boolean(env.GOOGLE_CLIENT_SECRET)) {
       ctx.addIssue({ code: "custom", path: ["GOOGLE_CLIENT_SECRET"], message: "set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET together, or neither" });
     }
+    if (Boolean(env.GMAIL_USER) !== Boolean(env.GMAIL_APP_PASSWORD)) {
+      ctx.addIssue({ code: "custom", path: ["GMAIL_APP_PASSWORD"], message: "set GMAIL_USER and GMAIL_APP_PASSWORD together, or neither" });
+    }
     if (env.RESEND_API_KEY && !env.MAIL_FROM) {
       ctx.addIssue({ code: "custom", path: ["MAIL_FROM"], message: "required when RESEND_API_KEY is set" });
     }
     if (env.NODE_ENV === "production") {
-      if (!env.RESEND_API_KEY) ctx.addIssue({ code: "custom", path: ["RESEND_API_KEY"], message: "required in production" });
+      if (!env.RESEND_API_KEY && !env.GMAIL_USER) {
+        ctx.addIssue({ code: "custom", path: ["RESEND_API_KEY"], message: "required in production unless GMAIL_USER is set" });
+      }
       if (!env.APP_ORIGIN.startsWith("https://")) ctx.addIssue({ code: "custom", path: ["APP_ORIGIN"], message: "must use https in production" });
       if (env.TRUST_PROXY !== "true") {
         ctx.addIssue({ code: "custom", path: ["TRUST_PROXY"], message: "must be true in production, or every client shares one rate-limit bucket" });
@@ -64,6 +75,11 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
       e.GOOGLE_CLIENT_ID && e.GOOGLE_CLIENT_SECRET
         ? { clientId: e.GOOGLE_CLIENT_ID, clientSecret: e.GOOGLE_CLIENT_SECRET }
         : null,
-    mail: e.RESEND_API_KEY && e.MAIL_FROM ? { kind: "resend", apiKey: e.RESEND_API_KEY, from: e.MAIL_FROM } : { kind: "console" },
+    mail:
+      e.RESEND_API_KEY && e.MAIL_FROM
+        ? { kind: "resend", apiKey: e.RESEND_API_KEY, from: e.MAIL_FROM }
+        : e.GMAIL_USER && e.GMAIL_APP_PASSWORD
+          ? { kind: "gmail", user: e.GMAIL_USER, appPassword: e.GMAIL_APP_PASSWORD, from: e.MAIL_FROM ?? `VASH <${e.GMAIL_USER}>` }
+          : { kind: "console" },
   };
 }

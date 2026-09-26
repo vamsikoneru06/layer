@@ -1,0 +1,243 @@
+{
+  "schemaVersion": 1,
+  "id": "story-countdown",
+  "kind": "template",
+  "meta": {
+    "title": "Event Countdown",
+    "category": "events",
+    "tags": [
+      "countdown",
+      "event",
+      "dark",
+      "meetup"
+    ],
+    "format": "ig-story"
+  },
+  "artboard": {
+    "width": 1080,
+    "height": 1920,
+    "background": {
+      "type": "solid",
+      "color": "#0E0E12"
+    }
+  },
+  "root": [
+    "ring",
+    "photo",
+    "days",
+    "label",
+    "divider",
+    "event",
+    "details"
+  ],
+  "nodes": {
+    "ring": {
+      "id": "ring",
+      "name": "Ring",
+      "transform": {
+        "x": 540,
+        "y": 470,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 540,
+      "height": 540,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": null,
+      "stroke": {
+        "color": "#FF5A36",
+        "width": 6
+      }
+    },
+    "photo": {
+      "id": "photo",
+      "name": "Speaker photo",
+      "transform": {
+        "x": 540,
+        "y": 470,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 500,
+      "height": 500,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "ellipse"
+      },
+      "content": null,
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "days": {
+      "id": "days",
+      "name": "Days left",
+      "transform": {
+        "x": 540,
+        "y": 990,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 800,
+      "height": 420,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "03",
+      "font": {
+        "family": "Bebas Neue",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 420,
+      "color": "#FF5A36",
+      "align": "center",
+      "lineHeight": 1,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 3
+    },
+    "label": {
+      "id": "label",
+      "name": "Label",
+      "transform": {
+        "x": 540,
+        "y": 1240,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 800,
+      "height": 80,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "days to go",
+      "font": {
+        "family": "Space Grotesk",
+        "weight": 500,
+        "style": "normal"
+      },
+      "size": 64,
+      "color": "#FFFFFF",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 24
+    },
+    "divider": {
+      "id": "divider",
+      "name": "Divider",
+      "transform": {
+        "x": 540,
+        "y": 1332,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 100,
+      "height": 4,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#FF5A36"
+      },
+      "stroke": null
+    },
+    "event": {
+      "id": "event",
+      "name": "Event name",
+      "transform": {
+        "x": 540,
+        "y": 1450,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 900,
+      "height": 140,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Indie Makers Meetup",
+      "font": {
+        "family": "Space Grotesk",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 56,
+      "color": "#FFFFFF",
+      "align": "center",
+      "lineHeight": 1.1,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 40
+    },
+    "details": {
+      "id": "details",
+      "name": "Details",
+      "transform": {
+        "x": 540,
+        "y": 1565,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 900,
+      "height": 50,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Sat 12 Oct · Hyderabad",
+      "font": {
+        "family": "Inter",
+        "weight": 500,
+        "style": "normal"
+      },
+      "size": 34,
+      "color": "#A0A0AA",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 44
+    }
+  },
+  "assets": {}
+}

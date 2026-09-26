@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { boolean, check, date, index, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
-import type { Doc } from "@layer/schema";
+import type { Doc } from "@vash/schema";
 
 /** Millisecond precision so keyset cursors round-trip through JavaScript Dates exactly. */
 const ts = (name: string) => timestamp(name, { withTimezone: true, precision: 3 });
@@ -19,7 +19,7 @@ export const user = pgTable(
     image: text("image"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
-    // Layer extensions. Deliberately NOT declared to Better Auth, so sign-up bodies can never set them.
+    // VASH extensions. Deliberately NOT declared to Better Auth, so sign-up bodies can never set them.
     handle: text("handle").unique(),
     role: text("role", { enum: ["user", "admin"] }).notNull().default("user"),
     interests: text("interests").array().notNull().default(emptyTextArray),
@@ -78,7 +78,7 @@ export const verification = pgTable(
 
 export const authSchema = { user, session, account, verification };
 
-// ── Layer domain ─────────────────────────────────────────────────────────────
+// ── VASH domain ─────────────────────────────────────────────────────────────
 export const folders = pgTable(
   "folders",
   {

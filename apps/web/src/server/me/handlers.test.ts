@@ -6,7 +6,9 @@ import { emptyDoc } from "../../../tests/support/docs";
 import { createAsset, createFolder, createUser } from "../../../tests/support/factories";
 import { call } from "../../../tests/support/invoke";
 import { auditLog, designs, folders, storageDeletions, user } from "../db/schema";
+import { RATE_LIMITS } from "../rate-limit/rules";
 import { meHandlers } from "./handlers";
+import { EXPORT_PAGE_SIZE } from "./service";
 
 let t: TestDb;
 let h: ReturnType<typeof meHandlers>;
@@ -64,11 +66,29 @@ describe("GET /api/me/export", () => {
     await createFolder(t.db, bob.id, "Bob's folder");
     await t.db.insert(designs).values({ ownerId: alice.id, title: "Mine", doc: emptyDoc("Mine") });
     const res = await call(h.export, { as: alice });
-    expect(res.headers.get("content-disposition")).toMatch(/attachment; filename="layer-export\.json"/);
+    expect(res.headers.get("content-disposition")).toMatch(/attachment; filename="vash-export\.json"/);
     expect(res.body.profile.id).toBe(alice.id);
     expect(res.body.folders.map((f: { name: string }) => f.name)).toEqual(["Alice's folder"]);
     expect(res.body.designs[0].doc.meta.title).toBe("Mine");
     expect(JSON.stringify(res.body)).not.toContain("Bob's folder");
+  });
+
+  it("streams designs across pages as one valid JSON document, oldest first", async () => {
+    const alice = await createUser(t.db);
+    const count = EXPORT_PAGE_SIZE * 2 + 1;
+    const base = Date.parse("2026-09-25T09:00:00.000Z");
+    await t.db
+      .insert(designs)
+      .values(Array.from({ length: count }, (_, i) => ({ ownerId: alice.id, title: `D${i}`, doc: emptyDoc(`D${i}`), createdAt: new Date(base + i * 1000) })));
+    const res = await call(h.export, { as: alice });
+    expect(res.status).toBe(200);
+    expect(res.body.designs.map((d: { title: string }) => d.title)).toEqual(Array.from({ length: count }, (_, i) => `D${i}`));
+  });
+
+  it("rate-limits exports per user", async () => {
+    const alice = await createUser(t.db);
+    for (let i = 0; i < RATE_LIMITS.accountExport.max; i++) expect((await call(h.export, { as: alice })).status).toBe(200);
+    expect((await call(h.export, { as: alice })).status).toBe(429);
   });
 });
 
@@ -81,7 +101,11 @@ describe("DELETE /api/me", () => {
     const publicAsset = await createAsset(t.db, { ownerId: alice.id, visibility: "public" });
     const bobsFolder = await createFolder(t.db, bob.id);
 
-    expect((await call(h.remove, { method: "DELETE", as: alice })).status).toBe(204);
+    const res = await call(h.remove, { method: "DELETE", as: alice });
+    expect(res.status).toBe(204);
+    expect(res.headers.getSetCookie()).toEqual(
+      expect.arrayContaining([expect.stringMatching(/^better-auth\.session_token=; Max-Age=0; Path=\/; HttpOnly; SameSite=Lax$/)]),
+    );
 
     expect(await t.db.select().from(user).where(eq(user.id, alice.id))).toEqual([]);
     expect(await t.db.select().from(folders).where(eq(folders.ownerId, alice.id))).toEqual([]);

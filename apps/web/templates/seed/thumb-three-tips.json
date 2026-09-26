@@ -1,0 +1,214 @@
+{
+  "schemaVersion": 1,
+  "id": "thumb-three-tips",
+  "kind": "template",
+  "meta": {
+    "title": "Three Tips",
+    "category": "business",
+    "tags": [
+      "youtube",
+      "tips",
+      "productivity",
+      "bold"
+    ],
+    "format": "yt-thumbnail"
+  },
+  "artboard": {
+    "width": 1280,
+    "height": 720,
+    "background": {
+      "type": "solid",
+      "color": "#F5F5F0"
+    }
+  },
+  "root": [
+    "photo",
+    "highlight",
+    "number",
+    "subject",
+    "badge",
+    "badge-label"
+  ],
+  "nodes": {
+    "photo": {
+      "id": "photo",
+      "name": "Presenter photo",
+      "transform": {
+        "x": 300,
+        "y": 360,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 600,
+      "height": 720,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "content": null,
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "highlight": {
+      "id": "highlight",
+      "name": "Highlight",
+      "transform": {
+        "x": 928,
+        "y": 195,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 560,
+      "height": 90,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#FFE14D"
+      },
+      "stroke": null
+    },
+    "number": {
+      "id": "number",
+      "name": "Headline",
+      "transform": {
+        "x": 950,
+        "y": 175,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 580,
+      "height": 170,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "3 TIPS",
+      "font": {
+        "family": "Archivo Black",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 110,
+      "color": "#111111",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 10
+    },
+    "subject": {
+      "id": "subject",
+      "name": "Subject",
+      "transform": {
+        "x": 950,
+        "y": 410,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 580,
+      "height": 220,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "to double your focus",
+      "font": {
+        "family": "Montserrat",
+        "weight": 800,
+        "style": "normal"
+      },
+      "size": 64,
+      "color": "#111111",
+      "align": "left",
+      "lineHeight": 1.05,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 40
+    },
+    "badge": {
+      "id": "badge",
+      "name": "Badge",
+      "transform": {
+        "x": 790,
+        "y": 595,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 260,
+      "height": 70,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 35
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#111111"
+      },
+      "stroke": null
+    },
+    "badge-label": {
+      "id": "badge-label",
+      "name": "Badge label",
+      "transform": {
+        "x": 790,
+        "y": 595,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 260,
+      "height": 34,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "NEW VIDEO",
+      "font": {
+        "family": "Inter",
+        "weight": 800,
+        "style": "normal"
+      },
+      "size": 28,
+      "color": "#FFFFFF",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 3,
+      "fit": "shrink",
+      "maxChars": 14
+    }
+  },
+  "assets": {}
+}

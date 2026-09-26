@@ -1,4 +1,4 @@
-import { LIMITS } from "@layer/schema";
+import { LIMITS } from "@vash/schema";
 import { z } from "zod";
 import type { Deps } from "../deps";
 import { readJson, readQuery } from "../http/body";
@@ -21,8 +21,9 @@ const PatchBody = z
   .strict()
   .refine((b) => b.title !== undefined || b.folderId !== undefined, "Provide title or folderId.");
 const ListQuery = pageQuery.extend({ folderId: z.uuid().optional() });
+const createLimit = { name: "designCreate", rule: RATE_LIMITS.designCreate, by: "user" } as const;
 
-const summary = (d: repo.DesignSummary) => ({
+const summary = (d: Omit<repo.DesignSummary, "format" | "width" | "height">) => ({
   id: d.id,
   title: d.title,
   folderId: d.folderId,
@@ -31,6 +32,7 @@ const summary = (d: repo.DesignSummary) => ({
   createdAt: d.createdAt.toISOString(),
   updatedAt: d.updatedAt.toISOString(),
 });
+const listItem = (d: repo.DesignSummary) => ({ ...summary(d), format: d.format, width: d.width, height: d.height });
 const full = (d: repo.DesignRow) => ({ ...summary(d), doc: d.doc, sourceTemplateId: d.sourceTemplateId, sourceTemplateVersion: d.sourceTemplateVersion });
 
 export function designHandlers(deps: Deps) {
@@ -39,10 +41,10 @@ export function designHandlers(deps: Deps) {
     list: endpoint(deps, { auth: "user" }, async ({ req, user }) => {
       const q = readQuery(req, ListQuery);
       const rows = await repo.listDesigns(deps.db, user.id, { folderId: q.folderId, cursor: q.cursor ? decodeCursor(q.cursor) : undefined, limit: q.limit });
-      return Response.json(toPage(rows, q.limit, (r) => ({ at: r.updatedAt.toISOString(), id: r.id }), summary));
+      return Response.json(toPage(rows, q.limit, (r) => ({ at: r.updatedAt.toISOString(), id: r.id }), listItem));
     }),
 
-    create: endpoint(deps, { auth: "user" }, async ({ req, user }) => {
+    create: endpoint(deps, { auth: "user", rateLimit: createLimit }, async ({ req, user }) => {
       const body = await readJson(req, CreateBody, DOC_BODY_LIMIT);
       return Response.json(full(await service.createDesign(ctx, user.id, body)), { status: 201 });
     }),
@@ -70,7 +72,7 @@ export function designHandlers(deps: Deps) {
       return new Response(null, { status: 204 });
     }),
 
-    duplicate: endpoint(deps, { auth: "user" }, async ({ user, params }) => {
+    duplicate: endpoint(deps, { auth: "user", rateLimit: createLimit }, async ({ user, params }) => {
       return Response.json(full(await service.duplicateDesign(ctx, user.id, parseId(params.id))), { status: 201 });
     }),
   };

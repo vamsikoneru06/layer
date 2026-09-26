@@ -1,5 +1,5 @@
 /**
- * The Layer document format (schemaVersion 1).
+ * The VASH document format (schemaVersion 1).
  *
  * Rules that keep the format safe and predictable:
  * - Every key is required; "absent" is expressed as `null`.

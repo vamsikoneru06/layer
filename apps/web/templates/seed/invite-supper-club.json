@@ -1,0 +1,249 @@
+{
+  "schemaVersion": 1,
+  "id": "invite-supper-club",
+  "kind": "template",
+  "meta": {
+    "title": "Supper Club",
+    "category": "food",
+    "tags": [
+      "dinner",
+      "supper club",
+      "elegant",
+      "dark"
+    ],
+    "format": "invitation"
+  },
+  "artboard": {
+    "width": 1500,
+    "height": 2100,
+    "background": {
+      "type": "solid",
+      "color": "#23291F"
+    }
+  },
+  "root": [
+    "border",
+    "kicker",
+    "title",
+    "photo",
+    "menu",
+    "when",
+    "notes"
+  ],
+  "nodes": {
+    "border": {
+      "id": "border",
+      "name": "Border",
+      "transform": {
+        "x": 750,
+        "y": 1050,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1340,
+      "height": 1940,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "fill": null,
+      "stroke": {
+        "color": "#D4B06A",
+        "width": 2
+      }
+    },
+    "kicker": {
+      "id": "kicker",
+      "name": "Kicker",
+      "transform": {
+        "x": 750,
+        "y": 225,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1000,
+      "height": 50,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "SUPPER CLUB",
+      "font": {
+        "family": "Inter",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 36,
+      "color": "#D4B06A",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 14,
+      "fit": "shrink",
+      "maxChars": 24
+    },
+    "title": {
+      "id": "title",
+      "name": "Title",
+      "transform": {
+        "x": 750,
+        "y": 430,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1200,
+      "height": 260,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "An evening of slow food",
+      "font": {
+        "family": "Playfair Display",
+        "weight": 400,
+        "style": "italic"
+      },
+      "size": 110,
+      "color": "#F3EEDF",
+      "align": "center",
+      "lineHeight": 1.1,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 40
+    },
+    "photo": {
+      "id": "photo",
+      "name": "Table photo",
+      "transform": {
+        "x": 750,
+        "y": 970,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1000,
+      "height": 700,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 8
+      },
+      "content": null,
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "menu": {
+      "id": "menu",
+      "name": "Menu",
+      "transform": {
+        "x": 750,
+        "y": 1500,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1100,
+      "height": 220,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Burrata & heirloom tomato · Wood-fired lamb · Saffron poached pear",
+      "font": {
+        "family": "Lora",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 44,
+      "color": "#E5DDC8",
+      "align": "center",
+      "lineHeight": 1.6,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 160
+    },
+    "when": {
+      "id": "when",
+      "name": "When",
+      "transform": {
+        "x": 750,
+        "y": 1720,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1100,
+      "height": 80,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Saturday, 7:30 PM",
+      "font": {
+        "family": "Playfair Display",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 60,
+      "color": "#D4B06A",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 40
+    },
+    "notes": {
+      "id": "notes",
+      "name": "Notes",
+      "transform": {
+        "x": 750,
+        "y": 1825,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1100,
+      "height": 50,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Dress: garden formal · Bring a friend",
+      "font": {
+        "family": "Inter",
+        "weight": 500,
+        "style": "normal"
+      },
+      "size": 34,
+      "color": "#BFB7A2",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 60
+    }
+  },
+  "assets": {}
+}

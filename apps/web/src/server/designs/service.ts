@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { LIMITS, parseDoc, type Doc } from "@layer/schema";
+import { LIMITS, parseDoc, type Doc } from "@vash/schema";
 import { findUnusableAssets } from "../assets/repository";
 import { isForeignKeyViolation } from "../db/errors";
 import type { Db } from "../db/types";
 import { folderExists } from "../folders/repository";
 import { conflict, notFound, unprocessable } from "../http/problem";
+import { insertWithinQuota } from "../quotas";
 import * as repo from "./repository";
 
 export interface ServiceContext {
@@ -47,7 +48,11 @@ export async function createDesign(
   if (input.title !== undefined) doc.meta = { ...doc.meta, title: input.title };
   await assertFolder(ctx.db, ownerId, input.folderId);
   const now = ctx.now();
-  return writingFolder(repo.insertDesign(ctx.db, { id, ownerId, folderId: input.folderId ?? null, title: doc.meta.title, doc, createdAt: now, updatedAt: now }));
+  return writingFolder(
+    insertWithinQuota(ctx.db, ownerId, "designs", (tx) =>
+      repo.insertDesign(tx, { id, ownerId, folderId: input.folderId ?? null, title: doc.meta.title, doc, createdAt: now, updatedAt: now }),
+    ),
+  );
 }
 
 export async function saveDesignDoc(ctx: ServiceContext, ownerId: string, id: string, input: { doc: unknown; version: number }): Promise<repo.DesignRow> {
@@ -79,16 +84,18 @@ export async function duplicateDesign(ctx: ServiceContext, ownerId: string, id: 
   const copyId = randomUUID();
   const title = `Copy of ${source.title}`.slice(0, LIMITS.titleChars);
   const now = ctx.now();
-  return repo.insertDesign(ctx.db, {
-    id: copyId,
-    ownerId,
-    folderId: source.folderId,
-    title,
-    doc: { ...source.doc, id: copyId, meta: { ...source.doc.meta, title } },
-    sourceTemplateId: source.sourceTemplateId,
-    sourceTemplateVersion: source.sourceTemplateVersion,
-    thumbnailAssetId: source.thumbnailAssetId,
-    createdAt: now,
-    updatedAt: now,
-  });
+  return insertWithinQuota(ctx.db, ownerId, "designs", (tx) =>
+    repo.insertDesign(tx, {
+      id: copyId,
+      ownerId,
+      folderId: source.folderId,
+      title,
+      doc: { ...source.doc, id: copyId, meta: { ...source.doc.meta, title } },
+      sourceTemplateId: source.sourceTemplateId,
+      sourceTemplateVersion: source.sourceTemplateVersion,
+      thumbnailAssetId: source.thumbnailAssetId,
+      createdAt: now,
+      updatedAt: now,
+    }),
+  );
 }

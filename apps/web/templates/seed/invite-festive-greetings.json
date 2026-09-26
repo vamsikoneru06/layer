@@ -1,0 +1,279 @@
+{
+  "schemaVersion": 1,
+  "id": "invite-festive-greetings",
+  "kind": "template",
+  "meta": {
+    "title": "Festive Greetings",
+    "category": "events",
+    "tags": [
+      "festive",
+      "greetings",
+      "telugu",
+      "family"
+    ],
+    "format": "invitation"
+  },
+  "artboard": {
+    "width": 1500,
+    "height": 2100,
+    "background": {
+      "type": "linear",
+      "angle": 160,
+      "stops": [
+        {
+          "offset": 0,
+          "color": "#7A1F3D"
+        },
+        {
+          "offset": 1,
+          "color": "#3B0D1E"
+        }
+      ]
+    }
+  },
+  "root": [
+    "ring-outer",
+    "ring-inner",
+    "mandala",
+    "photo",
+    "greeting",
+    "wishes",
+    "invite",
+    "from"
+  ],
+  "nodes": {
+    "ring-outer": {
+      "id": "ring-outer",
+      "name": "Ring",
+      "transform": {
+        "x": 750,
+        "y": 750,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1000,
+      "height": 1000,
+      "opacity": 0.6,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": null,
+      "stroke": {
+        "color": "#E9B949",
+        "width": 4
+      }
+    },
+    "ring-inner": {
+      "id": "ring-inner",
+      "name": "Ring",
+      "transform": {
+        "x": 750,
+        "y": 750,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 840,
+      "height": 840,
+      "opacity": 0.4,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": null,
+      "stroke": {
+        "color": "#E9B949",
+        "width": 2
+      }
+    },
+    "mandala": {
+      "id": "mandala",
+      "name": "Mandala",
+      "transform": {
+        "x": 750,
+        "y": 750,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 600,
+      "height": 600,
+      "opacity": 0.15,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "polygon",
+        "sides": 12
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#E9B949"
+      },
+      "stroke": null
+    },
+    "photo": {
+      "id": "photo",
+      "name": "Family photo",
+      "transform": {
+        "x": 750,
+        "y": 750,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 500,
+      "height": 500,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "ellipse"
+      },
+      "content": null,
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "greeting": {
+      "id": "greeting",
+      "name": "Greeting",
+      "transform": {
+        "x": 750,
+        "y": 1380,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1300,
+      "height": 160,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "శుభాకాంక్షలు",
+      "font": {
+        "family": "Noto Sans Telugu",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 110,
+      "color": "#F7D774",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 30
+    },
+    "wishes": {
+      "id": "wishes",
+      "name": "Wishes",
+      "transform": {
+        "x": 750,
+        "y": 1525,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1200,
+      "height": 90,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Warm wishes to you and your family",
+      "font": {
+        "family": "Playfair Display",
+        "weight": 400,
+        "style": "italic"
+      },
+      "size": 60,
+      "color": "#FCEBD0",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 50
+    },
+    "invite": {
+      "id": "invite",
+      "name": "Invite",
+      "transform": {
+        "x": 750,
+        "y": 1670,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1200,
+      "height": 60,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Join us for dinner · Saturday, 7 PM",
+      "font": {
+        "family": "Inter",
+        "weight": 600,
+        "style": "normal"
+      },
+      "size": 40,
+      "color": "#F2D9A8",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 50
+    },
+    "from": {
+      "id": "from",
+      "name": "From",
+      "transform": {
+        "x": 750,
+        "y": 1825,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1200,
+      "height": 90,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "With love, the Reddy family",
+      "font": {
+        "family": "Caveat",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 64,
+      "color": "#F7D774",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 50
+    }
+  },
+  "assets": {}
+}

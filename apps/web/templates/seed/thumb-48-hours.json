@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 1,
+  "id": "thumb-48-hours",
+  "kind": "template",
+  "meta": {
+    "title": "48 Hours In",
+    "category": "travel",
+    "tags": [
+      "vlog",
+      "travel",
+      "youtube",
+      "beach"
+    ],
+    "format": "yt-thumbnail"
+  },
+  "artboard": {
+    "width": 1280,
+    "height": 720,
+    "background": {
+      "type": "solid",
+      "color": "#000000"
+    }
+  },
+  "root": [
+    "photo",
+    "shade",
+    "kicker",
+    "place",
+    "topics"
+  ],
+  "nodes": {
+    "photo": {
+      "id": "photo",
+      "name": "Destination photo",
+      "transform": {
+        "x": 640,
+        "y": 360,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1280,
+      "height": 720,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "content": null,
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "shade": {
+      "id": "shade",
+      "name": "Shade",
+      "transform": {
+        "x": 380,
+        "y": 360,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 760,
+      "height": 720,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "fill": {
+        "type": "linear",
+        "angle": 90,
+        "stops": [
+          {
+            "offset": 0,
+            "color": "#000000CC"
+          },
+          {
+            "offset": 1,
+            "color": "#00000000"
+          }
+        ]
+      },
+      "stroke": null
+    },
+    "kicker": {
+      "id": "kicker",
+      "name": "Kicker",
+      "transform": {
+        "x": 390,
+        "y": 215,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 640,
+      "height": 70,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "48 HOURS IN",
+      "font": {
+        "family": "Montserrat",
+        "weight": 800,
+        "style": "normal"
+      },
+      "size": 56,
+      "color": "#FFFFFF",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 4,
+      "fit": "shrink",
+      "maxChars": 20
+    },
+    "place": {
+      "id": "place",
+      "name": "Place",
+      "transform": {
+        "x": 380,
+        "y": 390,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 640,
+      "height": 300,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "GOA",
+      "font": {
+        "family": "Bebas Neue",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 300,
+      "color": "#FFD23F",
+      "align": "left",
+      "lineHeight": 0.9,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 12
+    },
+    "topics": {
+      "id": "topics",
+      "name": "Topics",
+      "transform": {
+        "x": 390,
+        "y": 582,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 640,
+      "height": 44,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "beaches · food · hidden spots",
+      "font": {
+        "family": "Inter",
+        "weight": 600,
+        "style": "normal"
+      },
+      "size": 32,
+      "color": "#FFFFFF",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 40
+    }
+  },
+  "assets": {}
+}

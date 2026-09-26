@@ -1,0 +1,281 @@
+{
+  "schemaVersion": 1,
+  "id": "thumb-versus",
+  "kind": "template",
+  "meta": {
+    "title": "Head to Head",
+    "category": "business",
+    "tags": [
+      "comparison",
+      "versus",
+      "review",
+      "youtube"
+    ],
+    "format": "yt-thumbnail"
+  },
+  "artboard": {
+    "width": 1280,
+    "height": 720,
+    "background": {
+      "type": "solid",
+      "color": "#111827"
+    }
+  },
+  "root": [
+    "left",
+    "right",
+    "vs-circle",
+    "vs",
+    "label-left-bg",
+    "label-left",
+    "label-right-bg",
+    "label-right"
+  ],
+  "nodes": {
+    "left": {
+      "id": "left",
+      "name": "Left photo",
+      "transform": {
+        "x": 330,
+        "y": 360,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 580,
+      "height": 640,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 24
+      },
+      "content": null,
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "right": {
+      "id": "right",
+      "name": "Right photo",
+      "transform": {
+        "x": 950,
+        "y": 360,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 580,
+      "height": 640,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 24
+      },
+      "content": null,
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "vs-circle": {
+      "id": "vs-circle",
+      "name": "VS circle",
+      "transform": {
+        "x": 640,
+        "y": 360,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 220,
+      "height": 220,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#EF4444"
+      },
+      "stroke": {
+        "color": "#FFFFFF",
+        "width": 8
+      }
+    },
+    "vs": {
+      "id": "vs",
+      "name": "VS",
+      "transform": {
+        "x": 640,
+        "y": 360,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 220,
+      "height": 110,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "VS",
+      "font": {
+        "family": "Archivo Black",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 96,
+      "color": "#FFFFFF",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 4
+    },
+    "label-left-bg": {
+      "id": "label-left-bg",
+      "name": "Label",
+      "transform": {
+        "x": 200,
+        "y": 615,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 260,
+      "height": 70,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 12
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#FFFFFF"
+      },
+      "stroke": null
+    },
+    "label-left": {
+      "id": "label-left",
+      "name": "Left label",
+      "transform": {
+        "x": 200,
+        "y": 615,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 260,
+      "height": 36,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "OPTION A",
+      "font": {
+        "family": "Montserrat",
+        "weight": 800,
+        "style": "normal"
+      },
+      "size": 30,
+      "color": "#111827",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 14
+    },
+    "label-right-bg": {
+      "id": "label-right-bg",
+      "name": "Label",
+      "transform": {
+        "x": 1080,
+        "y": 615,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 260,
+      "height": 70,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 12
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#FFFFFF"
+      },
+      "stroke": null
+    },
+    "label-right": {
+      "id": "label-right",
+      "name": "Right label",
+      "transform": {
+        "x": 1080,
+        "y": 615,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 260,
+      "height": 36,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "OPTION B",
+      "font": {
+        "family": "Montserrat",
+        "weight": 800,
+        "style": "normal"
+      },
+      "size": 30,
+      "color": "#111827",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 14
+    }
+  },
+  "assets": {}
+}

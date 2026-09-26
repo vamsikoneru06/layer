@@ -11,4 +11,7 @@ export const RATE_LIMITS = {
   publish: { windowSeconds: 86_400, max: 5 },
   report: { windowSeconds: 86_400, max: 20 },
   publicRead: { windowSeconds: 60, max: 300 },
+  // Not in §9.6: design create and duplicate share this bucket; export streams every design the user owns.
+  designCreate: { windowSeconds: 3_600, max: 100 },
+  accountExport: { windowSeconds: 3_600, max: 5 },
 } as const satisfies Record<string, RateLimitRule>;

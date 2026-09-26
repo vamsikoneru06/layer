@@ -1,0 +1,180 @@
+{
+  "schemaVersion": 1,
+  "id": "post-loud-quote",
+  "kind": "template",
+  "meta": {
+    "title": "Loud Quote",
+    "category": "quotes",
+    "tags": [
+      "quote",
+      "bold",
+      "typography",
+      "motivation"
+    ],
+    "format": "ig-post"
+  },
+  "artboard": {
+    "width": 1080,
+    "height": 1080,
+    "background": {
+      "type": "solid",
+      "color": "#111111"
+    }
+  },
+  "root": [
+    "mark",
+    "quote",
+    "line",
+    "attribution",
+    "handle"
+  ],
+  "nodes": {
+    "mark": {
+      "id": "mark",
+      "name": "Quote mark",
+      "transform": {
+        "x": 180,
+        "y": 170,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 200,
+      "height": 260,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "“",
+      "font": {
+        "family": "DM Serif Display",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 260,
+      "color": "#F2C94C",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 2
+    },
+    "quote": {
+      "id": "quote",
+      "name": "Quote",
+      "transform": {
+        "x": 540,
+        "y": 515,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 920,
+      "height": 450,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "DONE IS BETTER THAN PERFECT",
+      "font": {
+        "family": "Bebas Neue",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 150,
+      "color": "#F2C94C",
+      "align": "left",
+      "lineHeight": 0.95,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 60
+    },
+    "line": {
+      "id": "line",
+      "name": "Line",
+      "transform": {
+        "x": 140,
+        "y": 803,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 120,
+      "height": 6,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#F2C94C"
+      },
+      "stroke": null
+    },
+    "attribution": {
+      "id": "attribution",
+      "name": "Attribution",
+      "transform": {
+        "x": 430,
+        "y": 852,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 700,
+      "height": 44,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "— Notes to self",
+      "font": {
+        "family": "Inter",
+        "weight": 500,
+        "style": "normal"
+      },
+      "size": 30,
+      "color": "#BDBDBD",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 40
+    },
+    "handle": {
+      "id": "handle",
+      "name": "Handle",
+      "transform": {
+        "x": 840,
+        "y": 978,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 320,
+      "height": 36,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "@yourhandle",
+      "font": {
+        "family": "Inter",
+        "weight": 500,
+        "style": "normal"
+      },
+      "size": 24,
+      "color": "#7A7A7A",
+      "align": "right",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 24
+    }
+  },
+  "assets": {}
+}

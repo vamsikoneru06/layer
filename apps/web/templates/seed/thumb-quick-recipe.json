@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "id": "thumb-quick-recipe",
+  "kind": "template",
+  "meta": {
+    "title": "Quick Recipe",
+    "category": "food",
+    "tags": [
+      "recipe",
+      "cooking",
+      "youtube",
+      "warm"
+    ],
+    "format": "yt-thumbnail"
+  },
+  "artboard": {
+    "width": 1280,
+    "height": 720,
+    "background": {
+      "type": "solid",
+      "color": "#FFF4E0"
+    }
+  },
+  "root": [
+    "blob",
+    "photo",
+    "time",
+    "dish",
+    "note"
+  ],
+  "nodes": {
+    "blob": {
+      "id": "blob",
+      "name": "Blob",
+      "transform": {
+        "x": 110,
+        "y": 610,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 380,
+      "height": 380,
+      "opacity": 0.5,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#FFB347"
+      },
+      "stroke": null
+    },
+    "photo": {
+      "id": "photo",
+      "name": "Dish photo",
+      "transform": {
+        "x": 950,
+        "y": 360,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 660,
+      "height": 720,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "content": null,
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "time": {
+      "id": "time",
+      "name": "Time",
+      "transform": {
+        "x": 330,
+        "y": 165,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 520,
+      "height": 110,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "15-min",
+      "font": {
+        "family": "Caveat",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 96,
+      "color": "#E0602F",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 12
+    },
+    "dish": {
+      "id": "dish",
+      "name": "Dish",
+      "transform": {
+        "x": 330,
+        "y": 370,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 520,
+      "height": 300,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Creamy Garlic Pasta",
+      "font": {
+        "family": "Playfair Display",
+        "weight": 800,
+        "style": "normal"
+      },
+      "size": 96,
+      "color": "#2A1E14",
+      "align": "left",
+      "lineHeight": 1,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 30
+    },
+    "note": {
+      "id": "note",
+      "name": "Note",
+      "transform": {
+        "x": 330,
+        "y": 582,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 520,
+      "height": 44,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "one pan · 5 ingredients",
+      "font": {
+        "family": "Inter",
+        "weight": 600,
+        "style": "normal"
+      },
+      "size": 30,
+      "color": "#6A5646",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 36
+    }
+  },
+  "assets": {}
+}

@@ -1,0 +1,412 @@
+{
+  "schemaVersion": 1,
+  "id": "invite-balloon-party",
+  "kind": "template",
+  "meta": {
+    "title": "Balloon Party",
+    "category": "birthday",
+    "tags": [
+      "kids",
+      "birthday",
+      "balloons",
+      "pastel"
+    ],
+    "format": "invitation"
+  },
+  "artboard": {
+    "width": 1500,
+    "height": 2100,
+    "background": {
+      "type": "linear",
+      "angle": 180,
+      "stops": [
+        {
+          "offset": 0,
+          "color": "#E0F4FF"
+        },
+        {
+          "offset": 1,
+          "color": "#FFE9F3"
+        }
+      ]
+    }
+  },
+  "root": [
+    "string-1",
+    "string-2",
+    "string-3",
+    "string-4",
+    "balloon-1",
+    "balloon-2",
+    "balloon-3",
+    "balloon-4",
+    "title",
+    "photo",
+    "who",
+    "when",
+    "fun"
+  ],
+  "nodes": {
+    "string-1": {
+      "id": "string-1",
+      "name": "String",
+      "transform": {
+        "x": 310.5,
+        "y": 600,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 3,
+      "height": 200,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#9A8FA8"
+      },
+      "stroke": null
+    },
+    "string-2": {
+      "id": "string-2",
+      "name": "String",
+      "transform": {
+        "x": 500.5,
+        "y": 540,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 3,
+      "height": 240,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#9A8FA8"
+      },
+      "stroke": null
+    },
+    "string-3": {
+      "id": "string-3",
+      "name": "String",
+      "transform": {
+        "x": 990.5,
+        "y": 540,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 3,
+      "height": 240,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#9A8FA8"
+      },
+      "stroke": null
+    },
+    "string-4": {
+      "id": "string-4",
+      "name": "String",
+      "transform": {
+        "x": 1190.5,
+        "y": 620,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 3,
+      "height": 200,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#9A8FA8"
+      },
+      "stroke": null
+    },
+    "balloon-1": {
+      "id": "balloon-1",
+      "name": "Balloon",
+      "transform": {
+        "x": 310,
+        "y": 340,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 260,
+      "height": 320,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#FF8FB1"
+      },
+      "stroke": null
+    },
+    "balloon-2": {
+      "id": "balloon-2",
+      "name": "Balloon",
+      "transform": {
+        "x": 500,
+        "y": 270,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 240,
+      "height": 300,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#8FD3FF"
+      },
+      "stroke": null
+    },
+    "balloon-3": {
+      "id": "balloon-3",
+      "name": "Balloon",
+      "transform": {
+        "x": 990,
+        "y": 280,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 220,
+      "height": 280,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#B8A6FF"
+      },
+      "stroke": null
+    },
+    "balloon-4": {
+      "id": "balloon-4",
+      "name": "Balloon",
+      "transform": {
+        "x": 1190,
+        "y": 360,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 260,
+      "height": 320,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#FFD27A"
+      },
+      "stroke": null
+    },
+    "title": {
+      "id": "title",
+      "name": "Title",
+      "transform": {
+        "x": 750,
+        "y": 810,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1300,
+      "height": 180,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "You're invited!",
+      "font": {
+        "family": "Pacifico",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 130,
+      "color": "#E0527E",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 30
+    },
+    "photo": {
+      "id": "photo",
+      "name": "Birthday photo",
+      "transform": {
+        "x": 750,
+        "y": 1180,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 500,
+      "height": 500,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "ellipse"
+      },
+      "content": null,
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "who": {
+      "id": "who",
+      "name": "Who",
+      "transform": {
+        "x": 750,
+        "y": 1535,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1300,
+      "height": 110,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Kabir is turning 5",
+      "font": {
+        "family": "Poppins",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 80,
+      "color": "#2C2A4A",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 40
+    },
+    "when": {
+      "id": "when",
+      "name": "When",
+      "transform": {
+        "x": 750,
+        "y": 1652,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1300,
+      "height": 64,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Sunday, 3 PM · Sunshine Play Café",
+      "font": {
+        "family": "Poppins",
+        "weight": 500,
+        "style": "normal"
+      },
+      "size": 44,
+      "color": "#5B587A",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 60
+    },
+    "fun": {
+      "id": "fun",
+      "name": "Fun line",
+      "transform": {
+        "x": 750,
+        "y": 1805,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1300,
+      "height": 90,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Games, cake and lots of balloons",
+      "font": {
+        "family": "Caveat",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 64,
+      "color": "#E0527E",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 50
+    }
+  },
+  "assets": {}
+}

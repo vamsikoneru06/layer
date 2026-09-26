@@ -1,4 +1,4 @@
-# Layer — Frontend Design Brief
+# VASH — Frontend Design Brief
 
 > **For Claude Design.** This document is self-contained: it describes the product, the brand direction, the design system, and all 15 pages with their layouts, content, states, and interactions. Please design **high-fidelity screens for every page listed in §6**, in **light and dark themes**, at the breakpoints in §4, plus the component sheet in §5. Where this brief proposes a visual value (colour, font, radius), treat it as a strong starting point, not a cage — push it if a better idea serves the product.
 
@@ -6,7 +6,7 @@
 
 ## 1. The product in one paragraph
 
-**Layer** is a template-first photo design editor in the browser — think *Canva meets Instagram Stories*, focused on one thing done beautifully: **pick a template, drop your own photos into its frames, tweak text, stickers and filters, and export a crisp PNG.** No video. No account required to start. Creators can design their own templates in the same app ("Author Mode") and publish them to a public gallery that everyone can use and remix.
+**VASH** is a template-first photo design editor in the browser — think *Canva meets Instagram Stories*, focused on one thing done beautifully: **pick a template, drop your own photos into its frames, tweak text, stickers and filters, and export a crisp PNG.** No video. No account required to start. Creators can design their own templates in the same app ("Author Mode") and publish them to a public gallery that everyone can use and remix.
 
 ### Who uses it
 | Person | What they want | What delights them |
@@ -27,7 +27,7 @@ Keywords: *crafted, fast, friendly, precise, photo-first.*
 Avoid: gradients-everywhere "AI startup" look, glassmorphism overload, cartoon illustrations, tiny low-contrast grey text.
 
 ### Name & logo idea
-Wordmark "layer" in lowercase, with a mark made of **three offset rounded rectangles stacked like layers** (slight rotation on the top one). The mark doubles as the app icon and favicon.
+Wordmark "VASH", with a mark made of **three offset rounded rectangles stacked like layers** (slight rotation on the top one). The mark doubles as the app icon and favicon.
 
 ### Colour (proposed tokens)
 | Token | Light | Dark | Use |
@@ -131,7 +131,7 @@ Each page lists **purpose → layout → content → key interactions → states
 ```
 [Header]
 [Hero: left = headline + subcopy + CTA | right = LIVE MINI-EDITOR]
-[Logo strip / "Made with Layer" marquee of real templates]
+[Logo strip / "Made with VASH" marquee of real templates]
 [3 feature bands: Drop photos → Frames adapt | Filters on the GPU | Publish templates]
 [Template carousel by format]
 [How it works: 1 Pick · 2 Drop · 3 Export]
@@ -156,7 +156,7 @@ Each page lists **purpose → layout → content → key interactions → states
 
 ### 6.4 Shared Design View — `/s/[token]`
 **Purpose:** view someone's design read-only and remix it.
-**Layout:** minimal header (logo, "Made with Layer"); centred design on pasteboard; below: title, owner name, "Remix this design" primary button, "Download PNG" secondary (if owner allowed), and a small "Create your own →" link.
+**Layout:** minimal header (logo, "Made with VASH"); centred design on pasteboard; below: title, owner name, "Remix this design" primary button, "Download PNG" secondary (if owner allowed), and a small "Create your own →" link.
 **States:** link revoked ("This link has been turned off by its owner"); remix requires sign-in → sign-in page with return.
 
 ### 6.5 Creator Profile — `/u/[handle]`
@@ -174,7 +174,7 @@ Each page lists **purpose → layout → content → key interactions → states
 **Steps (single page, 2 short steps with progress dots):**
 1. **Pick your handle & name** — handle field with live availability check (✓ available / ✕ taken / rules: 3–20 chars, lowercase letters, numbers, underscore).
 2. **What will you design?** — selectable tiles with mini illustrations (Social posts · Stories · Business promos · Events & invites · YouTube thumbnails · Templates for others). Multi-select.
-Then "Take me to Layer" → Dashboard with personalised recommendations. Include a "Skip" link on step 2.
+Then "Take me to VASH" → Dashboard with personalised recommendations. Include a "Skip" link on step 2.
 
 ### 6.8 Settings — `/settings`
 **Layout:** left sub-nav (Profile · Account · Appearance · Keyboard shortcuts · Privacy & data), right content.
@@ -253,7 +253,7 @@ Then "Take me to Layer" → Dashboard with personalised recommendations. Include
 
 **Top bar saved status:** "Saved", "Saving…", "Offline — saved on this device", "Couldn't save — retry".
 
-**States:** loading (skeleton panels + artboard shimmer), **"This design changed in another tab"** conflict dialog (Reload their version · Keep mine as a copy), missing photo (frame shows broken-image placeholder + "Photo unavailable"), WebGL unavailable notice (filters disabled banner), **screen too small** (< 1024 px: illustration + "Layer's editor needs a bigger screen. Your design is saved — open it on a laptop." + Export PNG + Copy link), guest banner ("Save to cloud").
+**States:** loading (skeleton panels + artboard shimmer), **"This design changed in another tab"** conflict dialog (Reload their version · Keep mine as a copy), missing photo (frame shows broken-image placeholder + "Photo unavailable"), WebGL unavailable notice (filters disabled banner), **screen too small** (< 1024 px: illustration + "VASH's editor needs a bigger screen. Your design is saved — open it on a laptop." + Export PNG + Copy link), guest banner ("Save to cloud").
 
 ### 6.13 Author Mode — `/author/[id]`
 The Editor, plus unmistakable author affordances:

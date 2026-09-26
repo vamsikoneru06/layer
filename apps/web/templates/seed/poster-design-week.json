@@ -1,0 +1,275 @@
+{
+  "schemaVersion": 1,
+  "id": "poster-design-week",
+  "kind": "template",
+  "meta": {
+    "title": "Design Week",
+    "category": "events",
+    "tags": [
+      "swiss",
+      "poster",
+      "design",
+      "exhibition"
+    ],
+    "format": "poster"
+  },
+  "artboard": {
+    "width": 1240,
+    "height": 1754,
+    "background": {
+      "type": "solid",
+      "color": "#F2F0EA"
+    }
+  },
+  "root": [
+    "sun",
+    "photo",
+    "title-1",
+    "title-2",
+    "dates",
+    "blurb",
+    "band",
+    "footer"
+  ],
+  "nodes": {
+    "sun": {
+      "id": "sun",
+      "name": "Red circle",
+      "transform": {
+        "x": 970,
+        "y": 590,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 900,
+      "height": 900,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#E63322"
+      },
+      "stroke": null
+    },
+    "photo": {
+      "id": "photo",
+      "name": "Photo",
+      "transform": {
+        "x": 400,
+        "y": 1010,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 620,
+      "height": 620,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "content": null,
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "title-1": {
+      "id": "title-1",
+      "name": "Title",
+      "transform": {
+        "x": 490,
+        "y": 205,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 800,
+      "height": 190,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "DESIGN",
+      "font": {
+        "family": "Space Grotesk",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 200,
+      "color": "#111111",
+      "align": "left",
+      "lineHeight": 0.9,
+      "letterSpacing": -6,
+      "fit": "shrink",
+      "maxChars": 12
+    },
+    "title-2": {
+      "id": "title-2",
+      "name": "Title",
+      "transform": {
+        "x": 490,
+        "y": 395,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 800,
+      "height": 190,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "WEEK",
+      "font": {
+        "family": "Space Grotesk",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 200,
+      "color": "#111111",
+      "align": "left",
+      "lineHeight": 0.9,
+      "letterSpacing": -6,
+      "fit": "shrink",
+      "maxChars": 12
+    },
+    "dates": {
+      "id": "dates",
+      "name": "Dates",
+      "transform": {
+        "x": 960,
+        "y": 1160,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 400,
+      "height": 80,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "OCT 14—18",
+      "font": {
+        "family": "Space Grotesk",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 64,
+      "color": "#111111",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 16
+    },
+    "blurb": {
+      "id": "blurb",
+      "name": "Blurb",
+      "transform": {
+        "x": 960,
+        "y": 1305,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 400,
+      "height": 170,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Talks, workshops and open studios across the city.",
+      "font": {
+        "family": "Inter",
+        "weight": 500,
+        "style": "normal"
+      },
+      "size": 30,
+      "color": "#333333",
+      "align": "left",
+      "lineHeight": 1.4,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 120
+    },
+    "band": {
+      "id": "band",
+      "name": "Band",
+      "transform": {
+        "x": 620,
+        "y": 1679,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1240,
+      "height": 150,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#111111"
+      },
+      "stroke": null
+    },
+    "footer": {
+      "id": "footer",
+      "name": "Footer",
+      "transform": {
+        "x": 620,
+        "y": 1680,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1060,
+      "height": 50,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Free entry · Register online",
+      "font": {
+        "family": "Space Grotesk",
+        "weight": 600,
+        "style": "normal"
+      },
+      "size": 40,
+      "color": "#F2F0EA",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 60
+    }
+  },
+  "assets": {}
+}

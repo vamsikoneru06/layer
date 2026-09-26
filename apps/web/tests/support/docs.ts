@@ -1,4 +1,4 @@
-import { createEmptyDoc, defaultFilters, type Doc } from "@layer/schema";
+import { createEmptyDoc, defaultFilters, type Doc } from "@vash/schema";
 
 export function emptyDoc(title = "Birthday card"): Doc {
   return createEmptyDoc({ id: "draft", kind: "design", title, format: "ig-post" });

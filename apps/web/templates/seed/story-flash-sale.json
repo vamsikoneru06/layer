@@ -1,0 +1,286 @@
+{
+  "schemaVersion": 1,
+  "id": "story-flash-sale",
+  "kind": "template",
+  "meta": {
+    "title": "Flash Sale Drop",
+    "category": "sale",
+    "tags": [
+      "sale",
+      "discount",
+      "gradient",
+      "shop"
+    ],
+    "format": "ig-story"
+  },
+  "artboard": {
+    "width": 1080,
+    "height": 1920,
+    "background": {
+      "type": "linear",
+      "angle": 160,
+      "stops": [
+        {
+          "offset": 0,
+          "color": "#2D5BFF"
+        },
+        {
+          "offset": 1,
+          "color": "#8A2BE2"
+        }
+      ]
+    }
+  },
+  "root": [
+    "eyebrow",
+    "offer",
+    "photo",
+    "burst",
+    "burst-label",
+    "cta-pill",
+    "cta",
+    "hint"
+  ],
+  "nodes": {
+    "eyebrow": {
+      "id": "eyebrow",
+      "name": "Eyebrow",
+      "transform": {
+        "x": 540,
+        "y": 182,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 900,
+      "height": 44,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "NEW DROP · 48 HOURS ONLY",
+      "font": {
+        "family": "Inter",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 30,
+      "color": "#FFFFFF",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 5,
+      "fit": "shrink",
+      "maxChars": 40
+    },
+    "offer": {
+      "id": "offer",
+      "name": "Offer",
+      "transform": {
+        "x": 540,
+        "y": 350,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 960,
+      "height": 220,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "50% OFF",
+      "font": {
+        "family": "Archivo Black",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 190,
+      "color": "#FFFFFF",
+      "align": "center",
+      "lineHeight": 0.95,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 12
+    },
+    "photo": {
+      "id": "photo",
+      "name": "Product photo",
+      "transform": {
+        "x": 540,
+        "y": 990,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 800,
+      "height": 900,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 48
+      },
+      "content": null,
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "burst": {
+      "id": "burst",
+      "name": "Burst",
+      "transform": {
+        "x": 880,
+        "y": 590,
+        "rotation": 12,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 240,
+      "height": 240,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "polygon",
+        "sides": 12
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#FFE14D"
+      },
+      "stroke": null
+    },
+    "burst-label": {
+      "id": "burst-label",
+      "name": "Burst label",
+      "transform": {
+        "x": 880,
+        "y": 590,
+        "rotation": 12,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 240,
+      "height": 50,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "EVERYTHING",
+      "font": {
+        "family": "Archivo Black",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 26,
+      "color": "#1A1A1A",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 12
+    },
+    "cta-pill": {
+      "id": "cta-pill",
+      "name": "Button",
+      "transform": {
+        "x": 540,
+        "y": 1620,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 500,
+      "height": 120,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 60
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#FFFFFF"
+      },
+      "stroke": null
+    },
+    "cta": {
+      "id": "cta",
+      "name": "Button label",
+      "transform": {
+        "x": 540,
+        "y": 1620,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 500,
+      "height": 60,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Shop the sale",
+      "font": {
+        "family": "Poppins",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 44,
+      "color": "#2D5BFF",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 20
+    },
+    "hint": {
+      "id": "hint",
+      "name": "Hint",
+      "transform": {
+        "x": 540,
+        "y": 1750,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 500,
+      "height": 40,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Link in bio",
+      "font": {
+        "family": "Inter",
+        "weight": 500,
+        "style": "normal"
+      },
+      "size": 28,
+      "color": "#E6E0FF",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 24
+    }
+  },
+  "assets": {}
+}
