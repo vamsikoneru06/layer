@@ -5,6 +5,7 @@ import { createAuthenticator } from "./auth/current-user";
 import { consoleMailer, gmailMailer, resendMailer } from "./auth/mailer";
 import { loadConfig } from "./config";
 import { createDb } from "./db/client";
+import { cronHandlers } from "./cron/handlers";
 import { designHandlers } from "./designs/handlers";
 import { folderHandlers } from "./folders/handlers";
 import type { Deps } from "./deps";
@@ -31,6 +32,7 @@ function build() {
     designs: designHandlers(deps),
     me: meHandlers(deps),
     assets: assetHandlers(deps, storage),
+    cron: cronHandlers(deps, storage, config.cronSecret),
   };
 }
 
