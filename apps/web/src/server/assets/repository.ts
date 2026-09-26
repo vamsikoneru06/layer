@@ -1,6 +1,7 @@
-import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { assets } from "../db/schema";
 import type { Db } from "../db/types";
+import type { Cursor } from "../http/cursor";
 import { isUuid } from "../http/ids";
 
 /**
@@ -59,4 +60,34 @@ export async function markAssetReady(db: Db, ownerId: string, id: string, dims: 
 export async function storageUsedBytes(db: Db, ownerId: string): Promise<number> {
   const [row] = await db.select({ used: sql<string>`coalesce(sum(${assets.bytes}), 0)` }).from(assets).where(eq(assets.ownerId, ownerId));
   return Number(row?.used ?? 0);
+}
+
+export function listReadyAssets(db: Db, ownerId: string, q: { kind?: AssetRow["kind"]; cursor?: Cursor; limit: number }): Promise<AssetRow[]> {
+  return db
+    .select()
+    .from(assets)
+    .where(
+      and(
+        eq(assets.ownerId, ownerId),
+        eq(assets.status, "ready"),
+        q.kind ? eq(assets.kind, q.kind) : undefined,
+        q.cursor ? sql`(${assets.createdAt}, ${assets.id}) < (${q.cursor.at}::timestamptz, ${q.cursor.id}::uuid)` : undefined,
+      ),
+    )
+    .orderBy(desc(assets.createdAt), desc(assets.id))
+    .limit(q.limit + 1);
+}
+
+/** Ready assets the viewer may see: their own, system-owned, or public. Guests (null) see only the latter two. */
+export function findResolvableAssets(db: Db, viewerId: string | null, ids: string[]): Promise<AssetRow[]> {
+  return db
+    .select()
+    .from(assets)
+    .where(
+      and(
+        inArray(assets.id, ids),
+        eq(assets.status, "ready"),
+        or(isNull(assets.ownerId), eq(assets.visibility, "public"), viewerId ? eq(assets.ownerId, viewerId) : undefined),
+      ),
+    );
 }

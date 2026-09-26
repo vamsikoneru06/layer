@@ -4,7 +4,7 @@ import { assets, storageDeletions, user } from "../db/schema";
 import type { Db } from "../db/types";
 import { conflict, notFound, unprocessable } from "../http/problem";
 import type { ObjectStorage } from "../storage/types";
-import { getOwnedAsset, insertPendingAsset, markAssetReady, storageUsedBytes, type AssetRow } from "./repository";
+import { findResolvableAssets, getOwnedAsset, insertPendingAsset, markAssetReady, storageUsedBytes, type AssetRow } from "./repository";
 import { SNIFF_BYTES, sniffImageMime } from "./sniff";
 
 const MB = 1024 * 1024;
@@ -99,4 +99,16 @@ export async function completeUpload(ctx: AssetContext, ownerId: string, id: str
   const ready = await markAssetReady(ctx.db, ownerId, id, dims, ctx.now());
   // A concurrent complete may have won the update; the asset is ready either way.
   return ready ?? (await getOwnedAsset(ctx.db, ownerId, id)) ?? asset;
+}
+
+export async function resolveAssets(ctx: AssetContext, viewerId: string | null, ids: string[]) {
+  const rows = await findResolvableAssets(ctx.db, viewerId, [...new Set(ids)]);
+  const expiresAt = new Date(ctx.now().getTime() + UPLOAD_LIMITS.downloadUrlSeconds * 1000).toISOString();
+  return Promise.all(
+    rows.map(async (a) =>
+      a.visibility === "public"
+        ? { id: a.id, url: ctx.storage.publicUrl(a.storageKey), expiresAt: null }
+        : { id: a.id, url: await ctx.storage.presignDownload("private", a.storageKey, UPLOAD_LIMITS.downloadUrlSeconds), expiresAt },
+    ),
+  );
 }
