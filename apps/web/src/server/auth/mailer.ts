@@ -1,3 +1,4 @@
+import nodemailer from "nodemailer";
 import type { Logger } from "../logging";
 
 export interface MailMessage {
@@ -43,6 +44,31 @@ export function resendMailer(options: { apiKey: string; from: string }, fetchImp
         signal: AbortSignal.timeout(10_000),
       });
       if (!res.ok) throw new Error(`Resend rejected the email (HTTP ${res.status})`);
+    },
+  };
+}
+
+type SmtpTransport = { sendMail(message: { from: string; to: string; subject: string; text: string; html: string }): Promise<unknown> };
+
+/** Gmail SMTP: free (about 500 messages a day) and needs no domain of your own. */
+export function gmailMailer(
+  options: { from: string; user?: string; appPassword?: string },
+  transport: SmtpTransport = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    auth: { user: options.user, pass: options.appPassword },
+    connectionTimeout: 10_000,
+  }),
+): Mailer {
+  return {
+    async send(m) {
+      try {
+        await transport.sendMail({ from: options.from, to: m.to, subject: m.subject, text: m.text, html: m.html });
+      } catch {
+        // SMTP replies can name the account; keep them out of logs and responses.
+        throw new Error("Gmail rejected the email (check GMAIL_USER and GMAIL_APP_PASSWORD)");
+      }
     },
   };
 }

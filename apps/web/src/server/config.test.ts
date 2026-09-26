@@ -62,6 +62,24 @@ describe("loadConfig", () => {
     });
   });
 
+  it("enables free Gmail sending with an app password, sending as that address by default", () => {
+    expect(loadConfig({ ...base, GMAIL_USER: "vash.app@gmail.com", GMAIL_APP_PASSWORD: "abcd efgh ijkl mnop" }).mail).toEqual({
+      kind: "gmail",
+      user: "vash.app@gmail.com",
+      appPassword: "abcd efgh ijkl mnop",
+      from: "VASH <vash.app@gmail.com>",
+    });
+  });
+
+  it("requires both Gmail settings or neither", () => {
+    expect(errorOf({ ...base, GMAIL_USER: "vash.app@gmail.com" })).toContain("GMAIL_APP_PASSWORD");
+  });
+
+  it("accepts Gmail instead of Resend in production", () => {
+    const message = errorOf({ ...base, NODE_ENV: "production", GMAIL_USER: "vash.app@gmail.com", GMAIL_APP_PASSWORD: "x".repeat(16) });
+    expect(message).not.toContain("RESEND_API_KEY");
+  });
+
   it("reads TRUST_PROXY", () => {
     expect(loadConfig({ ...base, TRUST_PROXY: "true" }).trustProxy).toBe(true);
   });
