@@ -15,6 +15,10 @@ export function s3Storage(
     region: config.region,
     forcePathStyle: true,
     credentials: { accessKeyId: config.accessKeyId, secretAccessKey: config.secretAccessKey },
+    // Default "WHEN_SUPPORTED" signs a CRC32 of the (empty) presign-time body into upload URLs,
+    // which S3/R2 then reject for every real upload; ranged reads can't be validated either.
+    requestChecksumCalculation: "WHEN_REQUIRED",
+    responseChecksumValidation: "WHEN_REQUIRED",
   }),
 ): ObjectStorage {
   const bucketName = (bucket: Bucket) => (bucket === "public" ? config.publicBucket : config.privateBucket);

@@ -21,6 +21,12 @@ describe("s3Storage", () => {
     expect(url.searchParams.get("X-Amz-Signature")).toMatch(/^[0-9a-f]{64}$/);
   });
 
+  it("doesn't sign a checksum into upload URLs (S3 and R2 would reject every real body)", async () => {
+    const url = new URL(await s3Storage(config).presignUpload("private", "staging/u/a", { contentType: "image/png", contentLength: 10, expiresInSeconds: 300 }));
+    const checksumParams = [...url.searchParams.keys()].filter((k) => /checksum/i.test(k));
+    expect(checksumParams).toEqual([]);
+  });
+
   it("presigns downloads from the requested bucket", async () => {
     const url = new URL(await s3Storage(config).presignDownload("private", "u/user-1/asset-1", 3600));
     expect(url.pathname).toBe("/storage/v1/s3/vash-private/u/user-1/asset-1");
