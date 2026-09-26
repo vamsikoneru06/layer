@@ -83,4 +83,40 @@ describe("loadConfig", () => {
   it("reads TRUST_PROXY", () => {
     expect(loadConfig({ ...base, TRUST_PROXY: "true" }).trustProxy).toBe(true);
   });
+
+  const storageEnv = {
+    STORAGE_ENDPOINT: "https://proj.storage.supabase.co/storage/v1/s3",
+    STORAGE_REGION: "ap-south-1",
+    STORAGE_ACCESS_KEY_ID: "key-id",
+    STORAGE_SECRET_ACCESS_KEY: "secret-access-key",
+    STORAGE_PUBLIC_BASE_URL: "https://proj.supabase.co/storage/v1/object/public/vash-public/",
+  };
+
+  it("configures storage only when every STORAGE_* connection variable is set", () => {
+    expect(loadConfig(base).storage).toBeNull();
+    expect(loadConfig({ ...base, ...storageEnv }).storage).toEqual({
+      endpoint: "https://proj.storage.supabase.co/storage/v1/s3",
+      region: "ap-south-1",
+      accessKeyId: "key-id",
+      secretAccessKey: "secret-access-key",
+      privateBucket: "vash-private",
+      publicBucket: "vash-public",
+      publicBaseUrl: "https://proj.supabase.co/storage/v1/object/public/vash-public",
+    });
+    const message = errorOf({ ...base, STORAGE_ENDPOINT: storageEnv.STORAGE_ENDPOINT });
+    expect(message).toContain("STORAGE_SECRET_ACCESS_KEY");
+    expect(message).not.toContain("proj.storage");
+  });
+
+  it("rejects invalid bucket names and short cron secrets", () => {
+    expect(errorOf({ ...base, ...storageEnv, STORAGE_PUBLIC_BUCKET: "Bad_Bucket" })).toContain("STORAGE_PUBLIC_BUCKET");
+    expect(errorOf({ ...base, CRON_SECRET: "short" })).toContain("CRON_SECRET");
+    expect(loadConfig({ ...base, CRON_SECRET: "c".repeat(32) }).cronSecret).toBe("c".repeat(32));
+  });
+
+  it("requires storage and a cron secret in production", () => {
+    const message = errorOf({ ...base, NODE_ENV: "production" });
+    expect(message).toContain("STORAGE_ENDPOINT");
+    expect(message).toContain("CRON_SECRET");
+  });
 });
