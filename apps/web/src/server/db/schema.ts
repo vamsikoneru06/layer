@@ -257,6 +257,17 @@ export const storageDeletions = pgTable(
     storageKey: text("storage_key").notNull(),
     attempts: integer("attempts").notNull().default(0),
     createdAt: createdAt(),
+    /** Not processed before this time (upload URLs stay usable until they expire). */
+    notBefore: ts("not_before").notNull().defaultNow(),
+    /** Set for objects that count toward an uploader's quota until they're actually gone. No FKs: rows outlive both. */
+    ownerId: text("owner_id"),
+    assetId: uuid("asset_id"),
+    bytes: integer("bytes"),
   },
-  (t) => [check("storage_deletions_bucket_check", sql`${t.bucket} in ('private', 'public')`)],
+  (t) => [
+    check("storage_deletions_bucket_check", sql`${t.bucket} in ('private', 'public')`),
+    index("storage_deletions_due_idx").on(t.notBefore, t.createdAt, t.id),
+    index("storage_deletions_owner_idx").on(t.ownerId),
+    index("storage_deletions_asset_idx").on(t.assetId),
+  ],
 );
