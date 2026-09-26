@@ -1,7 +1,7 @@
 import "server-only";
 import { createAuth, createAuthRoute } from "./auth/auth";
 import { createAuthenticator } from "./auth/current-user";
-import { consoleMailer, resendMailer } from "./auth/mailer";
+import { consoleMailer, gmailMailer, resendMailer } from "./auth/mailer";
 import { loadConfig } from "./config";
 import { createDb } from "./db/client";
 import { designHandlers } from "./designs/handlers";
@@ -17,7 +17,8 @@ function build() {
   const logger = createLogger();
   const { db } = createDb(config.databaseUrl, (err) => logger.error("db.idle_client_error", { err }));
   const now = () => new Date();
-  const mailer = config.mail.kind === "resend" ? resendMailer(config.mail) : consoleMailer(logger);
+  const mailer =
+    config.mail.kind === "resend" ? resendMailer(config.mail) : config.mail.kind === "gmail" ? gmailMailer(config.mail) : consoleMailer(logger);
   const auth = createAuth({ db, config, mailer, now });
   const deps: Deps = { db, config, logger, now, authenticate: createAuthenticator(auth, db) };
   return {

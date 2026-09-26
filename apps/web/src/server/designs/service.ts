@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { LIMITS, parseDoc, type Doc } from "@layer/schema";
+import { LIMITS, parseDoc, type Doc } from "@vash/schema";
 import { findUnusableAssets } from "../assets/repository";
 import { isForeignKeyViolation } from "../db/errors";
 import type { Db } from "../db/types";

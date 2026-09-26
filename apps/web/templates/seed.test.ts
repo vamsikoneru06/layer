@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { CATEGORIES, FORMATS, lintTemplate, parseDoc, scanForPii, type Doc } from "@layer/schema";
+import { CATEGORIES, FORMATS, lintTemplate, parseDoc, scanForPii, type Doc } from "@vash/schema";
 import { describe, expect, it } from "vitest";
 import { seedTemplates } from "./seed-templates";
 
@@ -52,7 +52,7 @@ describe("seed templates", () => {
     }
   });
 
-  it("matches the generator (run `pnpm --filter @layer/web templates:build` after editing seed-templates.ts)", () => {
+  it("matches the generator (run `pnpm --filter @vash/web templates:build` after editing seed-templates.ts)", () => {
     const generated = seedTemplates();
     expect(generated.map((d) => `${d.id}.json`).sort()).toEqual(files);
     for (const doc of generated) expect(load(`${doc.id}.json`)).toEqual(doc);

@@ -1,5 +1,5 @@
 import { eq, sql } from "drizzle-orm";
-import { createEmptyDoc } from "@layer/schema";
+import { createEmptyDoc } from "@vash/schema";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestDb, dbErrorMessage, type TestDb } from "../../../tests/support/db";
 import { createFolder, createUser } from "../../../tests/support/factories";

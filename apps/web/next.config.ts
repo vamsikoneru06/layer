@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const config: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  transpilePackages: ["@layer/schema"],
+  transpilePackages: ["@vash/schema"],
 };
 
 export default config;

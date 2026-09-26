@@ -1,4 +1,4 @@
-# Layer — Product Requirements & Design Spec
+# VASH — Product Requirements & Design Spec
 
 | | |
 |---|---|
@@ -16,7 +16,7 @@
 People who need a quick, good-looking social post, story, poster, thumbnail, or invitation either fight a blank canvas or use a closed tool. Templates solve the blank-canvas problem only if *dropping your own photos in* is effortless and the layout doesn't break when you do.
 
 ### 1.2 Product
-**Layer** is a template-first photo design editor in the browser. Users pick a template, drop their photos into its frames, edit text/stickers/filters, and export a PNG. Creators design templates in the same app (Author Mode) and publish them to a public gallery.
+**VASH** is a template-first photo design editor in the browser. Users pick a template, drop their photos into its frames, edit text/stickers/filters, and export a PNG. Creators design templates in the same app (Author Mode) and publish them to a public gallery.
 
 ### 1.3 Audiences
 | Audience | Need |
@@ -95,7 +95,7 @@ Plus: 404, 500, empty states, and the "editor needs a larger screen" state. Deta
 pnpm monorepo:
 
 ```
-layer/
+vash/
 ├─ apps/web/            Next.js 16 (App Router): pages, route handlers (API), auth
 ├─ packages/schema/     Document types, hand-written validator, migrations, limits — shared by browser and server
 ├─ packages/engine/     Editor core: pure TypeScript, zero dependencies, no React   (P1)

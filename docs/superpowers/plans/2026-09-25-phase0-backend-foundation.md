@@ -8,7 +8,7 @@
 
 **Tech Stack:** Next.js 16.3 · TypeScript 6 · Drizzle ORM 0.45 + drizzle-kit 0.31 · PGlite 0.5 (tests) / node-postgres (runtime) · Better Auth 1.7.5 (magic-link plugin, Drizzle adapter) · Zod 4 (request DTOs only) · Vitest 5.
 
-**Spec:** `docs/superpowers/specs/2026-09-24-layer-design.md` — §9 (Backend), §5 (server layering), §11.3 (testing). Read §9 before starting.
+**Spec:** `docs/superpowers/specs/2026-09-24-vash-design.md` — §9 (Backend), §5 (server layering), §11.3 (testing). Read §9 before starting.
 
 **Plan series:** Plan 1 (this one) is the foundation. Plan 2 covers assets and uploads (presign, file-signature sniffing, resolve), templates and gallery (search, use, preflight, publish, versions, reports), share links and remix, `GET /api/users/:handle`, admin moderation, and cron cleanup. Plan 3 covers `deploy.yml`, provisioning Vercel, Neon and R2, and a production smoke test.
 
@@ -23,7 +23,7 @@
 - Rate limits (§9.6): magic-link send 5/hour per email and 20/hour per IP; design save (PUT) 120/minute per user; the other limits are defined now and used in Plan 2.
 - "Structured JSON logs with `requestId` and no PII." No secrets or tokens in logs.
 - "Env validated at boot (fail fast); `server-only` imports; `.env.example` only."
-- Zod is for request DTOs only. Documents are validated by `@layer/schema`'s hand-written `parseDoc`.
+- Zod is for request DTOs only. Documents are validated by `@vash/schema`'s hand-written `parseDoc`.
 - Built from scratch, with no library: the rate limiter.
 - No `dangerouslySetInnerHTML` (the ESLint rule already exists).
 - Commit style: Conventional Commits (`feat(web): …`, `test(web): …`, `ci: …`), matching `git log`.
@@ -122,7 +122,7 @@ import type { NextConfig } from "next";
 const config: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  transpilePackages: ["@layer/schema"],
+  transpilePackages: ["@vash/schema"],
 };
 
 export default config;
@@ -174,7 +174,7 @@ import { describe, expect, it } from "vitest";
 import { ConfigError, loadConfig } from "./config";
 
 const base = {
-  DATABASE_URL: "postgres://layer:layer@localhost:5432/layer",
+  DATABASE_URL: "postgres://vash:vash@localhost:5432/vash",
   APP_ORIGIN: "http://localhost:3000",
   BETTER_AUTH_SECRET: "s".repeat(32),
 };
@@ -226,10 +226,10 @@ describe("loadConfig", () => {
   });
 
   it("enables Resend when a key and sender are present", () => {
-    expect(loadConfig({ ...base, RESEND_API_KEY: "re_x", MAIL_FROM: "Layer <hi@layer.test>" }).mail).toEqual({
+    expect(loadConfig({ ...base, RESEND_API_KEY: "re_x", MAIL_FROM: "VASH <hi@vash.test>" }).mail).toEqual({
       kind: "resend",
       apiKey: "re_x",
-      from: "Layer <hi@layer.test>",
+      from: "VASH <hi@vash.test>",
     });
   });
 
@@ -241,7 +241,7 @@ describe("loadConfig", () => {
 
 - [ ] **Step 3: Run the test to verify it fails**
 
-Run: `corepack pnpm --filter @layer/web exec vitest run src/server/config.test.ts`
+Run: `corepack pnpm --filter @vash/web exec vitest run src/server/config.test.ts`
 Expected: FAIL with "Failed to resolve import ./config".
 
 - [ ] **Step 4: Implement config**
@@ -318,7 +318,7 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
 
 - [ ] **Step 5: Run the test to verify it passes**
 
-Run: `corepack pnpm --filter @layer/web exec vitest run src/server/config.test.ts`
+Run: `corepack pnpm --filter @vash/web exec vitest run src/server/config.test.ts`
 Expected: PASS (8 tests).
 
 - [ ] **Step 6: Add the app shell, boot-time validation and `.env.example`**
@@ -337,7 +337,7 @@ export async function register(): Promise<void> {
 ```tsx
 import type { ReactNode } from "react";
 
-export const metadata = { title: "Layer" };
+export const metadata = { title: "VASH" };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
@@ -353,7 +353,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 export default function Home() {
   return (
     <main>
-      <h1>Layer</h1>
+      <h1>VASH</h1>
       <p>The editor arrives in Phase 1.</p>
     </main>
   );
@@ -363,7 +363,7 @@ export default function Home() {
 `apps/web/.env.example`:
 ```bash
 # Postgres connection string (Neon in production).
-DATABASE_URL=postgres://layer:layer@localhost:5432/layer
+DATABASE_URL=postgres://vash:vash@localhost:5432/vash
 # Public origin of the app, no trailing slash.
 APP_ORIGIN=http://localhost:3000
 # 32+ random characters: openssl rand -base64 32
@@ -380,7 +380,7 @@ MAIL_FROM=
 
 - [ ] **Step 7: Verify typecheck, lint and build**
 
-Run: `corepack pnpm --filter @layer/web typecheck && corepack pnpm --filter @layer/web lint && corepack pnpm --filter @layer/web build`
+Run: `corepack pnpm --filter @vash/web typecheck && corepack pnpm --filter @vash/web lint && corepack pnpm --filter @vash/web build`
 Expected: all three succeed. The build prints the `/` route and creates `next-env.d.ts`. If Next rewrites `tsconfig.json` (for example, adding `allowJs` or changing `jsx`), keep its edits.
 
 - [ ] **Step 8: Commit**
@@ -413,7 +413,7 @@ The Better Auth tables mirror the library's own field list (confirmed from `getA
 ```ts
 import { sql } from "drizzle-orm";
 import { boolean, check, date, index, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
-import type { Doc } from "@layer/schema";
+import type { Doc } from "@vash/schema";
 
 /** Millisecond precision so keyset cursors round-trip through JavaScript Dates exactly. */
 const ts = (name: string) => timestamp(name, { withTimezone: true, precision: 3 });
@@ -432,7 +432,7 @@ export const user = pgTable(
     image: text("image"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
-    // Layer extensions. Deliberately NOT declared to Better Auth, so sign-up bodies can never set them.
+    // VASH extensions. Deliberately NOT declared to Better Auth, so sign-up bodies can never set them.
     handle: text("handle").unique(),
     role: text("role", { enum: ["user", "admin"] }).notNull().default("user"),
     interests: text("interests").array().notNull().default(emptyTextArray),
@@ -491,7 +491,7 @@ export const verification = pgTable(
 
 export const authSchema = { user, session, account, verification };
 
-// ── Layer domain ─────────────────────────────────────────────────────────────
+// ── VASH domain ─────────────────────────────────────────────────────────────
 export const folders = pgTable(
   "folders",
   {
@@ -715,10 +715,10 @@ export default defineConfig({
 
 - [ ] **Step 2: Generate the migrations**
 
-Run: `corepack pnpm --filter @layer/web exec drizzle-kit generate --name init`
+Run: `corepack pnpm --filter @vash/web exec drizzle-kit generate --name init`
 Expected: `apps/web/drizzle/0000_init.sql` and `drizzle/meta/` are created. Read the SQL and confirm it has all 15 tables, the GIN index, and the check constraints.
 
-Run: `corepack pnpm --filter @layer/web exec drizzle-kit generate --custom --name audit_log_append_only`
+Run: `corepack pnpm --filter @vash/web exec drizzle-kit generate --custom --name audit_log_append_only`
 Then replace the generated empty file `apps/web/drizzle/0001_audit_log_append_only.sql` with:
 ```sql
 CREATE FUNCTION audit_log_reject_mutation() RETURNS trigger LANGUAGE plpgsql AS $$
@@ -841,7 +841,7 @@ export async function createAsset(db: Db, overrides: Partial<typeof assets.$infe
 `apps/web/src/server/db/schema.test.ts`:
 ```ts
 import { eq, sql } from "drizzle-orm";
-import { createEmptyDoc } from "@layer/schema";
+import { createEmptyDoc } from "@vash/schema";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestDb, dbErrorMessage, type TestDb } from "../../../tests/support/db";
 import { createFolder, createUser } from "../../../tests/support/factories";
@@ -907,12 +907,12 @@ describe("database schema", () => {
 
 - [ ] **Step 5: Run the tests**
 
-Run: `corepack pnpm --filter @layer/web exec vitest run src/server/db/schema.test.ts`
+Run: `corepack pnpm --filter @vash/web exec vitest run src/server/db/schema.test.ts`
 Expected: PASS (5 tests). If `drizzle-kit` quoted the GIN expression badly, or PGlite rejects it, fix the index definition. Don't drop it.
 
 - [ ] **Step 6: Typecheck, lint, commit**
 
-Run: `corepack pnpm --filter @layer/web typecheck && corepack pnpm --filter @layer/web lint`
+Run: `corepack pnpm --filter @vash/web typecheck && corepack pnpm --filter @vash/web lint`
 ```bash
 git add apps/web
 git commit -m "feat(web): database schema, migrations, append-only audit log, PGlite test harness"
@@ -1025,7 +1025,7 @@ describe("clientIp", () => {
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `corepack pnpm --filter @layer/web exec vitest run src/server/rate-limit src/server/http/client-ip.test.ts`
+Run: `corepack pnpm --filter @vash/web exec vitest run src/server/rate-limit src/server/http/client-ip.test.ts`
 Expected: FAIL — modules not found.
 
 - [ ] **Step 3: Implement**
@@ -1116,7 +1116,7 @@ export function clientIp(req: Request, trustProxy: boolean): string | null {
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `corepack pnpm --filter @layer/web exec vitest run src/server/rate-limit src/server/http/client-ip.test.ts`
+Run: `corepack pnpm --filter @vash/web exec vitest run src/server/rate-limit src/server/http/client-ip.test.ts`
 Expected: PASS (9 tests).
 
 - [ ] **Step 5: Commit**
@@ -1306,7 +1306,7 @@ describe("readJson", () => {
 
 - [ ] **Step 2: Run them to verify they fail**
 
-Run: `corepack pnpm --filter @layer/web exec vitest run src/server/logging.test.ts src/server/http`
+Run: `corepack pnpm --filter @vash/web exec vitest run src/server/logging.test.ts src/server/http`
 Expected: FAIL — modules not found (the client-ip tests still pass).
 
 - [ ] **Step 3: Implement deps, logging, problem, ids, cursor, body**
@@ -1554,7 +1554,7 @@ async function readText(req: Request, maxBytes: number): Promise<string> {
 
 - [ ] **Step 4: Run the unit tests to verify they pass**
 
-Run: `corepack pnpm --filter @layer/web exec vitest run src/server/logging.test.ts src/server/http`
+Run: `corepack pnpm --filter @vash/web exec vitest run src/server/logging.test.ts src/server/http`
 Expected: PASS (except `endpoint.test.ts`, which doesn't exist yet).
 
 - [ ] **Step 5: Write the test support helpers**
@@ -1721,7 +1721,7 @@ describe("endpoint()", () => {
   it("hides unexpected errors from the client and logs them without secrets", async () => {
     const logger = captureLogger();
     const h = endpoint(testDeps(t.db, { logger }), { auth: "none" }, async () => {
-      throw new Error("connect ECONNREFUSED postgres://layer:hunter2@db\nparams: riya@example.test");
+      throw new Error("connect ECONNREFUSED postgres://vash:hunter2@db\nparams: riya@example.test");
     });
     const res = await call(h);
     expect(res.status).toBe(500);
@@ -1764,7 +1764,7 @@ describe("endpoint()", () => {
 
 - [ ] **Step 7: Run it to verify it fails**
 
-Run: `corepack pnpm --filter @layer/web exec vitest run src/server/http/endpoint.test.ts`
+Run: `corepack pnpm --filter @vash/web exec vitest run src/server/http/endpoint.test.ts`
 Expected: FAIL — `./endpoint` not found.
 
 - [ ] **Step 8: Implement `endpoint()`**
@@ -1863,7 +1863,7 @@ async function enforceRateLimit(
 
 - [ ] **Step 9: Run the kernel tests, typecheck, lint**
 
-Run: `corepack pnpm --filter @layer/web exec vitest run src/server && corepack pnpm --filter @layer/web typecheck && corepack pnpm --filter @layer/web lint`
+Run: `corepack pnpm --filter @vash/web exec vitest run src/server && corepack pnpm --filter @vash/web typecheck && corepack pnpm --filter @vash/web lint`
 Expected: PASS.
 
 - [ ] **Step 10: Commit**
@@ -1921,10 +1921,10 @@ describe("resendMailer", () => {
       calls.push({ url, init });
       return new Response("{}", { status: 200 });
     }) as unknown as typeof fetch;
-    await resendMailer({ apiKey: "re_test", from: "Layer <hi@layer.test>" }, fakeFetch).send(magicLinkEmail("a@b.test", "https://x.test/v"));
+    await resendMailer({ apiKey: "re_test", from: "VASH <hi@vash.test>" }, fakeFetch).send(magicLinkEmail("a@b.test", "https://x.test/v"));
     expect(calls[0]!.url).toBe("https://api.resend.com/emails");
     expect(new Headers(calls[0]!.init.headers).get("authorization")).toBe("Bearer re_test");
-    expect(JSON.parse(String(calls[0]!.init.body))).toMatchObject({ from: "Layer <hi@layer.test>", to: ["a@b.test"] });
+    expect(JSON.parse(String(calls[0]!.init.body))).toMatchObject({ from: "VASH <hi@vash.test>", to: ["a@b.test"] });
   });
 
   it("fails without echoing the provider's response body", async () => {
@@ -1960,9 +1960,9 @@ export function magicLinkEmail(to: string, url: string): MailMessage {
   const note = "This link works once and expires in 10 minutes. If you didn't ask for it, you can ignore this email.";
   return {
     to,
-    subject: "Your Layer sign-in link",
-    text: `Sign in to Layer:\n\n${url}\n\n${note}`,
-    html: `<p>Sign in to Layer:</p><p><a href="${escapeHtml(url)}">Sign in</a></p><p>${note}</p>`,
+    subject: "Your VASH sign-in link",
+    text: `Sign in to VASH:\n\n${url}\n\n${note}`,
+    html: `<p>Sign in to VASH:</p><p><a href="${escapeHtml(url)}">Sign in</a></p><p>${note}</p>`,
   };
 }
 
@@ -2005,7 +2005,7 @@ export function captureMailer(): Mailer & { sent: MailMessage[] } {
 }
 ```
 
-Run: `corepack pnpm --filter @layer/web exec vitest run src/server/auth/mailer.test.ts`
+Run: `corepack pnpm --filter @vash/web exec vitest run src/server/auth/mailer.test.ts`
 Expected: PASS (3 tests).
 
 - [ ] **Step 3: Write the failing end-to-end auth test (real Better Auth over PGlite)**
@@ -2125,7 +2125,7 @@ describe("magic-link sign-in", () => {
 
 - [ ] **Step 4: Run it to verify it fails**
 
-Run: `corepack pnpm --filter @layer/web exec vitest run src/server/auth/auth.test.ts`
+Run: `corepack pnpm --filter @vash/web exec vitest run src/server/auth/auth.test.ts`
 Expected: FAIL — `./auth` not found.
 
 - [ ] **Step 5: Implement auth and the current-user lookup**
@@ -2158,7 +2158,7 @@ const DAY_SECONDS = 60 * 60 * 24;
 export function createAuth({ db, config, mailer, now }: AuthDeps) {
   const perIp = { window: RATE_LIMITS.magicLinkPerIp.windowSeconds, max: RATE_LIMITS.magicLinkPerIp.max };
   return betterAuth({
-    appName: "Layer",
+    appName: "VASH",
     baseURL: config.appOrigin,
     basePath: "/api/auth",
     secret: config.authSecret,
@@ -2242,7 +2242,7 @@ export function createAuthenticator(auth: Pick<Auth, "api">, db: Db) {
 
 - [ ] **Step 6: Run the auth tests**
 
-Run: `corepack pnpm --filter @layer/web exec vitest run src/server/auth`
+Run: `corepack pnpm --filter @vash/web exec vitest run src/server/auth`
 Expected: PASS (9 tests). If a test fails, record what Better Auth 1.7.5 actually does:
 - The verify status might not be `302`. Assert the status it returns, as long as it still sets the session cookie.
 - The per-IP limit might not trip at 21 because the plugin's own rule shadows `customRules`. Keep both and inspect `rate_limits` keys to see which rule applied. Don't loosen the numbers.
@@ -2250,7 +2250,7 @@ Expected: PASS (9 tests). If a test fails, record what Better Auth 1.7.5 actuall
 
 - [ ] **Step 7: Typecheck, lint, commit**
 
-Run: `corepack pnpm --filter @layer/web typecheck && corepack pnpm --filter @layer/web lint`
+Run: `corepack pnpm --filter @vash/web typecheck && corepack pnpm --filter @vash/web lint`
 ```bash
 git add apps/web
 git commit -m "feat(web): Better Auth magic-link sign-in with hashed single-use links, DB sessions, shared rate limits"
@@ -2373,7 +2373,7 @@ describe("GET /api/health", () => {
 
 - [ ] **Step 2: Run them to verify they fail**
 
-Run: `corepack pnpm --filter @layer/web exec vitest run src/proxy.test.ts src/server/security src/server/health`
+Run: `corepack pnpm --filter @vash/web exec vitest run src/proxy.test.ts src/server/security src/server/health`
 Expected: FAIL — modules not found.
 
 - [ ] **Step 3: Implement headers, proxy, health**
@@ -2462,7 +2462,7 @@ export function healthHandlers(deps: Deps) {
 
 - [ ] **Step 4: Run the tests**
 
-Run: `corepack pnpm --filter @layer/web exec vitest run src/proxy.test.ts src/server/security src/server/health`
+Run: `corepack pnpm --filter @vash/web exec vitest run src/proxy.test.ts src/server/security src/server/health`
 Expected: PASS (7 tests).
 
 - [ ] **Step 5: Add the composition root and route files**
@@ -2521,7 +2521,7 @@ export const POST = route((app) => app.auth.POST);
 
 - [ ] **Step 6: Full verification including a production build**
 
-Run: `corepack pnpm --filter @layer/web test && corepack pnpm --filter @layer/web typecheck && corepack pnpm --filter @layer/web lint && corepack pnpm --filter @layer/web build`
+Run: `corepack pnpm --filter @vash/web test && corepack pnpm --filter @vash/web typecheck && corepack pnpm --filter @vash/web lint && corepack pnpm --filter @vash/web build`
 Expected: all green. The build lists `ƒ /api/health`, `ƒ /api/auth/[...all]` and `ƒ Proxy`. The build must succeed with no env set. That proves the composition root is lazy.
 
 - [ ] **Step 7: Commit**
@@ -2542,7 +2542,7 @@ git commit -m "feat(web): security headers with per-request CSP nonce, health ch
 - Test: `apps/web/src/server/folders/handlers.test.ts`
 
 **Interfaces:**
-- Consumes: `endpoint`, `readJson`, `readQuery`, `pageQuery`, `decodeCursor`, `toPage`, `parseId`, `notFound`, `LIMITS` (from `@layer/schema`)
+- Consumes: `endpoint`, `readJson`, `readQuery`, `pageQuery`, `decodeCursor`, `toPage`, `parseId`, `notFound`, `LIMITS` (from `@vash/schema`)
 - Produces:
   ```ts
   listFolders(db, ownerId, { cursor?: Cursor; limit }): Promise<FolderRow[]>   // returns limit + 1 rows
@@ -2558,7 +2558,7 @@ git commit -m "feat(web): security headers with per-request CSP nonce, health ch
 
 `apps/web/src/server/folders/handlers.test.ts`:
 ```ts
-import { createEmptyDoc } from "@layer/schema";
+import { createEmptyDoc } from "@vash/schema";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestDb, type TestDb } from "../../../tests/support/db";
@@ -2644,7 +2644,7 @@ describe("folders", () => {
 
 - [ ] **Step 2: Run to verify it fails**
 
-Run: `corepack pnpm --filter @layer/web exec vitest run src/server/folders`
+Run: `corepack pnpm --filter @vash/web exec vitest run src/server/folders`
 Expected: FAIL — `./handlers` not found.
 
 - [ ] **Step 3: Implement**
@@ -2699,7 +2699,7 @@ export async function folderExists(db: Db, ownerId: string, id: string): Promise
 
 `apps/web/src/server/folders/handlers.ts`:
 ```ts
-import { LIMITS } from "@layer/schema";
+import { LIMITS } from "@vash/schema";
 import { z } from "zod";
 import type { Deps } from "../deps";
 import { readJson, readQuery } from "../http/body";
@@ -2762,7 +2762,7 @@ In `context.ts`, add `import { folderHandlers } from "./folders/handlers";` and 
 
 - [ ] **Step 4: Run tests, typecheck, lint**
 
-Run: `corepack pnpm --filter @layer/web exec vitest run src/server/folders && corepack pnpm --filter @layer/web typecheck && corepack pnpm --filter @layer/web lint`
+Run: `corepack pnpm --filter @vash/web exec vitest run src/server/folders && corepack pnpm --filter @vash/web typecheck && corepack pnpm --filter @vash/web lint`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
@@ -2785,7 +2785,7 @@ git commit -m "feat(web): owner-scoped folders API with keyset pagination and cr
 - Test: `apps/web/src/server/designs/handlers.test.ts`
 
 **Interfaces:**
-- Consumes: `parseDoc`, `LIMITS`, `type Doc` (from `@layer/schema`); `folderExists`; kernel helpers; `RATE_LIMITS.designSave`
+- Consumes: `parseDoc`, `LIMITS`, `type Doc` (from `@vash/schema`); `folderExists`; kernel helpers; `RATE_LIMITS.designSave`
 - Produces:
   ```ts
   findUnusableAssets(db, ownerId, refs: { id: string; kind: "photo" | "sticker" }[]): Promise<string[]>
@@ -2806,7 +2806,7 @@ git commit -m "feat(web): owner-scoped folders API with keyset pagination and cr
 
 `apps/web/tests/support/docs.ts`:
 ```ts
-import { createEmptyDoc, defaultFilters, type Doc } from "@layer/schema";
+import { createEmptyDoc, defaultFilters, type Doc } from "@vash/schema";
 
 export function emptyDoc(title = "Birthday card"): Doc {
   return createEmptyDoc({ id: "draft", kind: "design", title, format: "ig-post" });
@@ -3039,7 +3039,7 @@ describe("metadata, delete, duplicate", () => {
 
 - [ ] **Step 3: Run to verify it fails**
 
-Run: `corepack pnpm --filter @layer/web exec vitest run src/server/designs`
+Run: `corepack pnpm --filter @vash/web exec vitest run src/server/designs`
 Expected: FAIL — `./handlers` not found.
 
 - [ ] **Step 4: Implement the asset check and the design repository**
@@ -3078,7 +3078,7 @@ export async function findUnusableAssets(db: Db, ownerId: string, refs: { id: st
 `apps/web/src/server/designs/repository.ts`:
 ```ts
 import { and, desc, eq, sql } from "drizzle-orm";
-import type { Doc } from "@layer/schema";
+import type { Doc } from "@vash/schema";
 import { designs } from "../db/schema";
 import type { Db } from "../db/types";
 import type { Cursor } from "../http/cursor";
@@ -3173,7 +3173,7 @@ export async function deleteDesign(db: Db, ownerId: string, id: string): Promise
 `apps/web/src/server/designs/service.ts`:
 ```ts
 import { randomUUID } from "node:crypto";
-import { LIMITS, parseDoc, type Doc } from "@layer/schema";
+import { LIMITS, parseDoc, type Doc } from "@vash/schema";
 import { findUnusableAssets } from "../assets/repository";
 import type { Db } from "../db/types";
 import { folderExists } from "../folders/repository";
@@ -3259,7 +3259,7 @@ export async function duplicateDesign(ctx: ServiceContext, ownerId: string, id: 
 
 `apps/web/src/server/designs/handlers.ts`:
 ```ts
-import { LIMITS } from "@layer/schema";
+import { LIMITS } from "@vash/schema";
 import { z } from "zod";
 import type { Deps } from "../deps";
 import { readJson, readQuery } from "../http/body";
@@ -3369,7 +3369,7 @@ In `context.ts`, add `import { designHandlers } from "./designs/handlers";` and 
 
 - [ ] **Step 6: Run tests, typecheck, lint**
 
-Run: `corepack pnpm --filter @layer/web exec vitest run src/server/designs && corepack pnpm --filter @layer/web typecheck && corepack pnpm --filter @layer/web lint`
+Run: `corepack pnpm --filter @vash/web exec vitest run src/server/designs && corepack pnpm --filter @vash/web typecheck && corepack pnpm --filter @vash/web lint`
 Expected: PASS. If the rate-limit test's loop gets 409s before reaching 429, that's fine: only the last status is asserted, and every request still counts against the limit. If `parseDoc` rejects `{ ...emptyDoc(), root: ["ghost"] }` for a reason other than the dangling root, the test still holds, because it only asserts 422 plus issues.
 
 - [ ] **Step 7: Commit**
@@ -3474,7 +3474,7 @@ describe("GET /api/me/export", () => {
     await createFolder(t.db, bob.id, "Bob's folder");
     await t.db.insert(designs).values({ ownerId: alice.id, title: "Mine", doc: emptyDoc("Mine") });
     const res = await call(h.export, { as: alice });
-    expect(res.headers.get("content-disposition")).toMatch(/attachment; filename="layer-export\.json"/);
+    expect(res.headers.get("content-disposition")).toMatch(/attachment; filename="vash-export\.json"/);
     expect(res.body.profile.id).toBe(alice.id);
     expect(res.body.folders.map((f: { name: string }) => f.name)).toEqual(["Alice's folder"]);
     expect(res.body.designs[0].doc.meta.title).toBe("Mine");
@@ -3518,7 +3518,7 @@ describe("DELETE /api/me", () => {
 
 - [ ] **Step 2: Run to verify it fails**
 
-Run: `corepack pnpm --filter @layer/web exec vitest run src/server/me`
+Run: `corepack pnpm --filter @vash/web exec vitest run src/server/me`
 Expected: FAIL — `./handlers` not found.
 
 - [ ] **Step 3: Implement**
@@ -3642,7 +3642,7 @@ export async function exportAccount(db: Db, userId: string, now: Date) {
 
 `apps/web/src/server/me/handlers.ts`:
 ```ts
-import { CATEGORIES, LIMITS } from "@layer/schema";
+import { CATEGORIES, LIMITS } from "@vash/schema";
 import { z } from "zod";
 import type { Deps } from "../deps";
 import { readJson } from "../http/body";
@@ -3650,7 +3650,7 @@ import { endpoint } from "../http/endpoint";
 import { deleteAccount, exportAccount, getProfile, toProfile, updateProfile } from "./service";
 
 const RESERVED_HANDLES = new Set([
-  "admin", "administrator", "api", "app", "auth", "author", "designs", "edit", "help", "home", "layer", "media", "me",
+  "admin", "administrator", "api", "app", "auth", "author", "designs", "edit", "help", "home", "layer", "vash", "media", "me",
   "moderation", "onboarding", "publish", "root", "s", "settings", "signin", "signup", "support", "system", "templates", "u",
 ]);
 
@@ -3685,7 +3685,7 @@ export function meHandlers(deps: Deps) {
 
     export: endpoint(deps, { auth: "user" }, async ({ user }) =>
       Response.json(await exportAccount(deps.db, user.id, deps.now()), {
-        headers: { "content-disposition": 'attachment; filename="layer-export.json"' },
+        headers: { "content-disposition": 'attachment; filename="vash-export.json"' },
       }),
     ),
   };
@@ -3712,7 +3712,7 @@ In `context.ts`, add `import { meHandlers } from "./me/handlers";` and `me: meHa
 
 - [ ] **Step 4: Run tests, typecheck, lint**
 
-Run: `corepack pnpm --filter @layer/web exec vitest run src/server/me && corepack pnpm --filter @layer/web typecheck && corepack pnpm --filter @layer/web lint`
+Run: `corepack pnpm --filter @vash/web exec vitest run src/server/me && corepack pnpm --filter @vash/web typecheck && corepack pnpm --filter @vash/web lint`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
@@ -3758,17 +3758,17 @@ jobs:
       postgres:
         image: postgres:17
         env:
-          POSTGRES_USER: layer
-          POSTGRES_PASSWORD: layer
-          POSTGRES_DB: layer
+          POSTGRES_USER: vash
+          POSTGRES_PASSWORD: vash
+          POSTGRES_DB: vash
         ports: ["5432:5432"]
         options: >-
-          --health-cmd "pg_isready -U layer"
+          --health-cmd "pg_isready -U vash"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
     env:
-      DATABASE_URL: postgres://layer:layer@localhost:5432/layer
+      DATABASE_URL: postgres://vash:vash@localhost:5432/vash
       APP_ORIGIN: http://localhost:3000
       BETTER_AUTH_SECRET: ci-only-secret-used-nowhere-else-0000000000
     steps:

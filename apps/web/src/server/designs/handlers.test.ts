@@ -1,3 +1,4 @@
+import { createEmptyDoc } from "@vash/schema";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestDb, type TestDb } from "../../../tests/support/db";
 import { testDeps, tickingClock } from "../../../tests/support/deps";
@@ -90,6 +91,14 @@ describe("read and list", () => {
 
     const filed = await call(h.list, { as: alice, path: `/api/designs?folderId=${folder.id}` });
     expect(filed.body.items).toHaveLength(1);
+  });
+
+  it("lists each design's format and artboard size for cards", async () => {
+    const alice = await createUser(t.db);
+    const story = createEmptyDoc({ id: "draft", kind: "design", title: "Story", format: "ig-story" });
+    await newDesign(alice, story);
+    const res = await call(h.list, { as: alice, path: "/api/designs" });
+    expect(res.body.items[0]).toMatchObject({ format: "ig-story", width: 1080, height: 1920 });
   });
 
   it("returns 404 for someone else's design and for malformed ids", async () => {

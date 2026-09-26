@@ -1,4 +1,4 @@
-import { CATEGORIES, LIMITS } from "@layer/schema";
+import { CATEGORIES, LIMITS } from "@vash/schema";
 import { z } from "zod";
 import { expiredSessionCookies } from "../auth/cookies";
 import type { Deps } from "../deps";
@@ -8,7 +8,7 @@ import { RATE_LIMITS } from "../rate-limit/rules";
 import { deleteAccount, exportAccount, getProfile, toProfile, updateProfile } from "./service";
 
 const RESERVED_HANDLES = new Set([
-  "admin", "administrator", "api", "app", "auth", "author", "designs", "edit", "help", "home", "layer", "media", "me",
+  "admin", "administrator", "api", "app", "auth", "author", "designs", "edit", "help", "home", "layer", "vash", "media", "me",
   "moderation", "onboarding", "publish", "root", "s", "settings", "signin", "signup", "support", "system", "templates", "u",
 ]);
 
@@ -66,7 +66,7 @@ export function meHandlers(deps: Deps) {
         },
       });
       return new Response(body, {
-        headers: { "content-type": "application/json", "content-disposition": 'attachment; filename="layer-export.json"' },
+        headers: { "content-type": "application/json", "content-disposition": 'attachment; filename="vash-export.json"' },
       });
     }),
   };

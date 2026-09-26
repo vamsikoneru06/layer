@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { LIMITS } from "@layer/schema";
+import { LIMITS } from "@vash/schema";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError, createAuthMiddleware } from "better-auth/api";
@@ -27,7 +27,7 @@ const DAY_SECONDS = 60 * 60 * 24;
 const AUTH_BODY_LIMIT = 8 * 1024;
 
 /**
- * Better Auth routes that would bypass Layer's own rules: profile writes skip `PATCH /api/me`
+ * Better Auth routes that would bypass VASH's own rules: profile writes skip `PATCH /api/me`
  * validation, account deletion skips the audit log and storage-deletion queue, and the rest
  * (passwords, email change, provider tokens, account linking) are not part of the product.
  */
@@ -59,7 +59,7 @@ export function createAuth({ db, config, mailer, now }: AuthDeps) {
   const tooMany = () => new APIError("TOO_MANY_REQUESTS", { message: "Too many sign-in links requested. Try again later." });
 
   return betterAuth({
-    appName: "Layer",
+    appName: "VASH",
     baseURL: config.appOrigin,
     basePath: "/api/auth",
     secret: config.authSecret,

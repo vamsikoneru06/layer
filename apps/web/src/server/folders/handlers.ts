@@ -1,4 +1,4 @@
-import { LIMITS } from "@layer/schema";
+import { LIMITS } from "@vash/schema";
 import { z } from "zod";
 import type { Deps } from "../deps";
 import { readJson, readQuery } from "../http/body";

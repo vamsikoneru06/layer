@@ -1,9 +1,9 @@
 /**
  * The 20 seed templates, authored in code until Author Mode exists (spec §8.3).
  * Original designs; style cues only from current editorial / social trends — no copied artwork.
- * `pnpm --filter @layer/web templates:build` writes them to templates/seed/*.json.
+ * `pnpm --filter @vash/web templates:build` writes them to templates/seed/*.json.
  */
-import { defaultFilters, FORMATS, type Doc, type Fill, type FormatKey, type FrameNode, type Lock, type Node, type ShapeNode, type TextNode } from "@layer/schema";
+import { defaultFilters, FORMATS, type Doc, type Fill, type FormatKey, type FrameNode, type Lock, type Node, type ShapeNode, type TextNode } from "@vash/schema";
 
 interface Box {
   x: number;
