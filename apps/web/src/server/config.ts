@@ -73,6 +73,9 @@ const EnvSchema = z
     }
     if (env.NODE_ENV === "production") {
       if (storageSet.length === 0) ctx.addIssue({ code: "custom", path: ["STORAGE_ENDPOINT"], message: "required in production (photo uploads)" });
+      for (const k of ["STORAGE_ENDPOINT", "STORAGE_PUBLIC_BASE_URL"] as const) {
+        if (env[k] && !env[k].startsWith("https://")) ctx.addIssue({ code: "custom", path: [k], message: "must use https in production" });
+      }
       if (!env.CRON_SECRET) ctx.addIssue({ code: "custom", path: ["CRON_SECRET"], message: "required in production (scheduled cleanup)" });
       if (!env.RESEND_API_KEY && !env.GMAIL_USER) {
         ctx.addIssue({ code: "custom", path: ["RESEND_API_KEY"], message: "required in production unless GMAIL_USER is set" });

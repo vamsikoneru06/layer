@@ -114,6 +114,12 @@ describe("loadConfig", () => {
     expect(loadConfig({ ...base, CRON_SECRET: "c".repeat(32) }).cronSecret).toBe("c".repeat(32));
   });
 
+  it("requires https storage URLs in production", () => {
+    const message = errorOf({ ...base, ...storageEnv, NODE_ENV: "production", STORAGE_ENDPOINT: "http://proj.storage.supabase.co/storage/v1/s3" });
+    expect(message).toContain("STORAGE_ENDPOINT");
+    expect(errorOf({ ...base, ...storageEnv, NODE_ENV: "production", STORAGE_PUBLIC_BASE_URL: "http://cdn.example/x" })).toContain("STORAGE_PUBLIC_BASE_URL");
+  });
+
   it("requires storage and a cron secret in production", () => {
     const message = errorOf({ ...base, NODE_ENV: "production" });
     expect(message).toContain("STORAGE_ENDPOINT");
