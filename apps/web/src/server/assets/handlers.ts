@@ -22,6 +22,7 @@ const UploadBody = z
 const Dimension = z.number().int().min(1).max(service.UPLOAD_LIMITS.maxDimension);
 const CompleteBody = z.object({ width: Dimension, height: Dimension }).strict();
 const ListQuery = pageQuery.extend({ kind: z.enum(["photo", "thumbnail", "sticker"]).optional() });
+const writeLimit = { name: "userWrite", rule: RATE_LIMITS.userWrite, by: "user" } as const;
 const ResolveBody = z.object({ ids: z.array(z.uuid()).min(1).max(LIMITS.assets) }).strict();
 
 export function assetHandlers(deps: Deps, storage: ObjectStorage | null) {
@@ -37,7 +38,7 @@ export function assetHandlers(deps: Deps, storage: ObjectStorage | null) {
       return Response.json({ asset: service.toAssetJson(asset), upload }, { status: 201 });
     }),
 
-    complete: endpoint(deps, { auth: "user" }, async ({ req, user, params }) => {
+    complete: endpoint(deps, { auth: "user", rateLimit: writeLimit }, async ({ req, user, params }) => {
       const c = ctx();
       const id = parseId(params.id);
       const body = await readJson(req, CompleteBody);
@@ -56,7 +57,7 @@ export function assetHandlers(deps: Deps, storage: ObjectStorage | null) {
       return Response.json({ assets: await service.resolveAssets(c, user?.id ?? null, body.ids.map((id) => id.toLowerCase())) });
     }),
 
-    remove: endpoint(deps, { auth: "user" }, async ({ user, params }) => {
+    remove: endpoint(deps, { auth: "user", rateLimit: writeLimit }, async ({ user, params }) => {
       const c = ctx();
       const asset = await getOwnedAsset(deps.db, user.id, parseId(params.id));
       if (!asset) throw notFound();

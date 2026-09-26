@@ -7,6 +7,7 @@ import { createAsset, createUser } from "../../../tests/support/factories";
 import { call } from "../../../tests/support/invoke";
 import { memoryStorage } from "../../../tests/support/storage";
 import { assets, designs, storageDeletions } from "../db/schema";
+import { RATE_LIMITS } from "../rate-limit/rules";
 import { assetHandlers } from "./handlers";
 
 let t: TestDb;
@@ -100,5 +101,20 @@ describe("DELETE /api/assets/:id", () => {
     storage.failRemove.add(asset.storageKey);
     expect((await call(h.remove, { method: "DELETE", as: alice, params: { id: asset.id } })).status).toBe(204);
     expect(await t.db.select().from(storageDeletions).where(eq(storageDeletions.storageKey, asset.storageKey))).toMatchObject([{ bucket: "public" }]);
+  });
+});
+
+describe("asset writes", () => {
+  it("share the per-user write limit", async () => {
+    const alice = await createUser(t.db);
+    const asset = await createAsset(t.db, { ownerId: alice.id, status: "pending" });
+    const fixed = new Date("2026-09-26T10:00:05.000Z");
+    const limited = assetHandlers(testDeps(t.db, { now: () => fixed }), storage);
+    const missing = "00000000-0000-4000-8000-000000000000";
+    for (let i = 0; i < RATE_LIMITS.userWrite.max; i++) {
+      expect((await call(limited.remove, { method: "DELETE", as: alice, params: { id: missing } })).status).toBe(404);
+    }
+    expect((await call(limited.remove, { method: "DELETE", as: alice, params: { id: asset.id } })).status).toBe(429);
+    expect((await call(limited.complete, { method: "POST", as: alice, params: { id: asset.id }, body: { width: 10, height: 10 } })).status).toBe(429);
   });
 });
