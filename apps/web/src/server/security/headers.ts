@@ -26,8 +26,12 @@ export function securityHeaders({ csp, isProduction }: { csp: string; isProducti
     "x-frame-options": "DENY",
     "x-content-type-options": "nosniff",
     "referrer-policy": "strict-origin-when-cross-origin",
-    "permissions-policy": "camera=(), microphone=(), geolocation=()",
+    // Nothing in VASH needs these; denying them limits what an injected script or embedded page could reach.
+    "permissions-policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), hid=(), bluetooth=(), browsing-topics=()",
     "cross-origin-opener-policy": "same-origin",
+    "cross-origin-resource-policy": "same-origin",
+    "x-permitted-cross-domain-policies": "none",
+    "origin-agent-cluster": "?1",
     ...(isProduction ? { "strict-transport-security": "max-age=63072000; includeSubDomains; preload" } : {}),
   };
 }

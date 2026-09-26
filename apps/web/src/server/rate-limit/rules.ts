@@ -14,4 +14,6 @@ export const RATE_LIMITS = {
   // Not in §9.6: design create and duplicate share this bucket; export streams every design the user owns.
   designCreate: { windowSeconds: 3_600, max: 100 },
   accountExport: { windowSeconds: 3_600, max: 5 },
+  // Every other signed-in write (rename, move, delete, folders, profile) shares one per-user budget.
+  userWrite: { windowSeconds: 60, max: 300 },
 } as const satisfies Record<string, RateLimitRule>;

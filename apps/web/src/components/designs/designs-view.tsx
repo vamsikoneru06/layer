@@ -11,7 +11,7 @@ import { Menu } from "@/components/ui/menu";
 import { useToast } from "@/components/ui/toast";
 import * as api from "@/lib/api";
 import type { DesignItem, Folder } from "@/lib/api";
-import { sortDesigns, type SortKey } from "@/lib/designs";
+import { parseDraggedIds, sortDesigns, type SortKey } from "@/lib/designs";
 import { cn } from "@/lib/utils";
 import { DesignCard, DesignRow, type CardActions } from "./design-card";
 
@@ -61,8 +61,8 @@ function FolderRow({
       onDragLeave={() => setOver(false)}
       onDrop={(e) => {
         setOver(false);
-        const raw = e.dataTransfer.getData(DRAG_TYPE);
-        if (raw) onDropDesigns(JSON.parse(raw) as string[]);
+        const ids = parseDraggedIds(e.dataTransfer.getData(DRAG_TYPE));
+        if (ids.length > 0) onDropDesigns(ids);
       }}
       className={cn(
         "group/folder flex h-9 flex-none items-center rounded-[10px] hover:bg-field",

@@ -22,6 +22,7 @@ const PatchBody = z
   .refine((b) => b.title !== undefined || b.folderId !== undefined, "Provide title or folderId.");
 const ListQuery = pageQuery.extend({ folderId: z.uuid().optional() });
 const createLimit = { name: "designCreate", rule: RATE_LIMITS.designCreate, by: "user" } as const;
+const writeLimit = { name: "userWrite", rule: RATE_LIMITS.userWrite, by: "user" } as const;
 
 const summary = (d: Omit<repo.DesignSummary, "format" | "width" | "height">) => ({
   id: d.id,
@@ -61,13 +62,13 @@ export function designHandlers(deps: Deps) {
       return Response.json(full(await service.saveDesignDoc(ctx, user.id, id, body)));
     }),
 
-    patch: endpoint(deps, { auth: "user" }, async ({ req, user, params }) => {
+    patch: endpoint(deps, { auth: "user", rateLimit: writeLimit }, async ({ req, user, params }) => {
       const id = parseId(params.id);
       const body = await readJson(req, PatchBody);
       return Response.json(full(await service.updateDesignMeta(ctx, user.id, id, body)));
     }),
 
-    remove: endpoint(deps, { auth: "user" }, async ({ user, params }) => {
+    remove: endpoint(deps, { auth: "user", rateLimit: writeLimit }, async ({ user, params }) => {
       if (!(await repo.deleteDesign(deps.db, user.id, parseId(params.id)))) throw notFound();
       return new Response(null, { status: 204 });
     }),

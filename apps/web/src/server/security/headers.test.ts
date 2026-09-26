@@ -22,9 +22,14 @@ describe("securityHeaders", () => {
       "x-frame-options": "DENY",
       "x-content-type-options": "nosniff",
       "referrer-policy": "strict-origin-when-cross-origin",
-      "permissions-policy": "camera=(), microphone=(), geolocation=()",
       "cross-origin-opener-policy": "same-origin",
+      "cross-origin-resource-policy": "same-origin",
+      "x-permitted-cross-domain-policies": "none",
+      "origin-agent-cluster": "?1",
     });
+    for (const feature of ["camera", "microphone", "geolocation", "payment", "usb", "serial", "hid", "bluetooth", "browsing-topics"]) {
+      expect(dev["permissions-policy"]).toContain(`${feature}=()`);
+    }
     expect(dev["strict-transport-security"]).toBeUndefined();
     expect(securityHeaders({ csp: "x", isProduction: true })["strict-transport-security"]).toMatch(/max-age=63072000/);
   });

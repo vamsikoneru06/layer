@@ -6,9 +6,11 @@ import { decodeCursor, pageQuery, toPage } from "../http/cursor";
 import { endpoint } from "../http/endpoint";
 import { parseId } from "../http/ids";
 import { notFound } from "../http/problem";
+import { RATE_LIMITS } from "../rate-limit/rules";
 import { insertWithinQuota } from "../quotas";
 import { createFolder, deleteFolder, listFolders, renameFolder, type FolderRow } from "./repository";
 
+const writeLimit = { name: "userWrite", rule: RATE_LIMITS.userWrite, by: "user" } as const;
 const FolderBody = z.object({ name: z.string().trim().min(1).max(LIMITS.nameChars) }).strict();
 
 const toJson = (f: FolderRow) => ({ id: f.id, name: f.name, createdAt: f.createdAt.toISOString(), updatedAt: f.updatedAt.toISOString() });
@@ -21,13 +23,13 @@ export function folderHandlers(deps: Deps) {
       return Response.json(toPage(rows, q.limit, (r) => ({ at: r.createdAt.toISOString(), id: r.id }), toJson));
     }),
 
-    create: endpoint(deps, { auth: "user" }, async ({ req, user }) => {
+    create: endpoint(deps, { auth: "user", rateLimit: writeLimit }, async ({ req, user }) => {
       const body = await readJson(req, FolderBody);
       const row = await insertWithinQuota(deps.db, user.id, "folders", (tx) => createFolder(tx, user.id, body.name, deps.now()));
       return Response.json(toJson(row), { status: 201 });
     }),
 
-    rename: endpoint(deps, { auth: "user" }, async ({ req, user, params }) => {
+    rename: endpoint(deps, { auth: "user", rateLimit: writeLimit }, async ({ req, user, params }) => {
       const id = parseId(params.id);
       const body = await readJson(req, FolderBody);
       const row = await renameFolder(deps.db, user.id, id, body.name, deps.now());
@@ -35,7 +37,7 @@ export function folderHandlers(deps: Deps) {
       return Response.json(toJson(row));
     }),
 
-    remove: endpoint(deps, { auth: "user" }, async ({ user, params }) => {
+    remove: endpoint(deps, { auth: "user", rateLimit: writeLimit }, async ({ user, params }) => {
       if (!(await deleteFolder(deps.db, user.id, parseId(params.id)))) throw notFound();
       return new Response(null, { status: 204 });
     }),

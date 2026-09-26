@@ -22,4 +22,15 @@ describe("GET /api/health", () => {
     expect(res.status).toBe(503);
     expect(res.body).toEqual({ status: "unavailable" });
   });
+  it("probes the database at most once per 5 seconds however often it is called", async () => {
+    let probes = 0;
+    const counting = { execute: async () => void probes++ } as unknown as Db;
+    let now = Date.parse("2026-09-26T10:00:00.000Z");
+    const h = healthHandlers(testDeps(counting, { now: () => new Date(now) }));
+    for (let i = 0; i < 50; i++) expect((await call(h.get)).status).toBe(200);
+    expect(probes).toBe(1);
+    now += 5_001;
+    await call(h.get);
+    expect(probes).toBe(2);
+  });
 });
