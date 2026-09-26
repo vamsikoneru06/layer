@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { formatCountdown, isEmail, requestErrorMessage, RESEND_COOLDOWN_SECONDS } from "./messages";
 
 // Where Better Auth sends people after they click the emailed link (or return from Google).
-const REDIRECTS = { callbackURL: "/home", newUserCallbackURL: "/onboarding", errorCallbackURL: "/signin" };
+// New accounts land on /home too until /onboarding exists; pointing them at it today is a 404.
+const REDIRECTS = { callbackURL: "/home", newUserCallbackURL: "/home", errorCallbackURL: "/signin" };
 
 type Phase = "form" | "sending" | "sent";
 
