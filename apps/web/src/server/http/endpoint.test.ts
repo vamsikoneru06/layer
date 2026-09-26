@@ -60,7 +60,7 @@ describe("endpoint()", () => {
     const h = endpoint(testDeps(t.db, { logger }), { auth: "none" }, async () => {
       const err = new Error('Failed query: select * from "user" where email = $1\nparams: riya@example.test');
       err.name = "DrizzleQueryError";
-      (err as Error & { cause?: unknown }).cause = new Error("connect ECONNREFUSED postgres://layer:hunter2@db:5432/layer");
+      (err as Error & { cause?: unknown }).cause = new Error("connect ECONNREFUSED postgres://vash:hunter2@db:5432/vash");
       throw err;
     });
     const res = await call(h);

@@ -1,5 +1,5 @@
 {
-  "name": "layer",
+  "name": "vash",
   "private": true,
   "packageManager": "pnpm@12.6.0",
   "engines": {
@@ -10,9 +10,9 @@
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "build": "pnpm -r build",
-    "db:generate": "pnpm --filter @layer/web db:generate",
-    "db:migrate": "pnpm --filter @layer/web db:migrate",
-    "db:seed": "pnpm --filter @layer/web db:seed"
+    "db:generate": "pnpm --filter @vash/web db:generate",
+    "db:migrate": "pnpm --filter @vash/web db:migrate",
+    "db:seed": "pnpm --filter @vash/web db:seed"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

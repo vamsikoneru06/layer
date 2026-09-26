@@ -199,7 +199,7 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.1138.0
         version: 3.1138.0
-      '@layer/schema':
+      '@vash/schema':
         specifier: workspace:*
         version: link:../../packages/schema
       better-auth:

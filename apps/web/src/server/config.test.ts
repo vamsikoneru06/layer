@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ConfigError, loadConfig } from "./config";
 
 const base = {
-  DATABASE_URL: "postgres://layer:layer@localhost:5432/layer",
+  DATABASE_URL: "postgres://vash:vash@localhost:5432/vash",
   APP_ORIGIN: "http://localhost:3000",
   BETTER_AUTH_SECRET: "s".repeat(32),
 };
@@ -55,10 +55,10 @@ describe("loadConfig", () => {
   });
 
   it("enables Resend when a key and sender are present", () => {
-    expect(loadConfig({ ...base, RESEND_API_KEY: "re_x", MAIL_FROM: "Layer <hi@layer.test>" }).mail).toEqual({
+    expect(loadConfig({ ...base, RESEND_API_KEY: "re_x", MAIL_FROM: "VASH <hi@vash.test>" }).mail).toEqual({
       kind: "resend",
       apiKey: "re_x",
-      from: "Layer <hi@layer.test>",
+      from: "VASH <hi@vash.test>",
     });
   });
 

@@ -17,10 +17,10 @@ describe("resendMailer", () => {
       calls.push({ url, init });
       return new Response("{}", { status: 200 });
     }) as unknown as typeof fetch;
-    await resendMailer({ apiKey: "re_test", from: "Layer <hi@layer.test>" }, fakeFetch).send(magicLinkEmail("a@b.test", "https://x.test/v"));
+    await resendMailer({ apiKey: "re_test", from: "VASH <hi@vash.test>" }, fakeFetch).send(magicLinkEmail("a@b.test", "https://x.test/v"));
     expect(calls[0]!.url).toBe("https://api.resend.com/emails");
     expect(new Headers(calls[0]!.init.headers).get("authorization")).toBe("Bearer re_test");
-    expect(JSON.parse(String(calls[0]!.init.body))).toMatchObject({ from: "Layer <hi@layer.test>", to: ["a@b.test"] });
+    expect(JSON.parse(String(calls[0]!.init.body))).toMatchObject({ from: "VASH <hi@vash.test>", to: ["a@b.test"] });
   });
 
   it("fails without echoing the provider's response body", async () => {

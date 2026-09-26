@@ -1,5 +1,5 @@
 import { and, desc, eq, sql } from "drizzle-orm";
-import type { Doc } from "@layer/schema";
+import type { Doc } from "@vash/schema";
 import { designs } from "../db/schema";
 import type { Db } from "../db/types";
 import type { Cursor } from "../http/cursor";

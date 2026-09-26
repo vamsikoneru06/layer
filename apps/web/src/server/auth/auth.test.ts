@@ -153,7 +153,7 @@ describe("magic-link abuse controls", () => {
   });
 
   it.each(["/update-user", "/delete-user", "/change-email", "/sign-up/email", "/sign-in/email", "/request-password-reset", "/get-access-token"])(
-    "does not expose %s, which would bypass Layer's own rules",
+    "does not expose %s, which would bypass VASH's own rules",
     async (path) => {
       const res = await route.POST(
         new Request(`${origin}/api/auth${path}`, {

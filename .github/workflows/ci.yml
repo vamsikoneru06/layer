@@ -20,17 +20,17 @@ jobs:
       postgres:
         image: postgres:17
         env:
-          POSTGRES_USER: layer
-          POSTGRES_PASSWORD: layer
-          POSTGRES_DB: layer
+          POSTGRES_USER: vash
+          POSTGRES_PASSWORD: vash
+          POSTGRES_DB: vash
         ports: ["5432:5432"]
         options: >-
-          --health-cmd "pg_isready -U layer"
+          --health-cmd "pg_isready -U vash"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
     env:
-      DATABASE_URL: postgres://layer:layer@localhost:5432/layer
+      DATABASE_URL: postgres://vash:vash@localhost:5432/vash
       APP_ORIGIN: http://localhost:3000
       BETTER_AUTH_SECRET: ci-only-secret-used-nowhere-else-0000000000
     steps:

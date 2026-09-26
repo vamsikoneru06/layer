@@ -64,7 +64,7 @@ describe("GET /api/me/export", () => {
     await createFolder(t.db, bob.id, "Bob's folder");
     await t.db.insert(designs).values({ ownerId: alice.id, title: "Mine", doc: emptyDoc("Mine") });
     const res = await call(h.export, { as: alice });
-    expect(res.headers.get("content-disposition")).toMatch(/attachment; filename="layer-export\.json"/);
+    expect(res.headers.get("content-disposition")).toMatch(/attachment; filename="vash-export\.json"/);
     expect(res.body.profile.id).toBe(alice.id);
     expect(res.body.folders.map((f: { name: string }) => f.name)).toEqual(["Alice's folder"]);
     expect(res.body.designs[0].doc.meta.title).toBe("Mine");

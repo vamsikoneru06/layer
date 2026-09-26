@@ -1,4 +1,4 @@
-import { CATEGORIES, LIMITS } from "@layer/schema";
+import { CATEGORIES, LIMITS } from "@vash/schema";
 import { z } from "zod";
 import type { Deps } from "../deps";
 import { readJson } from "../http/body";
@@ -6,7 +6,7 @@ import { endpoint } from "../http/endpoint";
 import { deleteAccount, exportAccount, getProfile, toProfile, updateProfile } from "./service";
 
 const RESERVED_HANDLES = new Set([
-  "admin", "administrator", "api", "app", "auth", "author", "designs", "edit", "help", "home", "layer", "media", "me",
+  "admin", "administrator", "api", "app", "auth", "author", "designs", "edit", "help", "home", "layer", "vash", "media", "me",
   "moderation", "onboarding", "publish", "root", "s", "settings", "signin", "signup", "support", "system", "templates", "u",
 ]);
 
@@ -41,7 +41,7 @@ export function meHandlers(deps: Deps) {
 
     export: endpoint(deps, { auth: "user" }, async ({ user }) =>
       Response.json(await exportAccount(deps.db, user.id, deps.now()), {
-        headers: { "content-disposition": 'attachment; filename="layer-export.json"' },
+        headers: { "content-disposition": 'attachment; filename="vash-export.json"' },
       }),
     ),
   };

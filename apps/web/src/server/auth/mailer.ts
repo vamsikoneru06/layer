@@ -18,9 +18,9 @@ export function magicLinkEmail(to: string, url: string): MailMessage {
   const note = "This link works once and expires in 10 minutes. If you didn't ask for it, you can ignore this email.";
   return {
     to,
-    subject: "Your Layer sign-in link",
-    text: `Sign in to Layer:\n\n${url}\n\n${note}`,
-    html: `<p>Sign in to Layer:</p><p><a href="${escapeHtml(url)}">Sign in</a></p><p>${note}</p>`,
+    subject: "Your VASH sign-in link",
+    text: `Sign in to VASH:\n\n${url}\n\n${note}`,
+    html: `<p>Sign in to VASH:</p><p><a href="${escapeHtml(url)}">Sign in</a></p><p>${note}</p>`,
   };
 }
 

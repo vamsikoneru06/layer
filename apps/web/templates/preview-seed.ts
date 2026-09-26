@@ -1,6 +1,6 @@
 // Renders every seed template to one HTML page (approximate: SVG shapes + HTML text in foreignObject).
 import { writeFileSync } from "node:fs";
-import type { Doc, Fill, Node } from "@layer/schema";
+import type { Doc, Fill, Node } from "@vash/schema";
 import { seedTemplates } from "./seed-templates";
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
@@ -73,13 +73,13 @@ function render(doc: Doc): string {
 const families = [...new Set(seedTemplates().flatMap((d) => Object.values(d.nodes).flatMap((n) => (n.type === "text" ? [n.font.family] : []))))];
 const fontsHref = `https://fonts.googleapis.com/css2?${families.map((f) => `family=${f.replace(/ /g, "+")}:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400`).join("&")}&display=swap`;
 
-const html = `<!doctype html><html><head><meta charset="utf-8"><title>Layer Seed Templates</title>
+const html = `<!doctype html><html><head><meta charset="utf-8"><title>VASH Seed Templates</title>
 <link rel="stylesheet" href="${fontsHref}">
 <style>body{margin:0;padding:32px;background:#E9E7E2;font-family:Inter,system-ui,sans-serif;color:#1d1d1f}h1{font-size:22px;margin:0 0 4px}p{margin:0 0 24px;color:#555}
 main{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:28px;align-items:start}
 figure{margin:0}svg{width:100%;height:auto;display:block;box-shadow:0 6px 24px rgba(0,0,0,.12);border-radius:4px}
 figcaption{display:flex;justify-content:space-between;gap:8px;font-size:13px;margin-top:8px}figcaption span{color:#777}</style></head>
-<body><h1>Layer — seed templates (preview)</h1><p>Approximate render. Hatched areas are empty photo frames users fill with their own pictures.</p><main>${seedTemplates().map(render).join("")}</main></body></html>`;
+<body><h1>VASH — seed templates (preview)</h1><p>Approximate render. Hatched areas are empty photo frames users fill with their own pictures.</p><main>${seedTemplates().map(render).join("")}</main></body></html>`;
 
 writeFileSync(new URL("./preview.html", import.meta.url), html);
 console.log("wrote templates/preview.html");
