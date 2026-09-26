@@ -1,4 +1,5 @@
 import "server-only";
+import { assetHandlers } from "./assets/handlers";
 import { createAuth, createAuthRoute } from "./auth/auth";
 import { createAuthenticator } from "./auth/current-user";
 import { consoleMailer, gmailMailer, resendMailer } from "./auth/mailer";
@@ -11,6 +12,7 @@ import { healthHandlers } from "./health/handlers";
 import type { Handler } from "./http/types";
 import { createLogger } from "./logging";
 import { meHandlers } from "./me/handlers";
+import { s3Storage } from "./storage/s3";
 
 function build() {
   const config = loadConfig(process.env);
@@ -21,12 +23,14 @@ function build() {
     config.mail.kind === "resend" ? resendMailer(config.mail) : config.mail.kind === "gmail" ? gmailMailer(config.mail) : consoleMailer(logger);
   const auth = createAuth({ db, config, mailer, now });
   const deps: Deps = { db, config, logger, now, authenticate: createAuthenticator(auth, db) };
+  const storage = config.storage ? s3Storage(config.storage) : null;
   return {
     auth: createAuthRoute(auth, config),
     health: healthHandlers(deps),
     folders: folderHandlers(deps),
     designs: designHandlers(deps),
     me: meHandlers(deps),
+    assets: assetHandlers(deps, storage),
   };
 }
 

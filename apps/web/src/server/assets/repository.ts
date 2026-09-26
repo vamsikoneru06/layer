@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull, or } from "drizzle-orm";
+import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { assets } from "../db/schema";
 import type { Db } from "../db/types";
 import { isUuid } from "../http/ids";
@@ -24,4 +24,39 @@ export async function findUnusableAssets(db: Db, ownerId: string, refs: { id: st
           );
   const usable = new Map(rows.map((r) => [r.id, r.kind]));
   return refs.filter((r) => usable.get(r.id.toLowerCase()) !== r.kind).map((r) => r.id);
+}
+
+export type AssetRow = typeof assets.$inferSelect;
+
+export const assetKey = (ownerId: string, assetId: string) => `u/${ownerId}/${assetId}`;
+
+export async function insertPendingAsset(
+  db: Db,
+  v: { id: string; ownerId: string; kind: "photo" | "thumbnail"; mime: AssetRow["mime"]; bytes: number; now: Date },
+): Promise<AssetRow> {
+  const [row] = await db
+    .insert(assets)
+    .values({ id: v.id, ownerId: v.ownerId, kind: v.kind, mime: v.mime, bytes: v.bytes, storageKey: assetKey(v.ownerId, v.id), createdAt: v.now, updatedAt: v.now })
+    .returning();
+  return row!;
+}
+
+export async function getOwnedAsset(db: Db, ownerId: string, id: string): Promise<AssetRow | undefined> {
+  const [row] = await db.select().from(assets).where(and(eq(assets.id, id), eq(assets.ownerId, ownerId)));
+  return row;
+}
+
+export async function markAssetReady(db: Db, ownerId: string, id: string, dims: { width: number; height: number }, now: Date): Promise<AssetRow | undefined> {
+  const [row] = await db
+    .update(assets)
+    .set({ status: "ready", width: dims.width, height: dims.height, updatedAt: now })
+    .where(and(eq(assets.id, id), eq(assets.ownerId, ownerId), eq(assets.status, "pending")))
+    .returning();
+  return row;
+}
+
+/** Bytes counted against the quota: pending uploads included, so a burst of requests can't overshoot it. */
+export async function storageUsedBytes(db: Db, ownerId: string): Promise<number> {
+  const [row] = await db.select({ used: sql<string>`coalesce(sum(${assets.bytes}), 0)` }).from(assets).where(eq(assets.ownerId, ownerId));
+  return Number(row?.used ?? 0);
 }
