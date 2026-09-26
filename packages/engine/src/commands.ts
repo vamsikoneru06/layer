@@ -1,8 +1,11 @@
 import type { Doc, Node, NodeId } from "@vash/schema";
 
+/** Fields of one node type that an update may change (identity, type and group membership are fixed). */
+export type NodePatch = Node extends infer N ? (N extends Node ? Partial<Omit<N, "id" | "type" | "children">> : never) : never;
+
 /** Every document edit is one of these. Applying one yields the new document and the command that undoes it. */
 export type Command =
-  | { type: "update"; id: NodeId; patch: Partial<Omit<Node, "id" | "type" | "children">> }
+  | { type: "update"; id: NodeId; patch: NodePatch }
   /** `nodes[0]` goes into `parent` (null = root) at `index`; any further nodes are its descendants. */
   | { type: "insert"; nodes: Node[]; parent: NodeId | null; index: number }
   /** Removes the node and, for a group, everything inside it. */
@@ -57,7 +60,7 @@ export function applyCommand(doc: Doc, cmd: Command): Applied {
       const next = { ...node, ...cmd.patch } as Node;
       return {
         doc: { ...doc, nodes: { ...doc.nodes, [cmd.id]: next } },
-        inverse: { type: "update", id: cmd.id, patch: previous as Extract<Command, { type: "update" }>["patch"] },
+        inverse: { type: "update", id: cmd.id, patch: previous as NodePatch },
       };
     }
 
