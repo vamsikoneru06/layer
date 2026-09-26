@@ -199,6 +199,9 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.1138.0
         version: 3.1138.0
+      '@vash/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
       '@vash/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -272,6 +275,12 @@ importers:
       tsx:
         specifier: ^4.23.15
         version: 4.23.15
+
+  packages/engine:
+    dependencies:
+      '@vash/schema':
+        specifier: workspace:*
+        version: link:../schema
 
   packages/schema: {}
 
