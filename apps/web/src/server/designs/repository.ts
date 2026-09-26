@@ -5,8 +5,13 @@ import type { Db } from "../db/types";
 import type { Cursor } from "../http/cursor";
 
 export type DesignRow = typeof designs.$inferSelect;
-export type DesignSummary = Omit<DesignRow, "doc" | "ownerId" | "sourceTemplateId" | "sourceTemplateVersion">;
+export type DesignSummary = Omit<DesignRow, "doc" | "ownerId" | "sourceTemplateId" | "sourceTemplateVersion"> & {
+  format: string;
+  width: number;
+  height: number;
+};
 
+// Cards need the format and aspect ratio, but lists must not ship whole documents.
 const summaryColumns = {
   id: designs.id,
   title: designs.title,
@@ -15,6 +20,9 @@ const summaryColumns = {
   version: designs.version,
   createdAt: designs.createdAt,
   updatedAt: designs.updatedAt,
+  format: sql<string>`${designs.doc}->'meta'->>'format'`,
+  width: sql<number>`(${designs.doc}->'artboard'->>'width')::int`,
+  height: sql<number>`(${designs.doc}->'artboard'->>'height')::int`,
 };
 
 const owned = (ownerId: string, id: string) => and(eq(designs.id, id), eq(designs.ownerId, ownerId));
