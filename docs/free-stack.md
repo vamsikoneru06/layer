@@ -12,6 +12,7 @@ Keys go in `apps/web/.env.local` (git-ignored), never in code or chat.
 |---|---|---|---|
 | Google OAuth | "Continue with Google" on `/signin` | `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` | Free |
 | Gmail SMTP | Sends magic sign-in links | `GMAIL_USER` + `GMAIL_APP_PASSWORD` | ~500 emails/day |
+| Supabase Storage | Photo uploads (S3 API, presigned URLs) | `STORAGE_*` (S3 access keys) | 1 GB; no card. Buckets `vash-private` + `vash-public`; CORS must allow `PUT` and `GET` from your `APP_ORIGIN`. Cloudflare R2 is free up to 10 GB but asks for a card |
 
 Without either, sign-in still works in development: the link is printed in the server log.
 
@@ -35,5 +36,4 @@ Colormind (HTTP only), Quotable (unreliable uptime).
 |---|---|---|
 | Web app | Vercel Hobby | Personal, non-commercial use only |
 | Postgres | Neon free | 0.5 GB; no card |
-| Photo storage | Supabase Storage free | 1 GB; no card. Cloudflare R2 is free up to 10 GB but asks for a card |
 | Local dev database | PGlite (`npx @electric-sql/pglite-socket`) | No Docker needed |

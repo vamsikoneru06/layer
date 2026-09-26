@@ -2,15 +2,15 @@ export function createNonce(): string {
   return Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString("base64");
 }
 
-/** Plan 2 adds the R2 origins to img-src and connect-src. */
-export function buildCsp({ nonce, isDevelopment }: { nonce: string; isDevelopment: boolean }): string {
+/** `storageOrigins` lets pages load photos from, and the browser PUT uploads to, object storage. */
+export function buildCsp({ nonce, isDevelopment, storageOrigins = [] }: { nonce: string; isDevelopment: boolean; storageOrigins?: string[] }): string {
   const directives: [string, ...string[]][] = [
     ["default-src", "'self'"],
     ["script-src", "'self'", `'nonce-${nonce}'`, "'strict-dynamic'", ...(isDevelopment ? ["'unsafe-eval'"] : [])],
     ["style-src", "'self'", "'unsafe-inline'"],
-    ["img-src", "'self'", "blob:", "data:"],
+    ["img-src", "'self'", "blob:", "data:", ...storageOrigins],
     ["font-src", "'self'"],
-    ["connect-src", "'self'"],
+    ["connect-src", "'self'", ...storageOrigins],
     ["object-src", "'none'"],
     ["base-uri", "'self'"],
     ["form-action", "'self'"],

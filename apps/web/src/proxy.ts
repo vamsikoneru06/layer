@@ -4,7 +4,7 @@ import { buildCsp, createNonce, securityHeaders } from "./server/security/header
 /** Next 16 "proxy" (formerly middleware): a per-request CSP nonce that Next applies to its own scripts. */
 export function proxy(request: NextRequest): NextResponse {
   const nonce = createNonce();
-  const csp = buildCsp({ nonce, isDevelopment: process.env.NODE_ENV === "development" });
+  const csp = buildCsp({ nonce, isDevelopment: process.env.NODE_ENV === "development", storageOrigins: storageOrigins(process.env) });
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("content-security-policy", csp);
@@ -13,6 +13,20 @@ export function proxy(request: NextRequest): NextResponse {
     response.headers.set(name, value);
   }
   return response;
+}
+
+/** https origins of the storage endpoints (browser PUTs and image loads); anything unparsable or non-https is ignored. */
+export function storageOrigins(env: Record<string, string | undefined>): string[] {
+  const origins = [env.STORAGE_ENDPOINT, env.STORAGE_PUBLIC_BASE_URL].flatMap((value) => {
+    if (!value) return [];
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" ? [url.origin] : [];
+    } catch {
+      return [];
+    }
+  });
+  return [...new Set(origins)];
 }
 
 export const config = {
