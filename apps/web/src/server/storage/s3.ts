@@ -1,5 +1,5 @@
 import "server-only";
-import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, NotFound, PutObjectCommand, S3Client, S3ServiceException } from "@aws-sdk/client-s3";
+import { CopyObjectCommand, DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, NotFound, PutObjectCommand, S3Client, S3ServiceException } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import type { StorageConfig } from "../config";
 import type { Bucket, ObjectStorage } from "./types";
@@ -44,6 +44,10 @@ export function s3Storage(
     async readPrefix(bucket, key, length) {
       const res = await client.send(new GetObjectCommand({ Bucket: bucketName(bucket), Key: key, Range: `bytes=0-${length - 1}` }));
       return (await res.Body?.transformToByteArray()) ?? new Uint8Array();
+    },
+    async copy(bucket, from, to) {
+      const name = bucketName(bucket);
+      await client.send(new CopyObjectCommand({ Bucket: name, Key: to, CopySource: [name, ...from.split("/")].map(encodeURIComponent).join("/") }));
     },
     async remove(bucket, key) {
       await client.send(new DeleteObjectCommand({ Bucket: bucketName(bucket), Key: key }));

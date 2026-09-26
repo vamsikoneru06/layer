@@ -1,7 +1,8 @@
 import { and, eq, lt } from "drizzle-orm";
 import { assets, rateLimits, session, storageDeletions, verification } from "../db/schema";
 import type { Db } from "../db/types";
-import { processStorageDeletions } from "../storage/outbox";
+import { objectDeletion } from "../assets/repository";
+import { drainStorageDeletions } from "../storage/outbox";
 import type { ObjectStorage } from "../storage/types";
 
 const HOUR = 3_600_000;
@@ -17,10 +18,9 @@ export async function runCleanup(db: Db, storage: ObjectStorage | null, now: Dat
     const stale = await tx
       .delete(assets)
       .where(and(eq(assets.status, "pending"), lt(assets.createdAt, pendingCutoff)))
-      .returning({ storageKey: assets.storageKey, visibility: assets.visibility });
-    if (stale.length > 0) {
-      await tx.insert(storageDeletions).values(stale.map((a) => ({ bucket: a.visibility, storageKey: a.storageKey, createdAt: now })));
-    }
+      .returning({ id: assets.id, ownerId: assets.ownerId, visibility: assets.visibility, storageKey: assets.storageKey, bytes: assets.bytes });
+    // Their staging objects were queued when the upload URL was issued.
+    if (stale.length > 0) await tx.insert(storageDeletions).values(stale.map((a) => objectDeletion(a, now)));
     return stale.length;
   });
   const windows = await db
@@ -29,7 +29,7 @@ export async function runCleanup(db: Db, storage: ObjectStorage | null, now: Dat
     .returning({ key: rateLimits.key });
   const verifications = await db.delete(verification).where(lt(verification.expiresAt, now)).returning({ id: verification.id });
   const sessions = await db.delete(session).where(lt(session.expiresAt, now)).returning({ id: session.id });
-  const outbox = storage ? await processStorageDeletions(db, storage) : { deleted: 0, failed: 0 };
+  const outbox = storage ? await drainStorageDeletions(db, storage, now) : { deleted: 0, failed: 0 };
   return {
     pendingUploadsPurged,
     rateLimitWindowsDeleted: windows.length,

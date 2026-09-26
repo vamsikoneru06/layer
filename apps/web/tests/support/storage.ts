@@ -20,6 +20,11 @@ export function memoryStorage() {
     async readPrefix(bucket, key, length) {
       return objects.get(id(bucket, key))?.slice(0, length) ?? new Uint8Array();
     },
+    async copy(bucket, from, to) {
+      const bytes = objects.get(id(bucket, from));
+      if (!bytes) throw new Error("NoSuchKey");
+      objects.set(id(bucket, to), bytes.slice());
+    },
     async remove(bucket, key) {
       if (failRemove.has(key)) throw new Error("storage unavailable");
       objects.delete(id(bucket, key));

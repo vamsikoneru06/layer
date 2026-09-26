@@ -1,3 +1,4 @@
+import type { S3Client } from "@aws-sdk/client-s3";
 import { describe, expect, it } from "vitest";
 import { s3Storage } from "./s3";
 
@@ -31,6 +32,13 @@ describe("s3Storage", () => {
     const url = new URL(await s3Storage(config).presignDownload("private", "u/user-1/asset-1", 3600));
     expect(url.pathname).toBe("/storage/v1/s3/vash-private/u/user-1/asset-1");
     expect(url.searchParams.get("X-Amz-Expires")).toBe("3600");
+  });
+
+  it("copies within a bucket, URL-encoding the source", async () => {
+    const sent: { input: unknown }[] = [];
+    const client = { send: async (cmd: { input: unknown }) => void sent.push(cmd) } as unknown as S3Client;
+    await s3Storage(config, client).copy("private", "staging/user 1/a", "u/user 1/a");
+    expect(sent.map((c) => c.input)).toEqual([{ Bucket: "vash-private", Key: "u/user 1/a", CopySource: "vash-private/staging/user%201/a" }]);
   });
 
   it("builds public URLs under the public base, encoding each key segment", () => {

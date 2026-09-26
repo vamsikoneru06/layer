@@ -1,5 +1,5 @@
 import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
-import { assets } from "../db/schema";
+import { assets, storageDeletions } from "../db/schema";
 import type { Db } from "../db/types";
 import type { Cursor } from "../http/cursor";
 import { isUuid } from "../http/ids";
@@ -30,6 +30,19 @@ export async function findUnusableAssets(db: Db, ownerId: string, refs: { id: st
 export type AssetRow = typeof assets.$inferSelect;
 
 export const assetKey = (ownerId: string, assetId: string) => `u/${ownerId}/${assetId}`;
+/** Where the browser uploads. Only the server writes assetKey, by copying from here once the bytes are checked. */
+export const stagingKey = (ownerId: string, assetId: string) => `staging/${ownerId}/${assetId}`;
+
+/** Outbox row for an asset's object. Owner and size ride along so the bytes keep counting toward the quota until it's gone. */
+export const objectDeletion = (a: Pick<AssetRow, "id" | "ownerId" | "visibility" | "storageKey" | "bytes">, now: Date) => ({
+  bucket: a.visibility,
+  storageKey: a.storageKey,
+  ownerId: a.ownerId,
+  assetId: a.id,
+  bytes: a.bytes,
+  createdAt: now,
+  notBefore: now,
+});
 
 export async function insertPendingAsset(
   db: Db,
@@ -56,10 +69,18 @@ export async function markAssetReady(db: Db, ownerId: string, id: string, dims: 
   return row;
 }
 
-/** Bytes counted against the quota: pending uploads included, so a burst of requests can't overshoot it. */
+/**
+ * Bytes counted against the quota: every asset row (pending included, so a burst of requests can't
+ * overshoot it), plus queued deletions whose asset is gone but whose object may still exist: a
+ * staging object an unexpired upload URL can still write, or a removal storage refused.
+ */
 export async function storageUsedBytes(db: Db, ownerId: string): Promise<number> {
   const [row] = await db.select({ used: sql<string>`coalesce(sum(${assets.bytes}), 0)` }).from(assets).where(eq(assets.ownerId, ownerId));
-  return Number(row?.used ?? 0);
+  const [queued] = await db
+    .select({ used: sql<string>`coalesce(sum(${storageDeletions.bytes}), 0)` })
+    .from(storageDeletions)
+    .where(and(eq(storageDeletions.ownerId, ownerId), sql`not exists (select 1 from ${assets} where ${assets.id} = ${storageDeletions.assetId})`));
+  return Number(row?.used ?? 0) + Number(queued?.used ?? 0);
 }
 
 export function listReadyAssets(db: Db, ownerId: string, q: { kind?: AssetRow["kind"]; cursor?: Cursor; limit: number }): Promise<AssetRow[]> {

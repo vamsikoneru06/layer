@@ -7,6 +7,8 @@ export interface ObjectStorage {
   publicUrl(key: string): string;
   head(bucket: Bucket, key: string): Promise<{ contentLength: number } | null>;
   readPrefix(bucket: Bucket, key: string, length: number): Promise<Uint8Array>;
+  /** Server-side copy within one bucket, overwriting `to`. */
+  copy(bucket: Bucket, from: string, to: string): Promise<void>;
   /** Idempotent: removing a missing object succeeds. */
   remove(bucket: Bucket, key: string): Promise<void>;
 }

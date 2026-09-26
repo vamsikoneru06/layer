@@ -34,7 +34,10 @@ describe("GET /api/cron/cleanup", () => {
     const stale = await createAsset(t.db, { ownerId: owner.id, status: "pending", createdAt: hoursAgo(25) });
     const fresh = await createAsset(t.db, { ownerId: owner.id, status: "pending", createdAt: hoursAgo(1) });
     const oldReady = await createAsset(t.db, { ownerId: owner.id, createdAt: hoursAgo(500) });
+    // A complete that crashed between the copy and marking the asset ready leaves the final object behind.
     storage.put("private", stale.storageKey, new Uint8Array([1]));
+    storage.put("private", "staging/later", new Uint8Array([1]));
+    await t.db.insert(storageDeletions).values({ bucket: "private", storageKey: "staging/later", notBefore: new Date(NOW.getTime() + 3_600_000) });
     await t.db.insert(rateLimits).values([
       { key: "old", windowStart: hoursAgo(72), count: 1 },
       { key: "recent", windowStart: hoursAgo(1), count: 1 },
@@ -60,6 +63,7 @@ describe("GET /api/cron/cleanup", () => {
       storageFailed: 0,
     });
     expect(storage.has("private", stale.storageKey)).toBe(false);
+    expect(storage.has("private", "staging/later")).toBe(true);
     const left = (await t.db.select({ id: assets.id }).from(assets)).map((a) => a.id);
     expect(left).toEqual(expect.arrayContaining([fresh.id, oldReady.id]));
     expect(left).not.toContain(stale.id);
@@ -77,6 +81,6 @@ describe("GET /api/cron/cleanup", () => {
     const h = cronHandlers(testDeps(t.db, { now: () => NOW }), null, SECRET);
     const res = await call(h.cleanup, { headers: { authorization: `Bearer ${SECRET}` } });
     expect(res.body).toMatchObject({ pendingUploadsPurged: 1, storageDeleted: 0 });
-    expect(await t.db.select().from(storageDeletions).where(eq(storageDeletions.storageKey, stale.storageKey))).toHaveLength(1);
+    expect(await t.db.select().from(storageDeletions).where(eq(storageDeletions.storageKey, stale.storageKey))).toMatchObject([{ ownerId: owner.id, assetId: stale.id }]);
   });
 });

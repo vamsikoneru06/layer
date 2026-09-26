@@ -12,7 +12,7 @@ Keys go in `apps/web/.env.local` (git-ignored), never in code or chat.
 |---|---|---|---|
 | Google OAuth | "Continue with Google" on `/signin` | `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` | Free |
 | Gmail SMTP | Sends magic sign-in links | `GMAIL_USER` + `GMAIL_APP_PASSWORD` | ~500 emails/day |
-| Supabase Storage | Photo uploads (S3 API, presigned URLs) | `STORAGE_*` (S3 access keys) | 1 GB; no card. Buckets `vash-private` + `vash-public`; CORS must allow `PUT` and `GET` from your `APP_ORIGIN`. Cloudflare R2 is free up to 10 GB but asks for a card |
+| Supabase Storage | Photo uploads (S3 API, presigned URLs) | `STORAGE_*` (S3 access keys) | 1 GB; no card. Create `vash-private` as a **private** bucket and `vash-public` as a public one; on both set a 15 MB file-size limit and allow only `image/jpeg`, `image/png`, `image/webp`. `STORAGE_PUBLIC_BASE_URL` must point at the public bucket (`https://<project>.supabase.co/storage/v1/object/public/vash-public`). CORS must allow `PUT` and `GET` from your `APP_ORIGIN`. Cloudflare R2 is free up to 10 GB but asks for a card |
 
 Without either, sign-in still works in development: the link is printed in the server log.
 
