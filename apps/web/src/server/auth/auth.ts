@@ -13,6 +13,7 @@ import { clientIp, rateLimitSubject } from "../http/client-ip";
 import { HttpError, problem } from "../http/problem";
 import { betterAuthRateLimitStorage, consume } from "../rate-limit/limiter";
 import { RATE_LIMITS } from "../rate-limit/rules";
+import { authCookieOptions } from "./cookies";
 import { magicLinkEmail, type Mailer } from "./mailer";
 
 export interface AuthDeps {
@@ -78,8 +79,7 @@ export function createAuth({ db, config, mailer, now }: AuthDeps) {
       customStorage: betterAuthRateLimitStorage(db, now),
     },
     advanced: {
-      useSecureCookies: config.isProduction,
-      defaultCookieAttributes: { httpOnly: true, sameSite: "lax", secure: config.isProduction },
+      ...authCookieOptions(config),
       // Without a trusted proxy the forwarded header is attacker-controlled; our own hook below
       // still limits per client using a shared bucket.
       ipAddress: config.trustProxy ? { ipAddressHeaders: ["x-forwarded-for"] } : { disableIpTracking: true },

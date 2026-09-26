@@ -4,6 +4,9 @@ import { testDeps, tickingClock } from "../../../tests/support/deps";
 import { docWithPhoto, emptyDoc } from "../../../tests/support/docs";
 import { createAsset, createFolder, createUser } from "../../../tests/support/factories";
 import { call } from "../../../tests/support/invoke";
+import { designs } from "../db/schema";
+import { QUOTAS } from "../quotas";
+import { RATE_LIMITS } from "../rate-limit/rules";
 import { designHandlers } from "./handlers";
 
 let t: TestDb;
@@ -192,5 +195,32 @@ describe("metadata, delete, duplicate", () => {
     expect((await call(h.remove, { method: "DELETE", as: bob, params: { id: d.id } })).status).toBe(404);
     expect((await call(h.remove, { method: "DELETE", as: alice, params: { id: d.id } })).status).toBe(204);
     expect((await call(h.get, { as: alice, params: { id: d.id } })).status).toBe(404);
+  });
+});
+
+describe("quota and create rate limit", () => {
+  it("caps each user at QUOTAS.designs, counting duplicates, with 422", async () => {
+    const dave = await createUser(t.db);
+    const erin = await createUser(t.db);
+    await t.db.insert(designs).values(Array.from({ length: QUOTAS.designs - 1 }, () => ({ ownerId: dave.id, title: "x", doc: emptyDoc() })));
+    const last = await newDesign(dave);
+    const over = await call(h.create, { method: "POST", as: dave, body: { doc: emptyDoc() } });
+    expect(over.status).toBe(422);
+    expect(over.body.limit).toBe(QUOTAS.designs);
+    expect((await call(h.duplicate, { method: "POST", as: dave, params: { id: last.id } })).status).toBe(422);
+    await newDesign(erin);
+  });
+
+  it("rate-limits create and duplicate together per user", async () => {
+    const frank = await createUser(t.db);
+    const fixed = new Date("2026-09-25T10:00:30.000Z");
+    const limited = designHandlers(testDeps(t.db, { now: () => fixed }));
+    const d = (await call(limited.create, { method: "POST", as: frank, body: { doc: emptyDoc() } })).body as { id: string };
+    for (let i = 1; i < RATE_LIMITS.designCreate.max; i++) {
+      expect((await call(limited.duplicate, { method: "POST", as: frank, params: { id: d.id } })).status).toBe(201);
+    }
+    const res = await call(limited.create, { method: "POST", as: frank, body: { doc: emptyDoc() } });
+    expect(res.status).toBe(429);
+    expect(res.headers.get("retry-after")).toMatch(/^\d+$/);
   });
 });

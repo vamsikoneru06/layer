@@ -15,7 +15,7 @@ import { meHandlers } from "./me/handlers";
 function build() {
   const config = loadConfig(process.env);
   const logger = createLogger();
-  const { db } = createDb(config.databaseUrl);
+  const { db } = createDb(config.databaseUrl, (err) => logger.error("db.idle_client_error", { err }));
   const now = () => new Date();
   const mailer = config.mail.kind === "resend" ? resendMailer(config.mail) : consoleMailer(logger);
   const auth = createAuth({ db, config, mailer, now });

@@ -6,6 +6,7 @@ import { testDeps, tickingClock } from "../../../tests/support/deps";
 import { createFolder, createUser } from "../../../tests/support/factories";
 import { call } from "../../../tests/support/invoke";
 import { designs, folders } from "../db/schema";
+import { QUOTAS } from "../quotas";
 import { folderHandlers } from "./handlers";
 
 let t: TestDb;
@@ -78,5 +79,16 @@ describe("folders", () => {
     const alice = await createUser(t.db);
     expect((await call(h.list)).status).toBe(401);
     expect((await call(h.create, { method: "POST", as: alice, origin: null, body: { name: "x" } })).status).toBe(403);
+  });
+});
+
+describe("folder quota", () => {
+  it("caps each user at QUOTAS.folders with 422", async () => {
+    const alice = await createUser(t.db);
+    await t.db.insert(folders).values(Array.from({ length: QUOTAS.folders - 1 }, (_, i) => ({ ownerId: alice.id, name: `F${i}` })));
+    expect((await call(h.create, { method: "POST", as: alice, body: { name: "Last" } })).status).toBe(201);
+    const over = await call(h.create, { method: "POST", as: alice, body: { name: "One too many" } });
+    expect(over.status).toBe(422);
+    expect(over.body.limit).toBe(QUOTAS.folders);
   });
 });

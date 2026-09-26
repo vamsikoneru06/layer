@@ -6,6 +6,7 @@ import { decodeCursor, pageQuery, toPage } from "../http/cursor";
 import { endpoint } from "../http/endpoint";
 import { parseId } from "../http/ids";
 import { notFound } from "../http/problem";
+import { insertWithinQuota } from "../quotas";
 import { createFolder, deleteFolder, listFolders, renameFolder, type FolderRow } from "./repository";
 
 const FolderBody = z.object({ name: z.string().trim().min(1).max(LIMITS.nameChars) }).strict();
@@ -22,7 +23,8 @@ export function folderHandlers(deps: Deps) {
 
     create: endpoint(deps, { auth: "user" }, async ({ req, user }) => {
       const body = await readJson(req, FolderBody);
-      return Response.json(toJson(await createFolder(deps.db, user.id, body.name, deps.now())), { status: 201 });
+      const row = await insertWithinQuota(deps.db, user.id, "folders", (tx) => createFolder(tx, user.id, body.name, deps.now()));
+      return Response.json(toJson(row), { status: 201 });
     }),
 
     rename: endpoint(deps, { auth: "user" }, async ({ req, user, params }) => {

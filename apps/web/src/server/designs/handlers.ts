@@ -21,6 +21,7 @@ const PatchBody = z
   .strict()
   .refine((b) => b.title !== undefined || b.folderId !== undefined, "Provide title or folderId.");
 const ListQuery = pageQuery.extend({ folderId: z.uuid().optional() });
+const createLimit = { name: "designCreate", rule: RATE_LIMITS.designCreate, by: "user" } as const;
 
 const summary = (d: repo.DesignSummary) => ({
   id: d.id,
@@ -42,7 +43,7 @@ export function designHandlers(deps: Deps) {
       return Response.json(toPage(rows, q.limit, (r) => ({ at: r.updatedAt.toISOString(), id: r.id }), summary));
     }),
 
-    create: endpoint(deps, { auth: "user" }, async ({ req, user }) => {
+    create: endpoint(deps, { auth: "user", rateLimit: createLimit }, async ({ req, user }) => {
       const body = await readJson(req, CreateBody, DOC_BODY_LIMIT);
       return Response.json(full(await service.createDesign(ctx, user.id, body)), { status: 201 });
     }),
@@ -70,7 +71,7 @@ export function designHandlers(deps: Deps) {
       return new Response(null, { status: 204 });
     }),
 
-    duplicate: endpoint(deps, { auth: "user" }, async ({ user, params }) => {
+    duplicate: endpoint(deps, { auth: "user", rateLimit: createLimit }, async ({ user, params }) => {
       return Response.json(full(await service.duplicateDesign(ctx, user.id, parseId(params.id))), { status: 201 });
     }),
   };

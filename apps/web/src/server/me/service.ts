@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { assets, auditLog, designs, folders, storageDeletions, templates, user } from "../db/schema";
 import { isUniqueViolation } from "../db/errors";
 import type { Db } from "../db/types";
@@ -78,15 +78,17 @@ export async function deleteAccount(db: Db, userId: string, now: Date): Promise<
   });
 }
 
-export async function exportAccount(db: Db, userId: string, now: Date) {
+export const EXPORT_PAGE_SIZE = 20;
+
+/**
+ * The export as JSON text chunks. Designs (up to LIMITS.docBytes each) are read and emitted a page at
+ * a time, so memory stays at one page whatever the account size. The first chunk runs every other
+ * query, so errors like a missing user surface before the caller commits to a response.
+ */
+export async function* exportAccount(db: Db, userId: string, now: Date): AsyncGenerator<string> {
   const profile = await getProfile(db, userId);
-  const [folderRows, designRows, assetRows, templateRows] = await Promise.all([
+  const [folderRows, assetRows, templateRows] = await Promise.all([
     db.select({ id: folders.id, name: folders.name, createdAt: folders.createdAt }).from(folders).where(eq(folders.ownerId, userId)).orderBy(asc(folders.createdAt)),
-    db
-      .select({ id: designs.id, title: designs.title, folderId: designs.folderId, doc: designs.doc, version: designs.version, createdAt: designs.createdAt, updatedAt: designs.updatedAt })
-      .from(designs)
-      .where(eq(designs.ownerId, userId))
-      .orderBy(asc(designs.createdAt)),
     db
       .select({ id: assets.id, kind: assets.kind, visibility: assets.visibility, mime: assets.mime, bytes: assets.bytes, width: assets.width, height: assets.height, createdAt: assets.createdAt })
       .from(assets)
@@ -96,5 +98,29 @@ export async function exportAccount(db: Db, userId: string, now: Date) {
       .from(templates)
       .where(eq(templates.authorId, userId)),
   ]);
-  return { exportedAt: now.toISOString(), profile: toProfile(profile), folders: folderRows, designs: designRows, assets: assetRows, templates: templateRows };
+  const head = { exportedAt: now.toISOString(), profile: toProfile(profile), folders: folderRows, assets: assetRows, templates: templateRows };
+  yield `${JSON.stringify(head).slice(0, -1)},"designs":[`;
+
+  let after: { createdAt: Date; id: string } | undefined;
+  let first = true;
+  for (;;) {
+    const page = await db
+      .select({ id: designs.id, title: designs.title, folderId: designs.folderId, doc: designs.doc, version: designs.version, createdAt: designs.createdAt, updatedAt: designs.updatedAt })
+      .from(designs)
+      .where(
+        and(
+          eq(designs.ownerId, userId),
+          after ? sql`(${designs.createdAt}, ${designs.id}) > (${after.createdAt.toISOString()}::timestamptz, ${after.id}::uuid)` : undefined,
+        ),
+      )
+      .orderBy(asc(designs.createdAt), asc(designs.id))
+      .limit(EXPORT_PAGE_SIZE);
+    for (const row of page) {
+      yield (first ? "" : ",") + JSON.stringify(row);
+      first = false;
+    }
+    if (page.length < EXPORT_PAGE_SIZE) break;
+    after = page.at(-1);
+  }
+  yield "]}";
 }
