@@ -4,6 +4,7 @@ import { expiredSessionCookies } from "../auth/cookies";
 import type { Deps } from "../deps";
 import { readJson } from "../http/body";
 import { endpoint } from "../http/endpoint";
+import { unprocessable } from "../http/problem";
 import { RATE_LIMITS } from "../rate-limit/rules";
 import { deleteAccount, exportAccount, getProfile, toProfile, updateProfile } from "./service";
 
@@ -11,6 +12,8 @@ const RESERVED_HANDLES = new Set([
   "admin", "administrator", "api", "app", "auth", "author", "designs", "edit", "help", "home", "layer", "vash", "media", "me",
   "moderation", "onboarding", "publish", "root", "s", "settings", "signin", "signup", "support", "system", "templates", "u",
 ]);
+
+const writeLimit = { name: "userWrite", rule: RATE_LIMITS.userWrite, by: "user" } as const;
 
 const PatchMe = z
   .object({
@@ -27,16 +30,23 @@ const PatchMe = z
   })
   .strict();
 
+/** Deleting an account can't be undone, so the request must name the account it deletes. */
+const DeleteMe = z.object({ confirm: z.string().trim().max(320) }).strict();
+
 export function meHandlers(deps: Deps) {
   return {
     get: endpoint(deps, { auth: "user" }, async ({ user }) => Response.json(toProfile(await getProfile(deps.db, user.id)))),
 
-    patch: endpoint(deps, { auth: "user" }, async ({ req, user }) => {
+    patch: endpoint(deps, { auth: "user", rateLimit: writeLimit }, async ({ req, user }) => {
       const patch = await readJson(req, PatchMe);
       return Response.json(toProfile(await updateProfile(deps.db, user.id, patch, deps.now())));
     }),
 
-    remove: endpoint(deps, { auth: "user" }, async ({ user }) => {
+    remove: endpoint(deps, { auth: "user", rateLimit: writeLimit }, async ({ req, user }) => {
+      const { confirm } = await readJson(req, DeleteMe, 1024);
+      if (confirm.toLowerCase() !== user.email.toLowerCase()) {
+        throw unprocessable("Type your account email to confirm deleting your account.");
+      }
       await deleteAccount(deps.db, user.id, deps.now());
       const headers = new Headers();
       for (const cookie of expiredSessionCookies(deps.config)) headers.append("set-cookie", cookie);

@@ -101,7 +101,7 @@ describe("DELETE /api/me", () => {
     const publicAsset = await createAsset(t.db, { ownerId: alice.id, visibility: "public" });
     const bobsFolder = await createFolder(t.db, bob.id);
 
-    const res = await call(h.remove, { method: "DELETE", as: alice });
+    const res = await call(h.remove, { method: "DELETE", as: alice, body: { confirm: alice.email.toUpperCase() } });
     expect(res.status).toBe(204);
     expect(res.headers.getSetCookie()).toEqual(
       expect.arrayContaining([expect.stringMatching(/^better-auth\.session_token=; Max-Age=0; Path=\/; HttpOnly; SameSite=Lax$/)]),
@@ -119,6 +119,15 @@ describe("DELETE /api/me", () => {
     const [entry] = await t.db.select().from(auditLog).where(eq(auditLog.targetId, alice.id));
     expect(entry).toMatchObject({ actorId: alice.id, action: "account.delete", targetType: "user", meta: { assets: 2 } });
     expect(await t.db.select().from(folders).where(eq(folders.id, bobsFolder.id))).toHaveLength(1);
+  });
+
+  it("requires the account email as confirmation, and nothing else in the body", async () => {
+    const alice = await createUser(t.db);
+    for (const body of [undefined, {}, { confirm: "someone-else@example.test" }, { confirm: alice.email, extra: true }]) {
+      const res = await call(h.remove, { method: "DELETE", as: alice, ...(body === undefined ? {} : { body }) });
+      expect([400, 415, 422], JSON.stringify(body)).toContain(res.status);
+    }
+    expect(await t.db.select().from(user).where(eq(user.id, alice.id))).toHaveLength(1);
   });
 
   it("requires a same-origin request", async () => {
