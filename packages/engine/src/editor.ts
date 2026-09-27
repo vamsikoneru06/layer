@@ -1,5 +1,6 @@
 import type { Doc } from "@vash/schema";
 import { EditorCore, type EditorState } from "./editor-core";
+import { exportPng } from "./export";
 import { fontRequests } from "./fonts";
 import { createInteraction, type PointerInput } from "./interaction";
 import { renderOverlay } from "./overlay";
@@ -29,6 +30,8 @@ export interface Editor {
   zoomTo(zoom: number): void;
   /** Redraw on the next frame (e.g. after fonts or images load). */
   invalidate(): void;
+  /** The current document as a PNG at 1×/2×/3×. */
+  exportPng(o: { scale: number; transparent: boolean }): Promise<Blob>;
   destroy(): void;
 }
 
@@ -169,6 +172,7 @@ export function createEditor(o: EditorOptions): Editor {
     fit,
     zoomTo: (zoom) => core.setChrome({ viewport: zoomAt(core.getState().viewport, { x: size.width / 2, y: size.height / 2 }, zoom) }),
     invalidate,
+    exportPng: (e) => exportPng(core.doc, { ...e, measure, image }),
     destroy() {
       unsubscribe();
       observer.disconnect();

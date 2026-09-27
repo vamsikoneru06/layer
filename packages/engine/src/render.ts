@@ -204,20 +204,22 @@ function effectiveOpacity(doc: Doc, id: string): number {
  * Paints the artboard and its layers. `base` maps artboard units to device pixels
  * (viewport × dpr on screen; a plain scale for export).
  */
-export function renderDoc(ctx: Ctx, doc: Doc, base: Mat, o: RenderOptions, opts: { shadow?: boolean } = {}): void {
+export function renderDoc(ctx: Ctx, doc: Doc, base: Mat, o: RenderOptions, opts: { shadow?: boolean; background?: boolean } = {}): void {
   const { width, height, background } = doc.artboard;
   ctx.setTransform(...base);
-  ctx.save();
-  if (opts.shadow) {
-    ctx.shadowColor = "rgba(0,0,0,0.14)";
-    ctx.shadowBlur = 24 * o.dpr;
-    ctx.shadowOffsetY = 6 * o.dpr;
+  if (opts.background !== false) {
+    ctx.save();
+    if (opts.shadow) {
+      ctx.shadowColor = "rgba(0,0,0,0.14)";
+      ctx.shadowBlur = 24 * o.dpr;
+      ctx.shadowOffsetY = 6 * o.dpr;
+    }
+    ctx.fillStyle = paint(ctx, background, width, height);
+    // Gradients are built around the origin; draw the background centred, then move back.
+    ctx.translate(width / 2, height / 2);
+    ctx.fillRect(-width / 2, -height / 2, width, height);
+    ctx.restore();
   }
-  ctx.fillStyle = paint(ctx, background, width, height);
-  // Gradients are built around the origin; draw the background centred, then move back.
-  ctx.translate(width / 2, height / 2);
-  ctx.fillRect(-width / 2, -height / 2, width, height);
-  ctx.restore();
 
   ctx.save();
   ctx.beginPath();

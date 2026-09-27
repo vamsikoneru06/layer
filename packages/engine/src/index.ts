@@ -9,6 +9,7 @@ export { hitTest, nodesInBox, worldBounds } from "./hit-test";
 export { drawOrder, parentOf, topLevelOf, worldMatrix } from "./scene";
 export { layoutText, type Measure, type TextLayout } from "./text";
 export { fontRequests } from "./fonts";
+export { checkExport, exportPng, EXPORT_MAX_SIDE, type ExportCheck, type ExportOptions } from "./export";
 export { drawNode, renderDoc, renderScene, fontString, type ImageState, type LoadedImage, type RenderOptions } from "./render";
 export { renderOverlay, GUIDE_COLOR, type OverlayState } from "./overlay";
 export { selectionFrame, handlePositions, handleAt, type Handle, type SelectionFrame } from "./handles";

@@ -13,6 +13,7 @@ import { Menu } from "@/components/ui/menu";
 import { getDesign, saveDesign, saveDesignAsCopy, type Design } from "@/lib/api";
 import { createAutosaver, type Autosaver, type SaveStatus } from "@/lib/autosave";
 import { cn } from "@/lib/utils";
+import { ExportPopover } from "./export-popover";
 import { LayersPanel } from "./layers-panel";
 // Self-hosted allowlisted fonts, loaded only on the editor route.
 import "./fonts.css";
@@ -152,6 +153,7 @@ export function Workspace({ design }: { design: Design }) {
             </button>
           )}
         />
+        <ExportPopover editor={editor} doc={state?.doc ?? design.doc} />
       </header>
 
       <div className="flex min-h-0 flex-1">
