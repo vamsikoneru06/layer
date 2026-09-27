@@ -1,5 +1,6 @@
 import type { Doc } from "@vash/schema";
 import { EditorCore, type EditorState } from "./editor-core";
+import { fontRequests } from "./fonts";
 import { createInteraction, type PointerInput } from "./interaction";
 import { renderOverlay } from "./overlay";
 import type { EditMode } from "./policy";
@@ -70,6 +71,16 @@ export function createEditor(o: EditorOptions): Editor {
   };
 
   const fit = () => core.setChrome({ viewport: fitViewport(size, core.doc.artboard) });
+
+  // Ask for every font the document uses once; when one arrives, text is measured again.
+  const requested = new Set<string>();
+  const loadFonts = () => {
+    for (const font of fontRequests(core.doc)) {
+      if (requested.has(font) || !document.fonts) continue;
+      requested.add(font);
+      document.fonts.load(font).then(onFonts, () => {});
+    }
+  };
 
   const resize = () => {
     const r = o.container.getBoundingClientRect();
@@ -145,7 +156,11 @@ export function createEditor(o: EditorOptions): Editor {
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", onKeyUp);
   document.fonts?.addEventListener("loadingdone", onFonts);
-  const unsubscribe = core.subscribe(invalidate);
+  const unsubscribe = core.subscribe(() => {
+    loadFonts();
+    invalidate();
+  });
+  loadFonts();
 
   return {
     core,

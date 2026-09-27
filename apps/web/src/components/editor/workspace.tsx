@@ -14,6 +14,8 @@ import { getDesign, saveDesign, saveDesignAsCopy, type Design } from "@/lib/api"
 import { createAutosaver, type Autosaver, type SaveStatus } from "@/lib/autosave";
 import { cn } from "@/lib/utils";
 import { LayersPanel } from "./layers-panel";
+// Self-hosted allowlisted fonts, loaded only on the editor route.
+import "./fonts.css";
 
 const NO_EDITOR = { subscribe: () => () => {}, get: () => null };
 
