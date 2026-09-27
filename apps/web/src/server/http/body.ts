@@ -25,7 +25,27 @@ export function readQuery<S extends z.ZodType>(req: Request, schema: S): z.outpu
   return parseWith(schema, Object.fromEntries(new URL(req.url).searchParams), "query");
 }
 
+/** Postgres can't store NUL in text or jsonb; rejecting it here keeps it from surfacing as a 500. */
+function containsNul(data: unknown): boolean {
+  const pending: unknown[] = [data];
+  while (pending.length > 0) {
+    const value = pending.pop();
+    if (typeof value === "string") {
+      if (value.includes("\0")) return true;
+    } else if (Array.isArray(value)) {
+      pending.push(...value);
+    } else if (value !== null && typeof value === "object") {
+      for (const [key, v] of Object.entries(value)) {
+        if (key.includes("\0")) return true;
+        pending.push(v);
+      }
+    }
+  }
+  return false;
+}
+
 function parseWith<S extends z.ZodType>(schema: S, data: unknown, where: "body" | "query"): z.output<S> {
+  if (containsNul(data)) throw badRequest(`The request ${where} contains a NUL character.`);
   const result = schema.safeParse(data);
   if (!result.success) {
     throw badRequest(`The request ${where} is invalid.`, {

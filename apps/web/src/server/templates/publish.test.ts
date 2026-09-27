@@ -158,6 +158,26 @@ describe("POST /api/templates", () => {
 });
 
 describe("POST /api/templates/:id/versions", () => {
+  it("reuses the copies of photos it already published, so a republish doesn't charge the quota again", async () => {
+    const alice = await author();
+    const photo = await stored(alice.id);
+    const thumb = await stored(alice.id, "thumbnail");
+    const draft = await createDesign(t.db, alice.id, templateDoc({ photoAssetId: photo.id }));
+    const body = { designId: draft.id, thumbnailAssetId: thumb.id, keep: [photo.id], ownsKeptPhotos: true };
+    const first = await publish(alice, body);
+    const id = first.body.template.id;
+    const used = await storageUsedBytes(t.db, alice.id);
+    const publicObjects = [...storage.objects.keys()].filter((k) => k.startsWith("public:")).length;
+
+    const next = await call(h.publishVersion, { method: "POST", as: alice, params: { id }, body: { ...body, title: "Party, fixed typo", category: "birthday" } });
+    expect(next.status).toBe(201);
+    expect(await storageUsedBytes(t.db, alice.id)).toBe(used);
+    expect([...storage.objects.keys()].filter((k) => k.startsWith("public:")).length).toBe(publicObjects);
+    const [v1, v2] = [await versionOf(id, 1), await versionOf(id, 2)];
+    expect(Object.keys(v2.doc.assets)).toEqual(Object.keys(v1.doc.assets));
+    expect(v2.thumbnailAssetId).toBe(v1.thumbnailAssetId);
+  });
+
   it("publishes a new version for the author only, leaving earlier versions and designs alone", async () => {
     const alice = await author();
     const bob = await author();

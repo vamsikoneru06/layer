@@ -1,5 +1,5 @@
 {
-  "id": "da79c6d8-d1ee-49da-859b-a0f8c0ad2551",
+  "id": "05e82fe4-bbd9-4482-ba15-b61868724afe",
   "prevId": "85bd3f67-2441-4218-840a-93276d10baf0",
   "version": "7",
   "dialect": "postgresql",
@@ -196,6 +196,12 @@
         },
         "template_id": {
           "name": "template_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_asset_id": {
+          "name": "source_asset_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": false

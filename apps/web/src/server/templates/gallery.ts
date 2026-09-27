@@ -7,12 +7,15 @@ import { toTemplateJson } from "./view";
 
 export type GallerySort = "popular" | "new" | "featured";
 
+/** uses_count is an int4; a larger cursor value would make Postgres fail the comparison. */
+const INT4_MAX = 2_147_483_647;
+
 export const encodeRankCursor = (c: RankCursor) => Buffer.from(JSON.stringify([c.uses, c.id])).toString("base64url");
 
 export function decodeRankCursor(value: string): RankCursor {
   try {
     const parsed: unknown = JSON.parse(Buffer.from(value, "base64url").toString("utf8"));
-    if (Array.isArray(parsed) && parsed.length === 2 && Number.isSafeInteger(parsed[0]) && parsed[0] >= 0 && typeof parsed[1] === "string" && isUuid(parsed[1])) {
+    if (Array.isArray(parsed) && parsed.length === 2 && Number.isInteger(parsed[0]) && parsed[0] >= 0 && parsed[0] <= INT4_MAX && typeof parsed[1] === "string" && isUuid(parsed[1])) {
       return { uses: parsed[0], id: parsed[1] };
     }
   } catch {

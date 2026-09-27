@@ -107,6 +107,8 @@ export const assets = pgTable(
     height: integer("height"),
     /** Set on the system-owned public copies a published template uses; they go when it goes. */
     templateId: uuid("template_id").references((): AnyPgColumn => templates.id, { onDelete: "cascade" }),
+    /** The original a published copy was made from, so a republish can reuse the copy. No FK: the original may be deleted. */
+    sourceAssetId: uuid("source_asset_id"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

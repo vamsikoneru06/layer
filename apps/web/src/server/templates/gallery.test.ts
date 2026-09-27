@@ -66,7 +66,19 @@ describe("GET /api/templates", () => {
     expect((await list(`?q=${encodeURIComponent(q)}`)).status).toBe(200);
   });
 
-  it.each(["?q=" + "x".repeat(101), "?category=weddings", "?format=a4", "?sort=random", "?cursor=abc", "?limit=51"])("rejects %s with 400", async (query) => {
+  const cursorOf = (value: unknown[]) => Buffer.from(JSON.stringify(value)).toString("base64url");
+  it.each([
+    "?q=" + "x".repeat(101),
+    "?q=a%00b",
+    "?category=weddings",
+    "?format=a4",
+    "?sort=random",
+    "?cursor=abc",
+    "?limit=51",
+    `?sort=popular&cursor=${cursorOf([2_147_483_648, randomUUID()])}`,
+    `?sort=new&cursor=${cursorOf(["0000-01-01T00:00:00.000Z", randomUUID()])}`,
+    `?sort=new&cursor=${cursorOf(["+275760-09-13T00:00:00.000Z", randomUUID()])}`,
+  ])("rejects %s with 400", async (query) => {
     expect((await list(query)).status).toBe(400);
   });
 
