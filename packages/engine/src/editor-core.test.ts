@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { EditorCore } from "./editor-core";
-import { docWith, rect } from "./test-docs";
+import { docWith, rect, text } from "./test-docs";
 
 const core = (mode: "design" | "template" = "design") =>
   new EditorCore(docWith([rect("a", { x: 100 }), { ...rect("locked", { x: 500 }), lock: "locked" }, { ...rect("co", { x: 800 }), lock: "content-only" }]), { mode });
@@ -68,5 +68,57 @@ describe("EditorCore", () => {
     const c = core();
     c.select(["a", "ghost", "a"]);
     expect(c.getState().selection).toEqual(["a"]);
+  });
+});
+
+describe("EditorCore text editing", () => {
+  const textCore = () =>
+    new EditorCore(
+      docWith([
+        text("t", { x: 200 }, "Hello"),
+        { ...text("co", { x: 400 }, "Name"), lock: "content-only", maxChars: 8 },
+        { ...text("locked", { x: 600 }, "Fixed"), lock: "locked" },
+        rect("r", {}),
+      ]),
+    );
+
+  it("commits a whole typing session as one undo step", () => {
+    const c = textCore();
+    expect(c.startTextEdit("t")).toBe(true);
+    expect(c.getState()).toMatchObject({ editing: "t", selection: ["t"] });
+    c.editText("Hello,");
+    c.editText("Hello, world");
+    expect(c.getState().doc.nodes.t).toMatchObject({ content: "Hello, world" });
+    c.endTextEdit(true);
+    expect(c.getState().editing).toBeNull();
+    c.undo();
+    expect(c.getState().doc.nodes.t).toMatchObject({ content: "Hello" });
+  });
+
+  it("restores the text on cancel and records nothing", () => {
+    const c = textCore();
+    c.startTextEdit("t");
+    c.editText("Nope");
+    c.endTextEdit(false);
+    expect(c.getState().doc.nodes.t).toMatchObject({ content: "Hello" });
+    expect(c.getState().canUndo).toBe(false);
+  });
+
+  it("edits content-only layers, cut to maxChars, but refuses locked layers and non-text", () => {
+    const c = textCore();
+    expect(c.startTextEdit("co")).toBe(true);
+    c.editText("A much longer name");
+    c.endTextEdit(true);
+    expect(c.getState().doc.nodes.co).toMatchObject({ content: "A much l" });
+
+    expect(c.startTextEdit("locked")).toBe(false);
+    expect(c.getState().notice).toMatch(/locked/i);
+    expect(c.startTextEdit("r")).toBe(false);
+    expect(c.getState().editing).toBeNull();
+  });
+
+  it("allows locked text in Author Mode", () => {
+    const c = new EditorCore(docWith([{ ...text("locked", {}, "Fixed"), lock: "locked" }]), { mode: "template" });
+    expect(c.startTextEdit("locked")).toBe(true);
   });
 });

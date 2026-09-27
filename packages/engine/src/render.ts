@@ -20,6 +20,8 @@ export interface RenderOptions {
   image: (assetId: string) => ImageState;
   /** Device pixels per CSS pixel. */
   dpr: number;
+  /** A layer not to paint (the text being typed into, which the editor draws itself). */
+  hidden?: string | null;
 }
 
 const PLACEHOLDER_FILL = "#ECECEE";
@@ -227,7 +229,7 @@ export function renderDoc(ctx: Ctx, doc: Doc, base: Mat, o: RenderOptions, opts:
   ctx.clip();
   for (const id of drawOrder(doc)) {
     const node = doc.nodes[id];
-    if (!node) continue;
+    if (!node || id === o.hidden) continue;
     ctx.setTransform(...multiply(base, worldMatrix(doc, id)));
     ctx.globalAlpha = effectiveOpacity(doc, id);
     drawNode(ctx, node, o);
