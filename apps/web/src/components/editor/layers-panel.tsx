@@ -36,7 +36,7 @@ export function LayersPanel({ state, core }: { state: EditorState; core: EditorC
             <span className={cn("truncate", selected && "font-medium")}>{n.name || n.type}</span>
           </button>
           {n.lock !== "free" && (
-            <span title={n.lock === "locked" ? "Locked by the template" : "Layout locked — text and photo can change"} className="flex size-7 items-center justify-center text-muted">
+            <span title={n.lock === "locked" ? "Locked by the template" : "Layout locked. Text and photo can still change."} className="flex size-7 items-center justify-center text-muted">
               <Lock aria-label={n.lock === "locked" ? "Locked" : "Layout locked"} className={cn("size-3.5", n.lock === "content-only" && "opacity-60")} />
             </span>
           )}

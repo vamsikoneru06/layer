@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import { ImageStreamHero } from "@/components/ui/image-stream-hero";
 import { linkErrorMessage } from "./messages";
@@ -19,7 +20,14 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
         <div className="mx-auto flex w-full max-w-[380px] flex-1 flex-col justify-center py-12">
           <SignInForm googleEnabled={googleEnabled} initialError={linkErrorMessage(typeof error === "string" ? error : undefined)} />
         </div>
-        <p className="text-xs text-muted">Terms · Privacy</p>
+        <p className="flex gap-3 text-xs text-muted">
+          <Link href="/terms" className="hover:text-text">
+            Terms
+          </Link>
+          <Link href="/privacy" className="hover:text-text">
+            Privacy
+          </Link>
+        </p>
       </section>
       <div className="relative hidden py-3 pr-3 lg:block">
         <ImageStreamHero images={STREAM} className="size-full rounded-[28px] bg-bg2" />

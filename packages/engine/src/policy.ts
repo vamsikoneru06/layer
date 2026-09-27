@@ -30,7 +30,7 @@ export function checkPolicy(doc: Doc, cmd: Command, mode: EditMode): PolicyResul
       const keys = Object.keys(cmd.patch);
       if (lock === "free" || (keys.length === 1 && keys[0] === "lock")) return OK;
       if (lock === "locked") return { ok: false, reason: "This layer is locked by the template." };
-      return keys.some((k) => LAYOUT_KEYS.has(k)) ? { ok: false, reason: "Layout locked by template — you can still change the text or photo." } : OK;
+      return keys.some((k) => LAYOUT_KEYS.has(k)) ? { ok: false, reason: "Layout locked by the template. You can still change the text or photo." } : OK;
     }
     case "delete":
     case "reorder": {

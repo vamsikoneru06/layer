@@ -79,7 +79,7 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><title>VASH Seed 
 main{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:28px;align-items:start}
 figure{margin:0}svg{width:100%;height:auto;display:block;box-shadow:0 6px 24px rgba(0,0,0,.12);border-radius:4px}
 figcaption{display:flex;justify-content:space-between;gap:8px;font-size:13px;margin-top:8px}figcaption span{color:#777}</style></head>
-<body><h1>VASH — seed templates (preview)</h1><p>Approximate render. Hatched areas are empty photo frames users fill with their own pictures.</p><main>${seedTemplates().map(render).join("")}</main></body></html>`;
+<body><h1>VASH seed templates (preview)</h1><p>Approximate render. Hatched areas are empty photo frames users fill with their own pictures.</p><main>${seedTemplates().map(render).join("")}</main></body></html>`;
 
 writeFileSync(new URL("./preview.html", import.meta.url), html);
 console.log("wrote templates/preview.html");

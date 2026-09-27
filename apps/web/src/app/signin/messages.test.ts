@@ -12,12 +12,12 @@ describe("isEmail", () => {
 
 describe("requestErrorMessage", () => {
   it("names the wait when the server says how long", () => {
-    expect(requestErrorMessage(429, 720)).toBe("Too many requests — try again in 12 minutes.");
-    expect(requestErrorMessage(429, 30)).toBe("Too many requests — try again in 1 minute.");
+    expect(requestErrorMessage(429, 720)).toBe("Too many requests. Try again in 12 minutes.");
+    expect(requestErrorMessage(429, 30)).toBe("Too many requests. Try again in 1 minute.");
   });
   it("falls back to a vague wait without a usable Retry-After", () => {
-    expect(requestErrorMessage(429, null)).toBe("Too many requests — try again in a few minutes.");
-    expect(requestErrorMessage(429, Number.NaN)).toBe("Too many requests — try again in a few minutes.");
+    expect(requestErrorMessage(429, null)).toBe("Too many requests. Try again in a few minutes.");
+    expect(requestErrorMessage(429, Number.NaN)).toBe("Too many requests. Try again in a few minutes.");
   });
   it("treats 400 as a bad address and anything else as a retryable failure", () => {
     expect(requestErrorMessage(400, null)).toBe("Enter an email like name@example.com");
