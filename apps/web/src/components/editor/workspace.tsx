@@ -40,7 +40,7 @@ const STATUS: Record<SaveStatus, { icon: ReactNode; label: string }> = {
   saved: { icon: <CloudCheck aria-hidden />, label: "Saved" },
   unsaved: { icon: <CloudUpload aria-hidden />, label: "Unsaved changes" },
   saving: { icon: <CloudUpload aria-hidden />, label: "Saving…" },
-  offline: { icon: <CloudOff aria-hidden />, label: "Offline — retrying" },
+  offline: { icon: <CloudOff aria-hidden />, label: "Offline, retrying" },
   error: { icon: <CloudAlert aria-hidden />, label: "Couldn’t save" },
   conflict: { icon: <CloudAlert aria-hidden />, label: "Changed elsewhere" },
 };
@@ -158,7 +158,7 @@ export function Workspace({ design }: { design: Design }) {
             <canvas ref={scene} className="absolute inset-0" aria-hidden />
             <canvas ref={overlay} className="absolute inset-0 touch-none" aria-label="Design canvas. Use the Layers panel to select layers with the keyboard." />
             {notice && (
-              <div role="status" className="glass-primary pointer-events-none absolute top-4 left-1/2 max-w-[80%] -translate-x-1/2 rounded-full px-4 py-2 text-[13px] text-white">
+              <div role="status" className="glass-primary pointer-events-none absolute top-4 left-1/2 max-w-[80%] -translate-x-1/2 rounded-xl px-4 py-2 text-[13px] text-white">
                 {notice}
               </div>
             )}

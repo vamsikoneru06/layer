@@ -43,7 +43,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {toast && (
           <div
             key={toast.id}
-            className="glass-primary pointer-events-auto relative flex h-[52px] max-w-full items-center gap-3 overflow-hidden rounded-full pr-2 pl-[18px] text-sm text-white motion-safe:animate-[toast-in_.32s_var(--ease)]"
+            className="glass-primary pointer-events-auto relative flex h-[52px] max-w-full items-center gap-3 overflow-hidden rounded-2xl pr-2 pl-[18px] text-sm text-white motion-safe:animate-[toast-in_.32s_var(--ease)]"
           >
             {toast.icon}
             <span className="truncate">{toast.message}</span>
@@ -54,7 +54,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                   toast.action!.onClick();
                   setToast(null);
                 }}
-                className="h-9 flex-none rounded-full bg-white/12 px-4 font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,.2)] transition hover:bg-white/20 active:scale-[.96]"
+                className="h-9 flex-none rounded-[10px] bg-white/12 px-4 font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,.2)] transition hover:bg-white/20 active:scale-[.96]"
               >
                 {toast.action.label}
               </button>

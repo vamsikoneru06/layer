@@ -103,12 +103,12 @@ function MoveDialog({ open, folders, count, onClose, onMove }: { open: boolean; 
 }
 
 function BulkBar({ count, onMove, onDuplicate, onDelete, onClear }: { count: number; onMove: () => void; onDuplicate: () => void; onDelete: () => void; onClear: () => void }) {
-  const chip = "flex h-[34px] items-center gap-1.5 rounded-full bg-white/7 px-3.5 font-medium shadow-[inset_0_1px_0_rgba(255,255,255,.16),inset_0_0_0_.5px_rgba(255,255,255,.12)] transition hover:bg-white/14 active:scale-[.96]";
+  const chip = "flex h-[34px] items-center gap-1.5 rounded-[10px] bg-white/7 px-3.5 font-medium shadow-[inset_0_1px_0_rgba(255,255,255,.16),inset_0_0_0_.5px_rgba(255,255,255,.12)] transition hover:bg-white/14 active:scale-[.96]";
   return (
     <div
       role="toolbar"
       aria-label="Selected designs"
-      className="glass-primary fixed bottom-20 left-1/2 z-30 flex max-w-[calc(100vw-24px)] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-full py-1.5 pr-1.5 pl-[18px] text-sm text-white md:bottom-7 md:left-[calc(50%+120px)]"
+      className="glass-primary fixed bottom-20 left-1/2 z-30 flex max-w-[calc(100vw-24px)] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-2xl py-1.5 pr-1.5 pl-[18px] text-sm text-white md:bottom-7 md:left-[calc(50%+120px)]"
     >
       <span className="mr-2.5 flex-none font-semibold">{count} selected</span>
       <button type="button" onClick={onMove} className={chip}>
@@ -363,20 +363,20 @@ export function DesignsView() {
     <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
       <h1 className="text-[clamp(30px,5vw,40px)] leading-[1.02] font-bold tracking-[-0.035em]">Designs</h1>
       <div className="flex flex-wrap items-center gap-3">
-        <label className="glass-secondary flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-full px-4 text-sm text-muted focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-text sm:w-60 sm:flex-none">
+        <label className="glass-secondary flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-xl px-4 text-sm text-muted focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-text sm:w-60 sm:flex-none">
           <Search aria-hidden className="size-4 flex-none" />
           <input value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search designs" placeholder="Search" className="min-w-0 flex-1 bg-transparent text-text outline-none placeholder:text-muted" />
         </label>
         <label className="relative flex items-center text-sm text-muted">
           <span className="sr-only">Sort by</span>
-          <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className="h-10 cursor-pointer appearance-none rounded-full bg-transparent pr-6 pl-2 hover:text-text">
+          <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className="h-10 cursor-pointer appearance-none rounded-lg bg-transparent pr-6 pl-2 hover:text-text">
             <option value="edited">Last edited</option>
             <option value="name">Name</option>
             <option value="created">Created</option>
           </select>
           <ChevronDown aria-hidden className="pointer-events-none absolute right-1 size-3.5" />
         </label>
-        <div role="radiogroup" aria-label="View" className="flex rounded-full bg-field p-[3px]">
+        <div role="radiogroup" aria-label="View" className="flex rounded-[10px] bg-field p-[3px]">
           {(["grid", "list"] as const).map((v) => (
             <button
               key={v}
@@ -385,7 +385,7 @@ export function DesignsView() {
               aria-checked={view === v}
               aria-label={v === "grid" ? "Grid view" : "List view"}
               onClick={() => changeView(v)}
-              className={cn("flex h-[30px] items-center justify-center rounded-full px-3.5 text-muted hover:text-text", view === v && "bg-(--seg) text-text shadow-(--segsh)")}
+              className={cn("flex h-[30px] items-center justify-center rounded-[7px] px-3.5 text-muted hover:text-text", view === v && "bg-(--seg) text-text shadow-(--segsh)")}
             >
               {v === "grid" ? <LayoutGrid aria-hidden className="size-4" /> : <List aria-hidden className="size-4" />}
             </button>
