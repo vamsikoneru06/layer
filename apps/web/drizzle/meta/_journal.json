@@ -22,6 +22,13 @@
       "when": 1790315210013,
       "tag": "0002_audit_log_block_truncate",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790422442230,
+      "tag": "0003_storage_deletions_schedule",
+      "breakpoints": true
     }
   ]
 }
