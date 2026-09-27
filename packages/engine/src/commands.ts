@@ -12,6 +12,8 @@ export type Command =
   | { type: "delete"; id: NodeId }
   /** Moves the node to `index` within its current parent. */
   | { type: "reorder"; id: NodeId; index: number }
+  /** Changes the artboard's size and/or background. */
+  | { type: "artboard"; patch: Partial<Doc["artboard"]> }
   | { type: "batch"; commands: Command[] };
 
 export interface Applied {
@@ -96,6 +98,12 @@ export function applyCommand(doc: Doc, cmd: Command): Applied {
       list.splice(from, 1);
       list.splice(clampIndex(cmd.index, list.length), 0, cmd.id);
       return { doc: withSiblings(doc, parent, list), inverse: { type: "reorder", id: cmd.id, index: from } };
+    }
+
+    case "artboard": {
+      const previous: Record<string, unknown> = {};
+      for (const key of Object.keys(cmd.patch)) previous[key] = doc.artboard[key as keyof Doc["artboard"]];
+      return { doc: { ...doc, artboard: { ...doc.artboard, ...cmd.patch } }, inverse: { type: "artboard", patch: previous as Partial<Doc["artboard"]> } };
     }
 
     case "batch": {

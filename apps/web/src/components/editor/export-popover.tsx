@@ -7,6 +7,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Button, buttonClass } from "@/components/ui/button";
 import { exportFileName } from "@/lib/export-name";
 import { cn } from "@/lib/utils";
+import { Switch } from "./fields";
 
 const SCALES = [1, 2, 3] as const;
 
@@ -90,7 +91,7 @@ export function ExportPopover({ editor, doc }: { editor: Editor | null; doc: Doc
             <span id={`${id}-size`} className="text-[13px] font-medium">
               Size
             </span>
-            <div role="radiogroup" aria-labelledby={`${id}-size`} className="flex rounded-full bg-field p-[3px]">
+            <div role="radiogroup" aria-labelledby={`${id}-size`} className="flex rounded-[10px] bg-field p-[3px]">
               {SCALES.map((s) => {
                 const c = checkExport(doc, s);
                 return (
@@ -101,7 +102,7 @@ export function ExportPopover({ editor, doc }: { editor: Editor | null; doc: Doc
                     aria-checked={scale === s}
                     onClick={() => setScale(s)}
                     className={cn(
-                      "flex h-[44px] flex-1 flex-col items-center justify-center rounded-full text-muted hover:text-text",
+                      "flex h-[44px] flex-1 flex-col items-center justify-center rounded-[7px] text-muted hover:text-text",
                       scale === s && "bg-(--seg) text-text shadow-(--segsh)",
                     )}
                   >
@@ -113,24 +114,10 @@ export function ExportPopover({ editor, doc }: { editor: Editor | null; doc: Doc
             </div>
           </div>
 
-          <label className="flex cursor-pointer items-center justify-between text-[13px] font-medium">
+          <div className="flex items-center justify-between text-[13px] font-medium">
             Transparent background
-            <button
-              type="button"
-              role="switch"
-              aria-checked={transparent}
-              onClick={() => setTransparent((t) => !t)}
-              className={cn("relative h-[26px] w-[44px] flex-none rounded-full bg-field transition-colors", transparent && "bg-text")}
-            >
-              <span
-                aria-hidden
-                className={cn(
-                  "absolute top-[3px] left-[3px] size-5 rounded-full bg-bg shadow-[0_1px_3px_rgba(0,0,0,.2)] transition-transform motion-reduce:transition-none",
-                  transparent && "translate-x-[18px]",
-                )}
-              />
-            </button>
-          </label>
+            <Switch label="Transparent background" checked={transparent} onChange={setTransparent} />
+          </div>
 
           {(error ?? (!check.ok && check.reason)) && (
             <p role="alert" className="text-[13px] text-danger">

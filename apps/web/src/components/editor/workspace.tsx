@@ -14,7 +14,9 @@ import { getDesign, saveDesign, saveDesignAsCopy, type Design } from "@/lib/api"
 import { createAutosaver, type Autosaver, type SaveStatus } from "@/lib/autosave";
 import { cn } from "@/lib/utils";
 import { ExportPopover } from "./export-popover";
+import { Segmented } from "./fields";
 import { LayersPanel } from "./layers-panel";
+import { PropertiesPanel } from "./properties-panel";
 import { TextEditor } from "./text-editor";
 // Self-hosted allowlisted fonts, loaded only on the editor route.
 import "./fonts.css";
@@ -72,6 +74,7 @@ export function Workspace({ design }: { design: Design }) {
   const saver = useRef<Autosaver<Doc> | null>(null);
   const [editor, setEditor] = useState<Editor | null>(null);
   const [status, setStatus] = useState<SaveStatus>("saved");
+  const [panel, setPanel] = useState<"properties" | "layers">("properties");
   const state = useEditorState(editor);
 
   useEffect(() => {
@@ -187,9 +190,24 @@ export function Workspace({ design }: { design: Design }) {
             </span>
           </footer>
         </div>
-        <aside className="flex w-[300px] flex-none flex-col border-l-[.5px] border-line" aria-label="Layers">
-          <h2 className="px-4 pt-4 pb-2 text-[13px] font-semibold">Layers</h2>
-          {state && editor && <LayersPanel state={state} core={editor.core} />}
+        <aside className="flex w-[288px] flex-none flex-col border-l-[.5px] border-line text-[13px]" aria-label="Design panel">
+          <div className="px-4 pt-3.5 pb-3">
+            <Segmented
+              name="Panel"
+              value={panel}
+              options={[
+                { value: "properties", label: "Properties" },
+                { value: "layers", label: "Layers" },
+              ]}
+              onChange={setPanel}
+            />
+          </div>
+          {state && editor && panel === "properties" && (
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+              <PropertiesPanel state={state} core={editor.core} />
+            </div>
+          )}
+          {state && editor && panel === "layers" && <LayersPanel state={state} core={editor.core} />}
         </aside>
       </div>
 

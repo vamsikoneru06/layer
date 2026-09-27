@@ -25,6 +25,14 @@ describe("applyCommand", () => {
     expect(restored.nodes).toEqual(doc.nodes);
   });
 
+  it("changes the artboard and inverts back", () => {
+    const doc = base();
+    const { doc: next, inverse } = applyCommand(doc, { type: "artboard", patch: { width: 1080, background: { type: "solid", color: "#000000" } } });
+    expect(next.artboard).toEqual({ width: 1080, height: 1000, background: { type: "solid", color: "#000000" } });
+    expect(next.nodes).toBe(doc.nodes);
+    expect(applyCommand(next, inverse).doc.artboard).toEqual(doc.artboard);
+  });
+
   it("reorders within the parent and inverts back", () => {
     const doc = base();
     const { doc: next, inverse } = applyCommand(doc, { type: "reorder", id: "a", index: 2 });
