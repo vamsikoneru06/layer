@@ -1,5 +1,5 @@
 import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
-import { assets, storageDeletions } from "../db/schema";
+import { assets, storageDeletions, templates } from "../db/schema";
 import type { Db } from "../db/types";
 import type { Cursor } from "../http/cursor";
 import { isUuid } from "../http/ids";
@@ -72,7 +72,8 @@ export async function markAssetReady(db: Db, ownerId: string, id: string, dims: 
 /**
  * Bytes counted against the quota: every asset row (pending included, so a burst of requests can't
  * overshoot it), plus queued deletions whose asset is gone but whose object may still exist: a
- * staging object an unexpired upload URL can still write, or a removal storage refused.
+ * staging object an unexpired upload URL can still write, or a removal storage refused), and the
+ * public copies of every template the owner published.
  */
 export async function storageUsedBytes(db: Db, ownerId: string): Promise<number> {
   const [row] = await db.select({ used: sql<string>`coalesce(sum(${assets.bytes}), 0)` }).from(assets).where(eq(assets.ownerId, ownerId));
@@ -80,7 +81,12 @@ export async function storageUsedBytes(db: Db, ownerId: string): Promise<number>
     .select({ used: sql<string>`coalesce(sum(${storageDeletions.bytes}), 0)` })
     .from(storageDeletions)
     .where(and(eq(storageDeletions.ownerId, ownerId), sql`not exists (select 1 from ${assets} where ${assets.id} = ${storageDeletions.assetId})`));
-  return Number(row?.used ?? 0) + Number(queued?.used ?? 0);
+  const [published] = await db
+    .select({ used: sql<string>`coalesce(sum(${assets.bytes}), 0)` })
+    .from(assets)
+    .innerJoin(templates, eq(templates.id, assets.templateId))
+    .where(eq(templates.authorId, ownerId));
+  return Number(row?.used ?? 0) + Number(queued?.used ?? 0) + Number(published?.used ?? 0);
 }
 
 export function listReadyAssets(db: Db, ownerId: string, q: { kind?: AssetRow["kind"]; cursor?: Cursor; limit: number }): Promise<AssetRow[]> {

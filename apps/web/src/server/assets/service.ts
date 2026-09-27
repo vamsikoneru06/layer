@@ -125,7 +125,7 @@ export async function completeUpload(ctx: AssetContext, ownerId: string, id: str
 
   // Check a copy the browser can't write to: the upload URL stays valid for a few minutes and
   // could replace the staging object after any check made on it.
-  await ctx.storage.copy("private", stagingKey(ownerId, id), asset.storageKey);
+  await ctx.storage.copy({ bucket: "private", key: stagingKey(ownerId, id) }, { bucket: "private", key: asset.storageKey });
   const head = await ctx.storage.head("private", asset.storageKey);
   if (head?.contentLength !== asset.bytes) {
     await discardAsset(ctx, asset);

@@ -1,9 +1,10 @@
 import type { Bucket, ObjectStorage } from "@/server/storage/types";
 
-/** In-memory ObjectStorage. `put` plays the browser's presigned PUT; keys in `failRemove` make `remove` throw. */
+/** In-memory ObjectStorage. `put` plays the browser's presigned PUT; keys in `failRemove` make `remove` throw, source keys in `failCopy` make `copy` throw. */
 export function memoryStorage() {
   const objects = new Map<string, Uint8Array>();
   const failRemove = new Set<string>();
+  const failCopy = new Set<string>();
   const id = (bucket: Bucket, key: string) => `${bucket}:${key}`;
   const storage: ObjectStorage = {
     async presignUpload(bucket, key, o) {
@@ -20,10 +21,11 @@ export function memoryStorage() {
     async readPrefix(bucket, key, length) {
       return objects.get(id(bucket, key))?.slice(0, length) ?? new Uint8Array();
     },
-    async copy(bucket, from, to) {
-      const bytes = objects.get(id(bucket, from));
+    async copy(from, to) {
+      if (failCopy.has(from.key)) throw new Error("storage unavailable");
+      const bytes = objects.get(id(from.bucket, from.key));
       if (!bytes) throw new Error("NoSuchKey");
-      objects.set(id(bucket, to), bytes.slice());
+      objects.set(id(to.bucket, to.key), bytes.slice());
     },
     async remove(bucket, key) {
       if (failRemove.has(key)) throw new Error("storage unavailable");
@@ -34,6 +36,7 @@ export function memoryStorage() {
     ...storage,
     objects,
     failRemove,
+    failCopy,
     put: (bucket: Bucket, key: string, bytes: Uint8Array) => void objects.set(id(bucket, key), bytes),
     has: (bucket: Bucket, key: string) => objects.has(id(bucket, key)),
   };

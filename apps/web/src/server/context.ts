@@ -32,7 +32,7 @@ function build() {
     folders: folderHandlers(deps),
     designs: designHandlers(deps),
     me: meHandlers(deps),
-    templates: templateHandlers(deps),
+    templates: templateHandlers(deps, storage),
     assets: assetHandlers(deps, storage),
     cron: cronHandlers(deps, storage, config.cronSecret),
   };
