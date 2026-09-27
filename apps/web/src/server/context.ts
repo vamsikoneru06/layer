@@ -14,6 +14,7 @@ import type { Handler } from "./http/types";
 import { createLogger } from "./logging";
 import { meHandlers } from "./me/handlers";
 import { s3Storage } from "./storage/s3";
+import { templateHandlers } from "./templates/handlers";
 
 function build() {
   const config = loadConfig(process.env);
@@ -31,6 +32,7 @@ function build() {
     folders: folderHandlers(deps),
     designs: designHandlers(deps),
     me: meHandlers(deps),
+    templates: templateHandlers(deps),
     assets: assetHandlers(deps, storage),
     cron: cronHandlers(deps, storage, config.cronSecret),
   };
