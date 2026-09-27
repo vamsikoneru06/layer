@@ -19,6 +19,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1138.0",
     "@aws-sdk/s3-request-presigner": "^3.1138.0",
+    "@vash/engine": "workspace:*",
     "@vash/schema": "workspace:*",
     "better-auth": "^1.7.5",
     "clsx": "^2.1.1",
