@@ -198,7 +198,7 @@ export function Dashboard() {
             const q = search.current?.value.trim();
             router.push(q ? `/designs?q=${encodeURIComponent(q)}` : "/designs");
           }}
-          className="glass-secondary flex h-[42px] w-full items-center gap-2.5 rounded-full px-4 text-sm text-muted focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-text lg:w-[320px]"
+          className="glass-secondary flex h-[42px] w-full items-center gap-2.5 rounded-xl px-4 text-sm text-muted focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-text lg:w-[320px]"
         >
           <Search aria-hidden className="size-[17px] flex-none" />
           <input ref={search} name="q" aria-label="Search designs" placeholder="Search designs" className="min-w-0 flex-1 bg-transparent text-text outline-none placeholder:text-muted" />

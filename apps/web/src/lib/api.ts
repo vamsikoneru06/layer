@@ -1,4 +1,4 @@
-import { createEmptyDoc, type FormatKey } from "@vash/schema";
+import { createEmptyDoc, type Doc, type FormatKey } from "@vash/schema";
 
 /** Browser client for the app's own JSON API. Errors carry the problem+json detail when there is one. */
 
@@ -77,6 +77,18 @@ export function createDesign(format: FormatKey, size?: { width: number; height: 
   const doc = createEmptyDoc({ id: crypto.randomUUID(), kind: "design", title: "Untitled design", format, size });
   return request("/api/designs", { method: "POST", json: { doc } });
 }
+
+export type Design = { id: string; title: string; version: number; folderId: string | null; doc: Doc; updatedAt: string };
+
+export const getDesign = (id: string) => request<Design>(`/api/designs/${id}`);
+
+/** Saves a new version; resolves to the version the server assigned. Rejects with status 409 on a conflict. */
+export async function saveDesign(id: string, doc: Doc, version: number): Promise<number> {
+  return (await request<Design>(`/api/designs/${id}`, { method: "PUT", json: { doc, version } })).version;
+}
+
+/** "Keep mine as a copy" after a conflict. */
+export const saveDesignAsCopy = (doc: Doc, title: string) => request<{ id: string }>("/api/designs", { method: "POST", json: { doc, title } });
 
 export const renameDesign = (id: string, title: string) => request<unknown>(`/api/designs/${id}`, { method: "PATCH", json: { title } });
 export const moveDesign = (id: string, folderId: string | null) => request<unknown>(`/api/designs/${id}`, { method: "PATCH", json: { folderId } });
