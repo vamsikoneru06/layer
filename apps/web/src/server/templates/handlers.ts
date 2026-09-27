@@ -1,6 +1,7 @@
 import { CATEGORIES, FORMAT_KEYS } from "@vash/schema";
 import { z } from "zod";
 import type { Deps } from "../deps";
+import { toDesignJson } from "../designs/handlers";
 import { readQuery } from "../http/body";
 import { pageQuery } from "../http/cursor";
 import { endpoint } from "../http/endpoint";
@@ -9,9 +10,11 @@ import { notFound } from "../http/problem";
 import { RATE_LIMITS } from "../rate-limit/rules";
 import { galleryPage } from "./gallery";
 import * as repo from "./repository";
+import { useTemplate } from "./use";
 import { canSee, toTemplateJson } from "./view";
 
 const publicRead = { name: "publicRead", rule: RATE_LIMITS.publicRead, by: "ip" } as const;
+const createLimit = { name: "designCreate", rule: RATE_LIMITS.designCreate, by: "user" } as const;
 
 const GalleryParams = pageQuery.extend({
   q: z
@@ -37,6 +40,11 @@ export function templateHandlers(deps: Deps) {
       const version = await repo.getTemplateVersion(deps.db, card.id, card.currentVersion);
       if (!version) throw notFound();
       return Response.json({ ...toTemplateJson(card), doc: version.doc });
+    }),
+
+    use: endpoint(deps, { auth: "user", rateLimit: createLimit }, async ({ user, params }) => {
+      const design = await useTemplate({ db: deps.db, now: deps.now }, user, parseId(params.id));
+      return Response.json(toDesignJson(design), { status: 201 });
     }),
   };
 }
