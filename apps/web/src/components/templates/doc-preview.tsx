@@ -4,6 +4,7 @@ import { fontRequests, renderDoc, type Measure } from "@vash/engine";
 import type { Doc } from "@vash/schema";
 import { useEffect, useRef } from "react";
 import { fitBox } from "@/lib/designs";
+import { createImageLoader } from "@/lib/images";
 import { cn } from "@/lib/utils";
 // Template text uses the self-hosted editor fonts.
 import "@/components/editor/fonts.css";
@@ -15,6 +16,11 @@ function canvasMeasure(): Measure {
     return ctx.measureText(text).width;
   };
 }
+
+/** One loader for every preview on the page, so a photo used by several templates loads once. */
+const redraws = new Set<() => void>();
+let shared: ReturnType<typeof createImageLoader> | null = null;
+const images = () => (shared ??= createImageLoader(() => redraws.forEach((r) => r())));
 
 /**
  * A design drawn by the editor's own renderer. It fills its parent's width or height (whichever the
@@ -36,13 +42,15 @@ export function DocPreview({ doc, box, className }: { doc: Doc; box: { width: nu
       const s = (size.width / doc.artboard.width) * dpr;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, el.width, el.height);
-      renderDoc(ctx, doc, [s, 0, 0, s, 0, 0], { measure: canvasMeasure(), image: () => "loading", dpr });
+      renderDoc(ctx, doc, [s, 0, 0, s, 0, 0], { measure: canvasMeasure(), image: images().image, dpr });
     };
     draw();
+    redraws.add(draw);
     let live = true;
     void Promise.all(fontRequests(doc).map((f) => document.fonts.load(f).catch(() => []))).then(() => live && draw());
     return () => {
       live = false;
+      redraws.delete(draw);
     };
   }, [doc, size.width, size.height]);
 

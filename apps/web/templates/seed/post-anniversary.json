@@ -1,0 +1,208 @@
+{
+  "schemaVersion": 1,
+  "id": "post-anniversary",
+  "kind": "template",
+  "meta": {
+    "title": "Anniversary",
+    "category": "events",
+    "tags": [
+      "anniversary",
+      "love",
+      "couple",
+      "warm"
+    ],
+    "format": "ig-post"
+  },
+  "artboard": {
+    "width": 1080,
+    "height": 1080,
+    "background": {
+      "type": "linear",
+      "angle": 180,
+      "stops": [
+        {
+          "offset": 0,
+          "color": "#FFE8D6"
+        },
+        {
+          "offset": 1,
+          "color": "#FFD1BA"
+        }
+      ]
+    }
+  },
+  "root": [
+    "ring",
+    "photo",
+    "title",
+    "subtitle",
+    "since"
+  ],
+  "nodes": {
+    "ring": {
+      "id": "ring",
+      "name": "Photo ring",
+      "transform": {
+        "x": 540,
+        "y": 340,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 480,
+      "height": 480,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#FFFFFF"
+      },
+      "stroke": null
+    },
+    "photo": {
+      "id": "photo",
+      "name": "Couple photo",
+      "transform": {
+        "x": 540,
+        "y": 340,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 440,
+      "height": 440,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "ellipse"
+      },
+      "content": {
+        "assetId": "d24210d1-4b4b-83f7-8964-b10c9d08397e",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "title": {
+      "id": "title",
+      "name": "Title",
+      "transform": {
+        "x": 540,
+        "y": 695,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 900,
+      "height": 150,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "5 years",
+      "font": {
+        "family": "Pacifico",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 110,
+      "color": "#C8553D",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 20
+    },
+    "subtitle": {
+      "id": "subtitle",
+      "name": "Subtitle",
+      "transform": {
+        "x": 540,
+        "y": 812,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 900,
+      "height": 64,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "and counting, with you",
+      "font": {
+        "family": "Playfair Display",
+        "weight": 400,
+        "style": "italic"
+      },
+      "size": 44,
+      "color": "#7A3E2E",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 40
+    },
+    "since": {
+      "id": "since",
+      "name": "Since",
+      "transform": {
+        "x": 540,
+        "y": 900,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 900,
+      "height": 40,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "SINCE JUNE 2021",
+      "font": {
+        "family": "Inter",
+        "weight": 600,
+        "style": "normal"
+      },
+      "size": 26,
+      "color": "#7A3E2E",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 6,
+      "fit": "shrink",
+      "maxChars": 30
+    }
+  },
+  "assets": {
+    "d24210d1-4b4b-83f7-8964-b10c9d08397e": {
+      "id": "d24210d1-4b4b-83f7-8964-b10c9d08397e",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 1400,
+      "height": 1400
+    }
+  }
+}

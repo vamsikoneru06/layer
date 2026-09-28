@@ -80,7 +80,12 @@
         "kind": "rect",
         "cornerRadius": 0
       },
-      "content": null,
+      "content": {
+        "assetId": "818bcc9e-bfc8-839b-9330-8a6ec9328dee",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
       "filters": {
         "preset": null,
         "brightness": 0,
@@ -213,5 +218,13 @@
       "maxChars": 40
     }
   },
-  "assets": {}
+  "assets": {
+    "818bcc9e-bfc8-839b-9330-8a6ec9328dee": {
+      "id": "818bcc9e-bfc8-839b-9330-8a6ec9328dee",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 933,
+      "height": 1400
+    }
+  }
 }

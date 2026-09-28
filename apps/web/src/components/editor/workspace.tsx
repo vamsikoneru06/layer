@@ -12,6 +12,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Menu } from "@/components/ui/menu";
 import { getDesign, saveDesign, saveDesignAsCopy, type Design } from "@/lib/api";
 import { createAutosaver, type Autosaver, type SaveStatus } from "@/lib/autosave";
+import { createImageLoader } from "@/lib/images";
 import { cn } from "@/lib/utils";
 import { ExportPopover } from "./export-popover";
 import { Segmented } from "./fields";
@@ -79,7 +80,10 @@ export function Workspace({ design }: { design: Design }) {
   const state = useEditorState(editor);
 
   useEffect(() => {
-    const e = createEditor({ container: container.current!, scene: scene.current!, overlay: overlay.current!, doc: design.doc });
+    // Photos load in the background; the canvas redraws as each arrives.
+    let e: Editor | null = null;
+    const images = createImageLoader(() => e?.invalidate());
+    e = createEditor({ container: container.current!, scene: scene.current!, overlay: overlay.current!, doc: design.doc, image: images.image });
     setEditor(e);
     const s = createAutosaver<Doc>({ version: design.version, delayMs: 1500, retryMs: 5000, save: (doc, v) => saveDesign(design.id, doc, v), onStatus: setStatus });
     saver.current = s;

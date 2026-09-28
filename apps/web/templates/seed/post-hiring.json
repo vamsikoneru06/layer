@@ -1,0 +1,231 @@
+{
+  "schemaVersion": 1,
+  "id": "post-hiring",
+  "kind": "template",
+  "meta": {
+    "title": "We're Hiring",
+    "category": "business",
+    "tags": [
+      "hiring",
+      "jobs",
+      "team",
+      "careers"
+    ],
+    "format": "ig-post"
+  },
+  "artboard": {
+    "width": 1080,
+    "height": 1080,
+    "background": {
+      "type": "solid",
+      "color": "#0F2A4A"
+    }
+  },
+  "root": [
+    "photo",
+    "title",
+    "role",
+    "button",
+    "button-label",
+    "handle"
+  ],
+  "nodes": {
+    "photo": {
+      "id": "photo",
+      "name": "Team photo",
+      "transform": {
+        "x": 540,
+        "y": 280,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1080,
+      "height": 560,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "content": {
+        "assetId": "d8bfc7ba-e181-865c-87f4-cd3c2096556a",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "title": {
+      "id": "title",
+      "name": "Title",
+      "transform": {
+        "x": 540,
+        "y": 670,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 940,
+      "height": 100,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "WE'RE HIRING",
+      "font": {
+        "family": "Archivo Black",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 88,
+      "color": "#FFFFFF",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 24
+    },
+    "role": {
+      "id": "role",
+      "name": "Role",
+      "transform": {
+        "x": 540,
+        "y": 780,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 940,
+      "height": 90,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Product designer · Full time · Bengaluru or remote",
+      "font": {
+        "family": "Inter",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 30,
+      "color": "#C9D6E8",
+      "align": "left",
+      "lineHeight": 1.4,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 90
+    },
+    "button": {
+      "id": "button",
+      "name": "Button",
+      "transform": {
+        "x": 260,
+        "y": 925,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 380,
+      "height": 90,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 16
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#4FD1C5"
+      },
+      "stroke": null
+    },
+    "button-label": {
+      "id": "button-label",
+      "name": "Button label",
+      "transform": {
+        "x": 260,
+        "y": 925,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 380,
+      "height": 40,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Apply via link in bio",
+      "font": {
+        "family": "Poppins",
+        "weight": 600,
+        "style": "normal"
+      },
+      "size": 28,
+      "color": "#0F2A4A",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 26
+    },
+    "handle": {
+      "id": "handle",
+      "name": "Handle",
+      "transform": {
+        "x": 825,
+        "y": 1008,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 370,
+      "height": 36,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "@yourcompany",
+      "font": {
+        "family": "Inter",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 22,
+      "color": "#7F95B2",
+      "align": "right",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 24
+    }
+  },
+  "assets": {
+    "d8bfc7ba-e181-865c-87f4-cd3c2096556a": {
+      "id": "d8bfc7ba-e181-865c-87f4-cd3c2096556a",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 1400,
+      "height": 1400
+    }
+  }
+}

@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "id": "post-morning-quote",
+  "kind": "template",
+  "meta": {
+    "title": "Morning Quote",
+    "category": "quotes",
+    "tags": [
+      "quote",
+      "morning",
+      "sunrise",
+      "calm"
+    ],
+    "format": "ig-post"
+  },
+  "artboard": {
+    "width": 1080,
+    "height": 1080,
+    "background": {
+      "type": "solid",
+      "color": "#000000"
+    }
+  },
+  "root": [
+    "photo",
+    "card",
+    "quote",
+    "greeting",
+    "handle"
+  ],
+  "nodes": {
+    "photo": {
+      "id": "photo",
+      "name": "Background photo",
+      "transform": {
+        "x": 540,
+        "y": 540,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1080,
+      "height": 1080,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "content": {
+        "assetId": "c1fadef2-bdc5-801c-9289-13554ed8dd71",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "card": {
+      "id": "card",
+      "name": "Text backing",
+      "transform": {
+        "x": 540,
+        "y": 550,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 840,
+      "height": 440,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 24
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#00000073"
+      },
+      "stroke": null
+    },
+    "quote": {
+      "id": "quote",
+      "name": "Quote",
+      "transform": {
+        "x": 540,
+        "y": 510,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 760,
+      "height": 260,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Start where you are.",
+      "font": {
+        "family": "DM Serif Display",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 104,
+      "color": "#FFFFFF",
+      "align": "center",
+      "lineHeight": 1.05,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 60
+    },
+    "greeting": {
+      "id": "greeting",
+      "name": "Greeting",
+      "transform": {
+        "x": 540,
+        "y": 700,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 760,
+      "height": 80,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "good morning",
+      "font": {
+        "family": "Caveat",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 60,
+      "color": "#FFE4B5",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 30
+    },
+    "handle": {
+      "id": "handle",
+      "name": "Handle",
+      "transform": {
+        "x": 540,
+        "y": 1018,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 900,
+      "height": 36,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "@yourhandle",
+      "font": {
+        "family": "Inter",
+        "weight": 500,
+        "style": "normal"
+      },
+      "size": 24,
+      "color": "#FFFFFF",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 24
+    }
+  },
+  "assets": {
+    "c1fadef2-bdc5-801c-9289-13554ed8dd71": {
+      "id": "c1fadef2-bdc5-801c-9289-13554ed8dd71",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 875,
+      "height": 1400
+    }
+  }
+}

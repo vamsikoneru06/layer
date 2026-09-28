@@ -1,0 +1,223 @@
+{
+  "schemaVersion": 1,
+  "id": "post-new-arrivals",
+  "kind": "template",
+  "meta": {
+    "title": "New Arrivals",
+    "category": "sale",
+    "tags": [
+      "fashion",
+      "new in",
+      "shop",
+      "dark"
+    ],
+    "format": "ig-post"
+  },
+  "artboard": {
+    "width": 1080,
+    "height": 1080,
+    "background": {
+      "type": "solid",
+      "color": "#111111"
+    }
+  },
+  "root": [
+    "left",
+    "right",
+    "title",
+    "subtitle",
+    "cta"
+  ],
+  "nodes": {
+    "left": {
+      "id": "left",
+      "name": "Left photo",
+      "transform": {
+        "x": 285,
+        "y": 420,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 490,
+      "height": 760,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 20
+      },
+      "content": {
+        "assetId": "d49cd656-b305-8421-92b7-ab116466d1f8",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "right": {
+      "id": "right",
+      "name": "Right photo",
+      "transform": {
+        "x": 795,
+        "y": 420,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 490,
+      "height": 760,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 20
+      },
+      "content": {
+        "assetId": "0195baba-d3a9-8fda-ba9c-5cbcc3adea26",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "title": {
+      "id": "title",
+      "name": "Title",
+      "transform": {
+        "x": 540,
+        "y": 885,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1000,
+      "height": 110,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "NEW ARRIVALS",
+      "font": {
+        "family": "Archivo Black",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 96,
+      "color": "#FFFFFF",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 20
+    },
+    "subtitle": {
+      "id": "subtitle",
+      "name": "Subtitle",
+      "transform": {
+        "x": 440,
+        "y": 972,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 800,
+      "height": 44,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "The autumn edit, in store and online now",
+      "font": {
+        "family": "Inter",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 28,
+      "color": "#BDBDBD",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 60
+    },
+    "cta": {
+      "id": "cta",
+      "name": "Call to action",
+      "transform": {
+        "x": 960,
+        "y": 975,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 160,
+      "height": 40,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "SHOP",
+      "font": {
+        "family": "Inter",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 26,
+      "color": "#FFE14D",
+      "align": "right",
+      "lineHeight": 1.2,
+      "letterSpacing": 6,
+      "fit": "shrink",
+      "maxChars": 10
+    }
+  },
+  "assets": {
+    "d49cd656-b305-8421-92b7-ab116466d1f8": {
+      "id": "d49cd656-b305-8421-92b7-ab116466d1f8",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 933,
+      "height": 1400
+    },
+    "0195baba-d3a9-8fda-ba9c-5cbcc3adea26": {
+      "id": "0195baba-d3a9-8fda-ba9c-5cbcc3adea26",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 933,
+      "height": 1400
+    }
+  }
+}
