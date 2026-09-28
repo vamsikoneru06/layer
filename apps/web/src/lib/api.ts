@@ -124,3 +124,35 @@ export const updateMe = (patch: { name?: string }) => request<Me>("/api/me", { m
 export const deleteMe = (confirm: string) => request<void>("/api/me", { method: "DELETE", json: { confirm } });
 
 export const signOut = () => request<unknown>("/api/auth/sign-out", { method: "POST", json: {} });
+
+export type TemplateSort = "popular" | "new" | "featured";
+
+export type TemplateItem = {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  tags: string[];
+  format: string;
+  width: number;
+  height: number;
+  featured: boolean;
+  usesCount: number;
+  author: { handle: string | null; name: string } | null;
+};
+
+export type TemplateDetail = TemplateItem & { doc: Doc };
+
+export function listTemplates(q: { q?: string; category?: string; format?: string; sort?: TemplateSort; cursor?: string | null; limit?: number } = {}): Promise<Page<TemplateItem>> {
+  const params = new URLSearchParams({ limit: String(q.limit ?? 24), sort: q.sort ?? "popular" });
+  if (q.q) params.set("q", q.q);
+  if (q.category) params.set("category", q.category);
+  if (q.format) params.set("format", q.format);
+  if (q.cursor) params.set("cursor", q.cursor);
+  return request(`/api/templates?${params}`);
+}
+
+export const getTemplate = (id: string) => request<TemplateDetail>(`/api/templates/${id}`);
+
+/** Copies the template's current version into a new design of the signed-in user's. */
+export const copyTemplate = (id: string) => request<{ id: string }>(`/api/templates/${id}/use`, { method: "POST", json: {} });
