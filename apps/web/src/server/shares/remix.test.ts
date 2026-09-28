@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { hasLoneSurrogate } from "../text";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestDb, type TestDb } from "../../../tests/support/db";
 import { testDeps } from "../../../tests/support/deps";
@@ -7,7 +8,9 @@ import { createAsset, createDesign, createUser } from "../../../tests/support/fa
 import { call } from "../../../tests/support/invoke";
 import { memoryStorage } from "../../../tests/support/storage";
 import { assetHandlers } from "../assets/handlers";
+import { storageUsedBytes } from "../assets/repository";
 import { UPLOAD_LIMITS } from "../assets/service";
+import type { ObjectRef } from "../storage/types";
 import { assets, designs, storageDeletions } from "../db/schema";
 import { designHandlers } from "../designs/handlers";
 import { shareHandlers } from "./handlers";
@@ -89,6 +92,41 @@ describe("POST /api/shared/:token/remix", () => {
     expect(await t.db.select().from(designs).where(eq(designs.ownerId, bob.id))).toEqual([]);
     const queued = await t.db.select().from(storageDeletions);
     expect(queued.some((r) => r.storageKey.startsWith(`u/${bob.id}/`))).toBe(true);
+  });
+
+  it("registers each copy for deletion, charged to the remixer, before copying it, and clears that once saved", async () => {
+    const { photo, token } = await sharedWithPhoto();
+    const bob = await createUser(t.db);
+    const before = await storageUsedBytes(t.db, bob.id);
+    const seen: { rows: number; used: number }[] = [];
+    const watching = {
+      ...storage,
+      copy: async (from: ObjectRef, to: ObjectRef) => {
+        const rows = await t.db.select().from(storageDeletions).where(eq(storageDeletions.storageKey, to.key));
+        expect(rows).toMatchObject([{ bucket: "private", ownerId: bob.id, bytes: photo.bytes }]);
+        expect(rows[0]!.notBefore.getTime()).toBeGreaterThan(Date.now());
+        seen.push({ rows: rows.length, used: await storageUsedBytes(t.db, bob.id) });
+        await storage.copy(from, to);
+      },
+    };
+    const res = await remix(bob, token, shareHandlers(testDeps(t.db), watching));
+    expect(res.status).toBe(201);
+    expect(seen).toEqual([{ rows: 1, used: before + photo.bytes }]);
+    const copyKey = `u/${bob.id}/${res.body.doc.nodes.photo1.content.assetId}`;
+    expect(await t.db.select().from(storageDeletions).where(eq(storageDeletions.storageKey, copyKey))).toEqual([]);
+    expect(await storageUsedBytes(t.db, bob.id)).toBe(before + photo.bytes);
+  });
+
+  it("keeps a long title with an emoji at the cut valid", async () => {
+    const owner = await createUser(t.db);
+    const doc = emptyDoc("a".repeat(110) + "😀");
+    const design = await createDesign(t.db, owner.id, doc);
+    const { body } = await call(h.create, { method: "POST", as: owner, params: { id: design.id } });
+    const bob = await createUser(t.db);
+    const res = await remix(bob, body.token);
+    expect(res.status).toBe(201);
+    expect(res.body.title).not.toSatisfy(hasLoneSurrogate);
+    expect(res.body.title.startsWith("Remix of aaa")).toBe(true);
   });
 
   it("remixes a design without photos even when storage isn't configured", async () => {

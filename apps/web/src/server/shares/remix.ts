@@ -10,7 +10,8 @@ import { insertDesign, type DesignRow } from "../designs/repository";
 import { isUuid } from "../http/ids";
 import { HttpError, unprocessable } from "../http/problem";
 import { insertWithinQuota } from "../quotas";
-import { copyAll, queueObjects, type Copy } from "../storage/copies";
+import { truncate } from "../text";
+import { copyAll, dropCopies, releaseCopies, type Copy } from "../storage/copies";
 import type { ObjectStorage } from "../storage/types";
 import { openShare } from "./service";
 
@@ -48,15 +49,22 @@ export async function remixShare(ctx: { db: Db; now: () => Date; storage: Object
 
   const designId = randomUUID();
   const now = ctx.now();
-  const title = `Remix of ${design.title}`.slice(0, LIMITS.titleChars);
+  const title = truncate(`Remix of ${design.title}`, LIMITS.titleChars);
   const renamed = replaceAssetIds(scrubbed, new Map(copies.map((c) => [c.source.id, c.id])));
   const doc: Doc = { ...renamed, id: designId, kind: "design", meta: { ...renamed.meta, title } };
 
-  const objects: Copy[] = copies.map((c) => ({ from: { bucket: "private", key: c.source.storageKey }, to: { bucket: "private", key: assetKey(remixer.id, c.id) } }));
-  if (ctx.storage) await copyAll(ctx.db, ctx.storage, objects, now);
+  const objects: Copy[] = copies.map((c) => ({
+    from: { bucket: "private", key: c.source.storageKey },
+    to: { bucket: "private", key: assetKey(remixer.id, c.id) },
+    assetId: c.id,
+    bytes: c.source.bytes,
+  }));
+  const reserved = ctx.storage ? await copyAll(ctx.db, ctx.storage, objects, remixer.id, now) : [];
   try {
     // insertWithinQuota holds the remixer's row lock, which also serializes the storage quota check.
     return await insertWithinQuota(ctx.db, remixer.id, "designs", async (tx) => {
+      // The copies were charged while in flight; release that first so they aren't counted twice.
+      await releaseCopies(tx, reserved);
       const usedNow = await storageUsedBytes(tx, remixer.id);
       if (usedNow + bytes > UPLOAD_LIMITS.storageQuotaBytes) throw overQuota(usedNow);
       if (copies.length > 0) {
@@ -90,7 +98,7 @@ export async function remixShare(ctx: { db: Db; now: () => Date; storage: Object
       });
     });
   } catch (err) {
-    await queueObjects(ctx.db, objects.map((o) => o.to), now);
+    await dropCopies(ctx.db, reserved, now);
     throw err;
   }
 }

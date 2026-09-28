@@ -88,6 +88,19 @@ describe("share links", () => {
     expect((await view(live.token)).status).toBe(404);
   });
 
+  it("caps a design at 20 active links, so every link stays listable and revocable", async () => {
+    const alice = await createUser(t.db);
+    const design = await createDesign(t.db, alice.id, emptyDoc());
+    const links = [];
+    for (let i = 0; i < 20; i++) links.push((await share(alice, design.id)).body);
+    const over = await share(alice, design.id);
+    expect(over.status).toBe(422);
+    expect(over.body.detail).toMatch(/20/);
+    expect((await call(h.list, { as: alice, params: { id: design.id } })).body.items).toHaveLength(20);
+    await call(h.revoke, { method: "DELETE", as: alice, params: { id: design.id, linkId: links[0].id } });
+    expect((await share(alice, design.id)).status).toBe(201);
+  });
+
   it("never writes the token to the logs", async () => {
     const alice = await createUser(t.db);
     const design = await createDesign(t.db, alice.id, emptyDoc());
