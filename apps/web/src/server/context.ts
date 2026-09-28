@@ -16,6 +16,7 @@ import { meHandlers } from "./me/handlers";
 import { shareHandlers } from "./shares/handlers";
 import { s3Storage } from "./storage/s3";
 import { templateHandlers } from "./templates/handlers";
+import { userHandlers } from "./users/handlers";
 
 function build() {
   const config = loadConfig(process.env);
@@ -35,6 +36,7 @@ function build() {
     me: meHandlers(deps),
     templates: templateHandlers(deps, storage),
     shares: shareHandlers(deps, storage),
+    users: userHandlers(deps),
     assets: assetHandlers(deps, storage),
     cron: cronHandlers(deps, storage, config.cronSecret),
   };
