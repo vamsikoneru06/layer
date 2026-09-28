@@ -123,7 +123,7 @@ function BulkBar({ count, onMove, onDuplicate, onDelete, onClear }: { count: num
         <Trash2 aria-hidden className="size-4" />
         <span className="hidden sm:inline">Delete</span>
       </button>
-      <button type="button" onClick={onClear} aria-label="Clear selection" className="glass-btn glass-secondary mx-0.5 size-[34px] opacity-70">
+      <button type="button" onClick={onClear} aria-label="Clear selection" className="glass-btn glass-secondary mx-0.5 size-[34px] text-white opacity-70">
         <X aria-hidden className="size-4" />
       </button>
     </div>
