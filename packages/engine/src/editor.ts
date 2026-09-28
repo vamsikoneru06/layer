@@ -1,6 +1,7 @@
 import type { Doc } from "@vash/schema";
 import { EditorCore, type EditorState } from "./editor-core";
 import { exportPng } from "./export";
+import { createFilterRenderer, type FilterFn } from "./filters";
 import { fontRequests } from "./fonts";
 import { createInteraction, type PointerInput } from "./interaction";
 import { renderOverlay } from "./overlay";
@@ -66,10 +67,23 @@ export function createEditor(o: EditorOptions): Editor {
   let frame = 0;
   let fitted = false;
 
+  // The WebGL2 filter pipeline starts on first use, so designs without filtered photos never create a context.
+  let filters: ReturnType<typeof createFilterRenderer> | null = null;
+  let warned = false;
+  const filter: FilterFn = (source, width, height, f) => {
+    filters ??= createFilterRenderer({ onRestored: () => invalidate() });
+    const out = filters.apply(source, width, height, f);
+    if (!out && !filters.available && !warned) {
+      warned = true;
+      queueMicrotask(() => core.setChrome({ notice: "Photo filters aren't available in this browser, so photos show without them." }));
+    }
+    return out;
+  };
+
   const draw = () => {
     frame = 0;
     const s = core.getState();
-    renderScene(sceneCtx, s.doc, s.viewport, { measure, image, dpr, hidden: s.editing });
+    renderScene(sceneCtx, s.doc, s.viewport, { measure, image, filter, dpr, hidden: s.editing });
     // While typing, the text box is the chrome: outline only, no handles.
     renderOverlay(overlayCtx, s.doc, s.viewport, dpr, { ...s, dragging: s.dragging || s.editing !== null });
     o.overlay.style.cursor = ui.cursor();
@@ -185,7 +199,7 @@ export function createEditor(o: EditorOptions): Editor {
     fit,
     zoomTo: (zoom) => core.setChrome({ viewport: zoomAt(core.getState().viewport, { x: size.width / 2, y: size.height / 2 }, zoom) }),
     invalidate,
-    exportPng: (e) => exportPng(core.doc, { ...e, measure, image }),
+    exportPng: (e) => exportPng(core.doc, { ...e, measure, image, filter }),
     textEditBox: () => {
       const s = core.getState();
       return s.editing ? textEditBox(s.doc, s.editing, s.viewport, measure) : null;
@@ -193,6 +207,7 @@ export function createEditor(o: EditorOptions): Editor {
     destroy() {
       unsubscribe();
       observer.disconnect();
+      filters?.destroy();
       if (frame) cancelAnimationFrame(frame);
       o.overlay.removeEventListener("pointerdown", onDown);
       o.overlay.removeEventListener("pointermove", onMove);

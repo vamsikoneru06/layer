@@ -1,4 +1,5 @@
 import type { Doc, Fill, FrameNode, Node, ShapeNode, StickerNode, TextNode } from "@vash/schema";
+import { isNeutral, type FilterFn } from "./filters";
 import { multiply, type Mat } from "./math";
 import { drawOrder, parentOf, worldMatrix } from "./scene";
 import { layoutText, type Measure } from "./text";
@@ -22,6 +23,8 @@ export interface RenderOptions {
   dpr: number;
   /** A layer not to paint (the text being typed into, which the editor draws itself). */
   hidden?: string | null;
+  /** Applies photo filters (WebGL2). Without it, photos are drawn unfiltered. */
+  filter?: FilterFn;
 }
 
 const PLACEHOLDER_FILL = "#ECECEE";
@@ -123,6 +126,24 @@ function drawPlaceholder(ctx: Ctx, w: number, h: number, label: string): void {
   ctx.fillText(label, 0, 0);
 }
 
+/** Filter step, in px: resizing within a step reuses the cached result instead of filtering again. */
+const FILTER_STEP = 128;
+
+/**
+ * The photo to draw for a frame: filtered at the size it covers on this canvas (so on-screen previews
+ * stay cheap and exports get full resolution), never above the photo's own resolution.
+ */
+function frameSource(ctx: Ctx, n: FrameNode, img: LoadedImage, drawn: { x: number; y: number; w: number; h: number }, o: RenderOptions): CanvasImageSource {
+  if (!o.filter || isNeutral(n.filters)) return img.source;
+  const m = "getTransform" in ctx ? ctx.getTransform() : null;
+  const device = m ? Math.hypot(m.a, m.b) : 1;
+  const width = Math.max(1, Math.min(img.width, Math.ceil((drawn.w * device) / FILTER_STEP) * FILTER_STEP));
+  const height = Math.max(1, Math.round((width * img.height) / img.width));
+  // The frame's box, as fractions of the drawn photo (for the vignette).
+  const visible = [(-n.width / 2 - drawn.x) / drawn.w, (-n.height / 2 - drawn.y) / drawn.h, (n.width / 2 - drawn.x) / drawn.w, (n.height / 2 - drawn.y) / drawn.h] as const;
+  return o.filter(img.source, width, height, n.filters, visible) ?? img.source;
+}
+
 function drawFrame(ctx: Ctx, n: FrameNode, o: RenderOptions): void {
   const w = n.width;
   const h = n.height;
@@ -136,7 +157,8 @@ function drawFrame(ctx: Ctx, n: FrameNode, o: RenderOptions): void {
     const scale = Math.max(w / state.width, h / state.height) * n.content.scale;
     const dw = state.width * scale;
     const dh = state.height * scale;
-    ctx.drawImage(state.source, n.content.offsetX - dw / 2, n.content.offsetY - dh / 2, dw, dh);
+    const drawn = { x: n.content.offsetX - dw / 2, y: n.content.offsetY - dh / 2, w: dw, h: dh };
+    ctx.drawImage(frameSource(ctx, n, state, drawn, o), drawn.x, drawn.y, dw, dh);
   } else if (state === "missing") {
     drawPlaceholder(ctx, w, h, "Photo unavailable");
   } else if (state === "loading") {

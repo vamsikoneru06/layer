@@ -269,6 +269,62 @@ export function SelectField({
   );
 }
 
+/**
+ * A labelled range slider. Dragging previews live (`final` false) and the release applies once, so a
+ * drag is one undo step; arrow keys apply each step.
+ */
+export function Slider({
+  label,
+  value,
+  min,
+  max,
+  step = 0.01,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  onChange: (v: number, final: boolean) => void;
+  disabled?: boolean;
+}) {
+  const input = useRef<HTMLInputElement>(null);
+  const latest = useRef(onChange);
+  latest.current = onChange;
+
+  // React's onChange is the native `input` event; the native `change` fires once, on release.
+  useEffect(() => {
+    const el = input.current;
+    if (!el) return;
+    const done = () => latest.current(Number(el.value), true);
+    el.addEventListener("change", done);
+    return () => el.removeEventListener("change", done);
+  }, []);
+
+  return (
+    <label className={cn("flex flex-col gap-1", disabled && "opacity-45")}>
+      <span className="flex items-center justify-between text-[12px]">
+        <span className="text-muted">{label}</span>
+        <span className="font-medium tabular-nums">{Math.round(value * 100)}</span>
+      </span>
+      <input
+        ref={input}
+        type="range"
+        aria-label={label}
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(Number(e.target.value), false)}
+        className="h-4 w-full cursor-pointer accent-(--text) disabled:cursor-not-allowed"
+      />
+    </label>
+  );
+}
+
 /** A labelled row: muted label on the left, control on the right. */
 export function Row({ label, children }: { label: string; children: ReactNode }) {
   return (

@@ -1,10 +1,10 @@
 "use client";
 
-import { apply, checkPolicy, rotation, type Command, type EditorCore, type EditorState } from "@vash/engine";
-import { FONT_FAMILIES, LIMITS, type Fill, type Node, type ShapeNode, type TextNode } from "@vash/schema";
+import { apply, checkPolicy, FILTER_PRESETS, isNeutral, presetFilters, rotation, type Command, type EditorCore, type EditorState, type FilterValues } from "@vash/engine";
+import { defaultFilters, FONT_FAMILIES, LIMITS, type Fill, type FrameNode, type Node, type ShapeNode, type TextNode } from "@vash/schema";
 import { AlignCenter, AlignJustify, AlignLeft, AlignRight, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ColorField, NumberField, Row, Section, Segmented, SelectField, Switch } from "./fields";
+import { ColorField, NumberField, Row, Section, Segmented, SelectField, Slider, Switch } from "./fields";
 import { FONT_FACES } from "./font-faces";
 
 const TYPE_LABEL: Record<Node["type"], string> = { frame: "Photo frame", text: "Text", shape: "Shape", sticker: "Sticker", group: "Group" };
@@ -107,6 +107,7 @@ export function PropertiesPanel({ state, core }: { state: EditorState; core: Edi
 
       {node.type === "text" && <TextSection node={node} disabled={locked} update={update} />}
       {node.type === "shape" && <ShapeSection node={node} disabled={locked} update={update} />}
+      {node.type === "frame" && <FiltersSection node={node} disabled={locked} update={update} />}
 
       <Section title="Position & size">
         <div className="grid grid-cols-2 gap-2">
@@ -249,6 +250,56 @@ function ShapeSection({ node, disabled, update }: { node: ShapeNode; disabled: b
           onCommit={(cornerRadius) => update({ geometry: { ...g, cornerRadius } })}
         />
       )}
+    </Section>
+  );
+}
+
+const SLIDERS: readonly { key: keyof FilterValues; label: string; signed: boolean }[] = [
+  { key: "brightness", label: "Brightness", signed: true },
+  { key: "contrast", label: "Contrast", signed: true },
+  { key: "saturation", label: "Saturation", signed: true },
+  { key: "warmth", label: "Warmth", signed: true },
+  { key: "tint", label: "Tint", signed: true },
+  { key: "highlights", label: "Highlights", signed: true },
+  { key: "shadows", label: "Shadows", signed: true },
+  { key: "vignette", label: "Vignette", signed: false },
+  { key: "grain", label: "Grain", signed: false },
+  { key: "blur", label: "Blur", signed: false },
+  { key: "sharpen", label: "Sharpen", signed: false },
+];
+
+function FiltersSection({ node, disabled, update }: { node: FrameNode; disabled: boolean; update: Update }) {
+  const f = node.filters;
+  const chip = (selected: boolean) =>
+    `h-8 rounded-lg px-2 text-[12px] font-medium disabled:opacity-45 ${selected ? "bg-text text-bg" : "bg-field text-text hover:bg-line"}`;
+
+  return (
+    <Section title="Filters">
+      {!node.content && <p className="text-[12px] text-muted">Add a photo to this frame to see its filters.</p>}
+      <div role="group" aria-label="Filter presets" className="grid grid-cols-4 gap-1.5">
+        <button type="button" aria-pressed={f.preset === null && isNeutral(f)} disabled={disabled} onClick={() => update({ filters: defaultFilters() })} className={chip(f.preset === null && isNeutral(f))}>
+          None
+        </button>
+        {FILTER_PRESETS.map((p) => (
+          <button key={p.key} type="button" aria-pressed={f.preset === p.key} disabled={disabled} onClick={() => update({ filters: presetFilters(p.key) })} className={chip(f.preset === p.key)}>
+            {p.label}
+          </button>
+        ))}
+      </div>
+      <div className="flex flex-col gap-2.5 pt-1">
+        {SLIDERS.map(({ key, label, signed }) => (
+          <Slider
+            key={key}
+            label={label}
+            value={f[key]}
+            min={signed ? -1 : 0}
+            max={1}
+            disabled={disabled}
+            // Adjusting by hand leaves the preset; its values stay as the starting point.
+            onChange={(v, final) => update({ filters: { ...f, [key]: v, preset: null } }, final)}
+          />
+        ))}
+      </div>
     </Section>
   );
 }
