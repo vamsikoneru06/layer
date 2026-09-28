@@ -1,10 +1,12 @@
 import type { Deps } from "../deps";
+import { toDesignJson } from "../designs/handlers";
 import { getDesignVersion } from "../designs/repository";
 import { endpoint } from "../http/endpoint";
 import { parseId } from "../http/ids";
 import { notFound } from "../http/problem";
 import { RATE_LIMITS } from "../rate-limit/rules";
 import type { ObjectStorage } from "../storage/types";
+import { remixShare } from "./remix";
 import { listActiveShareLinks, revokeShareLink } from "./repository";
 import { createShare, viewShare } from "./service";
 
@@ -32,6 +34,11 @@ export function shareHandlers(deps: Deps, storage: ObjectStorage | null) {
 
     view: endpoint(deps, { auth: "none", rateLimit: { name: "sharedView", rule: RATE_LIMITS.sharedView, by: "ip" } }, async ({ params }) => {
       return Response.json(await viewShare({ ...ctx, storage }, params.token ?? ""));
+    }),
+
+    remix: endpoint(deps, { auth: "user", rateLimit: { name: "designCreate", rule: RATE_LIMITS.designCreate, by: "user" } }, async ({ user, params }) => {
+      const design = await remixShare({ ...ctx, storage }, user, params.token ?? "");
+      return Response.json(toDesignJson(design), { status: 201 });
     }),
   };
 }
