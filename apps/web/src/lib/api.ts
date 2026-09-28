@@ -156,3 +156,49 @@ export const getTemplate = (id: string) => request<TemplateDetail>(`/api/templat
 
 /** Copies the template's current version into a new design of the signed-in user's. */
 export const copyTemplate = (id: string) => request<{ id: string }>(`/api/templates/${id}/use`, { method: "POST", json: {} });
+
+export type Photo = { id: string; kind: string; mime: string; bytes: number; width: number | null; height: number | null; createdAt: string };
+
+export function listPhotos(cursor?: string | null): Promise<Page<Photo>> {
+  // The API pages at most 50 items.
+  const params = new URLSearchParams({ kind: "photo", limit: "48" });
+  if (cursor) params.set("cursor", cursor);
+  return request(`/api/assets?${params}`);
+}
+
+/** Short-lived URLs for showing assets (the documents and lists only ever hold ids). */
+export const resolveAssets = (ids: string[]) =>
+  request<{ assets: { id: string; url: string; expiresAt: string | null }[] }>("/api/assets/resolve", { method: "POST", json: { ids } });
+
+export const deleteAsset = (id: string) => request<void>(`/api/assets/${id}`, { method: "DELETE" });
+
+type UploadTicket = { asset: Photo; upload: { url: string; method: "PUT"; headers: Record<string, string> } };
+
+export const UPLOAD_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+export const UPLOAD_MAX_BYTES = 15 * 1024 * 1024;
+
+/**
+ * Uploads one photo: ask the API for a short-lived upload URL, send the file straight to storage,
+ * then confirm it with its pixel size. Throws an ApiError with a readable message on any failure.
+ */
+export async function uploadPhoto(file: File): Promise<Photo> {
+  if (!(UPLOAD_TYPES as readonly string[]).includes(file.type)) throw new ApiError(415, `${file.name}: use a JPEG, PNG or WebP photo.`);
+  if (file.size > UPLOAD_MAX_BYTES) throw new ApiError(413, `${file.name} is larger than 15 MB.`);
+  let size: { width: number; height: number };
+  try {
+    const bitmap = await createImageBitmap(file);
+    size = { width: bitmap.width, height: bitmap.height };
+    bitmap.close();
+  } catch {
+    throw new ApiError(422, `${file.name} couldn't be read as an image.`);
+  }
+  const ticket = await request<UploadTicket>("/api/assets/uploads", { method: "POST", json: { kind: "photo", mime: file.type, bytes: file.size } });
+  let put: Response;
+  try {
+    put = await fetch(ticket.upload.url, { method: ticket.upload.method, headers: ticket.upload.headers, body: file });
+  } catch {
+    throw new ApiError(0, `${file.name} couldn't be uploaded. Check your connection and try again.`);
+  }
+  if (!put.ok) throw new ApiError(put.status, `${file.name} couldn't be uploaded (storage answered ${put.status}).`);
+  return request<Photo>(`/api/assets/${ticket.asset.id}/complete`, { method: "POST", json: size });
+}
