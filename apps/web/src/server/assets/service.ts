@@ -146,8 +146,8 @@ export async function completeUpload(ctx: AssetContext, ownerId: string, id: str
   throw notFound();
 }
 
-export async function resolveAssets(ctx: AssetContext, viewerId: string | null, ids: string[]) {
-  const rows = await findResolvableAssets(ctx.db, viewerId, [...new Set(ids)]);
+export async function resolveAssets(ctx: AssetContext, viewerId: string | null, ids: string[], opts: { admin?: boolean } = {}) {
+  const rows = await findResolvableAssets(ctx.db, viewerId, [...new Set(ids)], opts);
   const expiresAt = new Date(ctx.now().getTime() + UPLOAD_LIMITS.downloadUrlSeconds * 1000).toISOString();
   return Promise.all(
     rows.map(async (a) =>

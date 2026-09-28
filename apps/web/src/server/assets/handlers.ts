@@ -54,7 +54,8 @@ export function assetHandlers(deps: Deps, storage: ObjectStorage | null) {
     resolve: endpoint(deps, { auth: "optional", rateLimit: { name: "assetResolve", rule: RATE_LIMITS.publicRead, by: "user" } }, async ({ req, user }) => {
       const c = ctx();
       const body = await readJson(req, ResolveBody);
-      return Response.json({ assets: await service.resolveAssets(c, user?.id ?? null, body.ids.map((id) => id.toLowerCase())) });
+      const ids = body.ids.map((id) => id.toLowerCase());
+      return Response.json({ assets: await service.resolveAssets(c, user?.id ?? null, ids, { admin: user?.role === "admin" }) });
     }),
 
     remove: endpoint(deps, { auth: "user", rateLimit: writeLimit }, async ({ user, params }) => {

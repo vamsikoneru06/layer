@@ -1,10 +1,16 @@
-import { and, asc, eq, lt, lte, sql } from "drizzle-orm";
+import { and, asc, eq, lte, sql } from "drizzle-orm";
 import { storageDeletions } from "../db/schema";
 import type { Db } from "../db/types";
 import type { ObjectStorage } from "./types";
 
-/** drainBudgetMs keeps one cron run well inside a serverless function's time limit. */
-export const OUTBOX = { batchSize: 50, maxAttempts: 5, drainBudgetMs: 20_000 } as const;
+/**
+ * drainBudgetMs keeps one cron run well inside a serverless function's time limit. A failed removal
+ * waits 2^attempts hours, capped at maxBackoffHours, and is never given up on: its bytes keep counting
+ * toward the owner's quota until the object is really gone.
+ */
+export const OUTBOX = { batchSize: 50, maxBackoffHours: 168, drainBudgetMs: 20_000 } as const;
+
+const backoffMs = (attempts: number) => Math.min(2 ** attempts, OUTBOX.maxBackoffHours) * 3_600_000;
 
 interface Position {
   createdAt: Date;
@@ -14,8 +20,7 @@ interface Position {
 /**
  * Deletes one batch of due objects (not_before <= now), oldest first, after `after` if given
  * and only for `assetId` if given.
- * Removal is idempotent, so overlapping runs are harmless. Rows that keep failing stop being
- * retried after OUTBOX.maxAttempts and stay for inspection.
+ * Removal is idempotent, so overlapping runs are harmless.
  */
 export async function processStorageDeletions(
   db: Db,
@@ -28,7 +33,6 @@ export async function processStorageDeletions(
     .from(storageDeletions)
     .where(
       and(
-        lt(storageDeletions.attempts, OUTBOX.maxAttempts),
         lte(storageDeletions.notBefore, now),
         opts.assetId ? eq(storageDeletions.assetId, opts.assetId) : undefined,
         opts.after
@@ -46,7 +50,10 @@ export async function processStorageDeletions(
       await db.delete(storageDeletions).where(eq(storageDeletions.id, row.id));
       deleted++;
     } catch {
-      await db.update(storageDeletions).set({ attempts: sql`${storageDeletions.attempts} + 1` }).where(eq(storageDeletions.id, row.id));
+      await db
+        .update(storageDeletions)
+        .set({ attempts: row.attempts + 1, notBefore: new Date(now.getTime() + backoffMs(row.attempts + 1)) })
+        .where(eq(storageDeletions.id, row.id));
       failed++;
     }
   }

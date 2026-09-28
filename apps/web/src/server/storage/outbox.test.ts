@@ -29,14 +29,25 @@ describe("processStorageDeletions", () => {
     expect(await t.db.select().from(storageDeletions)).toEqual([]);
   });
 
-  it("keeps failures for a retry, and gives up after the maximum attempts", async () => {
+  it("backs off after a failure and keeps retrying until storage recovers", async () => {
     const storage = memoryStorage();
+    storage.put("private", "u/a/stuck", new Uint8Array([1]));
     storage.failRemove.add("u/a/stuck");
     await queue("u/a/stuck");
-    for (let i = 0; i < OUTBOX.maxAttempts; i++) await processStorageDeletions(t.db, storage, NOW);
-    const [row] = await t.db.select().from(storageDeletions).where(eq(storageDeletions.storageKey, "u/a/stuck"));
-    expect(row?.attempts).toBe(OUTBOX.maxAttempts);
-    expect(await processStorageDeletions(t.db, storage, NOW)).toMatchObject({ deleted: 0, failed: 0 });
+    let at = NOW;
+    for (let i = 1; i <= 10; i++) {
+      expect(await processStorageDeletions(t.db, storage, at)).toMatchObject({ failed: 1 });
+      const [row] = await t.db.select().from(storageDeletions).where(eq(storageDeletions.storageKey, "u/a/stuck"));
+      expect(row?.attempts).toBe(i);
+      // Not retried again before its backoff ends, which is capped.
+      expect(await processStorageDeletions(t.db, storage, at)).toMatchObject({ failed: 0 });
+      expect(row!.notBefore.getTime() - at.getTime()).toBe(Math.min(2 ** i, OUTBOX.maxBackoffHours) * 3_600_000);
+      at = row!.notBefore;
+    }
+    storage.failRemove.delete("u/a/stuck");
+    expect(await processStorageDeletions(t.db, storage, at)).toMatchObject({ deleted: 1, failed: 0 });
+    expect(storage.has("private", "u/a/stuck")).toBe(false);
+    expect(await t.db.select().from(storageDeletions)).toEqual([]);
   });
 
   it("works oldest first, in batches", async () => {
