@@ -120,9 +120,9 @@ describe("loadConfig", () => {
     expect(errorOf({ ...base, ...storageEnv, NODE_ENV: "production", STORAGE_PUBLIC_BASE_URL: "http://cdn.example/x" })).toContain("STORAGE_PUBLIC_BASE_URL");
   });
 
-  it("requires a cron secret in production, but not storage (photos can live in the database)", () => {
+  it("requires storage and a cron secret in production", () => {
     const message = errorOf({ ...base, NODE_ENV: "production" });
-    expect(message).not.toContain("STORAGE_ENDPOINT");
+    expect(message).toContain("STORAGE_ENDPOINT");
     expect(message).toContain("CRON_SECRET");
   });
 });
