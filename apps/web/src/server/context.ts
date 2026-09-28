@@ -13,6 +13,8 @@ import { healthHandlers } from "./health/handlers";
 import type { Handler } from "./http/types";
 import { createLogger } from "./logging";
 import { meHandlers } from "./me/handlers";
+import { databaseStorage } from "./storage/database";
+import { storageFileHandlers } from "./storage/handlers";
 import { s3Storage } from "./storage/s3";
 import { templateHandlers } from "./templates/handlers";
 
@@ -25,7 +27,8 @@ function build() {
     config.mail.kind === "resend" ? resendMailer(config.mail) : config.mail.kind === "gmail" ? gmailMailer(config.mail) : consoleMailer(logger);
   const auth = createAuth({ db, config, mailer, now });
   const deps: Deps = { db, config, logger, now, authenticate: createAuthenticator(auth, db) };
-  const storage = config.storage ? s3Storage(config.storage) : null;
+  // An S3-compatible bucket when configured; otherwise photos are kept in the database itself.
+  const storage = config.storage ? s3Storage(config.storage) : databaseStorage({ db, secret: config.authSecret, origin: config.appOrigin, now });
   return {
     auth: createAuthRoute(auth, config),
     health: healthHandlers(deps),
@@ -35,6 +38,7 @@ function build() {
     templates: templateHandlers(deps, storage),
     assets: assetHandlers(deps, storage),
     cron: cronHandlers(deps, storage, config.cronSecret),
+    storageFiles: storageFileHandlers(deps, !config.storage),
   };
 }
 
