@@ -28,13 +28,46 @@ export function LegalPage({ title, updated, children }: { title: string; updated
   );
 }
 
+/** The operator's public contact details, from the environment so they're never guessed or hard-coded. */
+export function operator(): { email: string | null; grievanceOfficer: string | null } {
+  return { email: process.env.CONTACT_EMAIL || null, grievanceOfficer: process.env.GRIEVANCE_OFFICER_NAME || null };
+}
+
 /** "Email us at …" when CONTACT_EMAIL is set; otherwise nothing, rather than a made-up address. */
 export function Contact({ before }: { before: string }) {
-  const email = process.env.CONTACT_EMAIL;
+  const { email } = operator();
   if (!email) return null;
   return (
     <p>
       {before} <a href={`mailto:${email}`}>{email}</a>.
     </p>
+  );
+}
+
+/**
+ * The Grievance Officer section required of platforms hosting user content in India (IT Rules 2021,
+ * rule 3(2)) and for data complaints under the DPDP Act 2023. Shows the configured name and email.
+ */
+export function GrievanceOfficer() {
+  const { email, grievanceOfficer } = operator();
+  return (
+    <>
+      <h2>Grievance Officer</h2>
+      <p>
+        For complaints about content on VASH, about these terms, or about your personal data, contact our Grievance Officer
+        {grievanceOfficer ? (
+          <>
+            , <strong>{grievanceOfficer}</strong>
+          </>
+        ) : null}
+        {email ? (
+          <>
+            , at <a href={`mailto:${email}`}>{email}</a>
+          </>
+        ) : null}
+        . We acknowledge complaints within 24 hours and resolve them within 15 days. Complaints about content showing a person in a
+        sexual or intimate way without consent, or impersonating someone, are acted on within 24 hours.
+      </p>
+    </>
   );
 }
