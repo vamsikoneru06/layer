@@ -1,13 +1,15 @@
 "use client";
 
 import { LIMITS } from "@vash/schema";
-import { Download, Trash2 } from "lucide-react";
+import { Download, Monitor, Moon, Sun, Trash2 } from "lucide-react";
 import { useId, useState, type FormEvent } from "react";
 import { useSession, useSetMe } from "@/components/app/session";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
 import { deleteMe, updateMe, type Me } from "@/lib/api";
+import { currentTheme, setTheme, type Theme } from "@/lib/theme";
+import { cn } from "@/lib/utils";
 
 function ProfileSection({ me }: { me: Me }) {
   const id = useId();
@@ -68,6 +70,47 @@ function ProfileSection({ me }: { me: Me }) {
           </div>
         )}
       </dl>
+    </section>
+  );
+}
+
+const THEMES = [
+  { value: "system", label: "System", icon: <Monitor aria-hidden className="size-4" /> },
+  { value: "light", label: "Light", icon: <Sun aria-hidden className="size-4" /> },
+  { value: "dark", label: "Dark", icon: <Moon aria-hidden className="size-4" /> },
+] as const;
+
+function AppearanceSection() {
+  // The page is rendered with the saved choice, so read it once on the client.
+  const [theme, setChoice] = useState<Theme>(() => (typeof document === "undefined" ? "system" : currentTheme()));
+
+  return (
+    <section className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-lg font-semibold tracking-[-0.02em]">Appearance</h2>
+        <p className="text-sm text-muted">System follows your device&apos;s light or dark setting.</p>
+      </div>
+      <div role="radiogroup" aria-label="Appearance" className="flex w-fit rounded-[10px] bg-field p-[3px]">
+        {THEMES.map((t) => (
+          <button
+            key={t.value}
+            type="button"
+            role="radio"
+            aria-checked={theme === t.value}
+            onClick={() => {
+              setTheme(t.value);
+              setChoice(t.value);
+            }}
+            className={cn(
+              "flex h-8 items-center gap-1.5 rounded-[7px] px-3.5 text-[13px] text-muted hover:text-text",
+              theme === t.value && "bg-(--seg) font-medium text-text shadow-(--segsh)",
+            )}
+          >
+            {t.icon}
+            {t.label}
+          </button>
+        ))}
+      </div>
     </section>
   );
 }
@@ -217,9 +260,13 @@ export function SettingsView() {
 
   if (session.status !== "user") {
     return (
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-10">
         <h1 className="text-[clamp(30px,5vw,40px)] leading-[1.02] font-bold tracking-[-0.035em]">Settings</h1>
-        <p className="text-sm text-muted">Sign in to manage your account.</p>
+        <div className="flex max-w-[560px] flex-col gap-8">
+          <AppearanceSection />
+          <Divider />
+          <p className="text-sm text-muted">Sign in to manage your account.</p>
+        </div>
       </div>
     );
   }
@@ -230,6 +277,8 @@ export function SettingsView() {
       <h1 className="text-[clamp(30px,5vw,40px)] leading-[1.02] font-bold tracking-[-0.035em]">Settings</h1>
       <div className="flex max-w-[560px] flex-col gap-8">
         <ProfileSection me={me} />
+        <Divider />
+        <AppearanceSection />
         <Divider />
         <DataSection />
         <Divider />
