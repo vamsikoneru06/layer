@@ -66,7 +66,12 @@ export function storageFileHandlers(deps: Deps, enabled: boolean) {
 
     getPublic: endpoint(deps, { auth: "none", rateLimit: publicRead }, async ({ req }) => {
       if (!enabled) throw notFound();
-      const key = decodeURIComponent(new URL(req.url).pathname.replace(/^\/api\/storage\/public\//, ""));
+      let key: string;
+      try {
+        key = decodeURIComponent(new URL(req.url).pathname.replace(/^\/api\/storage\/public\//, ""));
+      } catch {
+        throw notFound(); // A malformed escape can't name a stored object.
+      }
       const obj = await readObject(deps.db, "public", key);
       if (!obj) throw notFound();
       // Public keys are unique per asset and never rewritten, so they can be cached for good.

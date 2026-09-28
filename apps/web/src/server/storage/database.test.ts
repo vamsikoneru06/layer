@@ -104,6 +104,7 @@ describe("database storage upload flow", () => {
     const deps = testDeps(t.db);
     expect((await call(files.getPublic, { path: "/api/storage/public/templates/t1/cover.jpg" })).status).toBe(200);
     expect((await call(files.getPublic, { path: "/api/storage/public/templates/t1/missing.jpg" })).status).toBe(404);
+    expect((await call(files.getPublic, { path: "/api/storage/public/%E0%A4%A" })).status).toBe(404);
     const off = storageFileHandlers(deps, false);
     expect((await call(off.getPublic, { path: "/api/storage/public/templates/t1/cover.jpg" })).status).toBe(404);
   });

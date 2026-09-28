@@ -72,7 +72,7 @@ const EnvSchema = z
       }
     }
     if (env.NODE_ENV === "production") {
-      if (storageSet.length === 0) ctx.addIssue({ code: "custom", path: ["STORAGE_ENDPOINT"], message: "required in production (photo uploads)" });
+      // Without a bucket, photos are kept in the database (storage/database.ts), so STORAGE_* is optional.
       for (const k of ["STORAGE_ENDPOINT", "STORAGE_PUBLIC_BASE_URL"] as const) {
         if (env[k] && !env[k].startsWith("https://")) ctx.addIssue({ code: "custom", path: [k], message: "must use https in production" });
       }

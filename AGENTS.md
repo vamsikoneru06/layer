@@ -117,8 +117,8 @@ Known gap: `db:seed` points at `apps/web/scripts/seed.ts`, which doesn't exist y
    to signed URLs, decode once with `createImageBitmap` (≤ 2048 px working copy), drop a file onto a frame to
    upload and place it, Photos panel with the user's media and Pexels search (`PEXELS_API_KEY`, credit the
    photographer). The storage backend exists (`apps/web/src/server/storage`, `server/assets`,
-   `docs/superpowers/plans/2026-09-26-storage-and-uploads.md`). Needs the Supabase `STORAGE_*` keys and `CRON_SECRET`
-   in `.env.local` (setup notes in `docs/free-stack.md`).
+   `docs/superpowers/plans/2026-09-26-storage-and-uploads.md`). Uploads already work without setup: with no `STORAGE_*` keys, photos are stored
+   in the database (`src/server/storage/database.ts`, 50 MB per user); Supabase keys switch to a bucket.
 2. **Missing pages** linked from the side bar: `/media`, `/templates`, `/settings`. Account export and deletion
    already exist as API endpoints (`apps/web/src/server/me`); Settings needs the UI.
 3. **Later phases** (spec §2.3): Author Mode, publishing, share links, creator profiles, moderation.
