@@ -31,6 +31,13 @@ describe("checkPolicy in design mode", () => {
     expect(checkPolicy(doc, { type: "update", id: "locked", patch: { lock: "free" } }, "design").ok).toBe(true);
   });
 
+  it("keeps a templated design's size but lets its background change", () => {
+    expect(checkPolicy(doc, { type: "artboard", patch: { width: 500 } }, "design").ok).toBe(false);
+    expect(checkPolicy(doc, { type: "artboard", patch: { background: { type: "solid", color: "#FFFFFF" } } }, "design").ok).toBe(true);
+    expect(checkPolicy(docWith([rect("free", {})]), { type: "artboard", patch: { width: 500 } }, "design").ok).toBe(true);
+    expect(checkPolicy(doc, { type: "artboard", patch: { width: 500 } }, "template").ok).toBe(true);
+  });
+
   it("refuses a whole batch if any part is refused", () => {
     const batch: Command = { type: "batch", commands: [move("free"), move("locked")] };
     expect(checkPolicy(doc, batch, "design").ok).toBe(false);

@@ -1,4 +1,4 @@
-import type { Doc, NodeId } from "@vash/schema";
+import { LIMITS, type Doc, type NodeId } from "@vash/schema";
 import type { Command } from "./commands";
 import { History } from "./history";
 import type { Box } from "./math";
@@ -22,16 +22,18 @@ export interface EditorState {
   canRedo: boolean;
   /** Short message for the UI, e.g. why a change was refused. */
   notice: string | null;
+  /** The text layer being typed into on the canvas, if any. */
+  editing: NodeId | null;
 }
 
-type Chrome = Pick<EditorState, "hover" | "guides" | "marquee" | "dragging" | "viewport" | "notice">;
+type Chrome = Pick<EditorState, "hover" | "guides" | "marquee" | "dragging" | "viewport" | "notice" | "editing">;
 
 /** The editor's state and its only write path: every document change passes the lock policy and the history. */
 export class EditorCore {
   readonly history: History;
   readonly mode: EditMode;
   #selection: readonly NodeId[] = [];
-  #chrome: Chrome = { hover: null, guides: [], marquee: null, dragging: false, viewport: { zoom: 1, panX: 0, panY: 0 }, notice: null };
+  #chrome: Chrome = { hover: null, guides: [], marquee: null, dragging: false, viewport: { zoom: 1, panX: 0, panY: 0 }, notice: null, editing: null };
   #state: EditorState;
   #listeners = new Set<() => void>();
   #txRefused = false;
@@ -91,6 +93,39 @@ export class EditorCore {
 
   cancelTransaction(): void {
     this.history.cancel();
+  }
+
+  /**
+   * Starts typing into a text layer. The whole edit is one transaction, so it becomes one undo step.
+   * Content-only layers can be edited; locked ones can't (outside Author Mode).
+   */
+  startTextEdit(id: NodeId): boolean {
+    const node = this.doc.nodes[id];
+    if (node?.type !== "text" || this.#chrome.editing) return false;
+    if (this.mode === "design" && node.lock === "locked") {
+      this.setChrome({ notice: "This layer is locked by the template." });
+      return false;
+    }
+    this.select([id]);
+    this.beginTransaction();
+    this.setChrome({ editing: id, hover: null, notice: null });
+    return true;
+  }
+
+  /** Replaces the edited layer's text, cut to its `maxChars`. */
+  editText(content: string): boolean {
+    const id = this.#chrome.editing;
+    const node = id ? (this.history.baseDoc ?? this.doc).nodes[id] : undefined;
+    if (!id || node?.type !== "text") return false;
+    return this.preview({ type: "update", id, patch: { content: content.slice(0, node.maxChars ?? LIMITS.textChars) } });
+  }
+
+  /** Ends typing: keeps the text as one undo step, or restores it (Escape). */
+  endTextEdit(commit: boolean): void {
+    if (!this.#chrome.editing) return;
+    if (commit) this.commitTransaction();
+    else this.cancelTransaction();
+    this.setChrome({ editing: null });
   }
 
   undo(): void {

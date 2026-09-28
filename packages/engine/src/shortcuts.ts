@@ -36,6 +36,10 @@ export function handleKey(core: EditorCore, e: KeyInput): boolean {
   }
   if (selection.length === 0) return false;
 
+  if (e.key === "Enter" && !e.mod && selection.length === 1 && doc.nodes[selection[0]!]?.type === "text") {
+    core.startTextEdit(selection[0]!);
+    return true;
+  }
   if (e.key === "Delete" || e.key === "Backspace") {
     core.dispatch({ type: "batch", commands: selection.map((id): Command => ({ type: "delete", id })) });
     return true;
