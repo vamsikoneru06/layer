@@ -1,32 +1,30 @@
 "use client";
 
+import { LIMITS } from "@vash/schema";
 import { Download, Trash2 } from "lucide-react";
 import { useId, useState, type FormEvent } from "react";
-import { useSession } from "@/components/app/session";
+import { useSession, useSetMe } from "@/components/app/session";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
-import { deleteMe, signOut, updateMe, type Me } from "@/lib/api";
+import { deleteMe, updateMe, type Me } from "@/lib/api";
 
-// ---------------------------------------------------------------------------
-// Profile section
-// ---------------------------------------------------------------------------
-
-function ProfileSection({ me, onUpdated }: { me: Me; onUpdated: (me: Me) => void }) {
+function ProfileSection({ me }: { me: Me }) {
   const id = useId();
   const toast = useToast();
+  const setMe = useSetMe();
   const [name, setName] = useState(me.name);
   const [saving, setSaving] = useState(false);
-  const dirty = name.trim() !== me.name;
+  const trimmed = name.trim();
+  const canSave = trimmed !== "" && trimmed !== me.name;
 
   async function save(e: FormEvent) {
     e.preventDefault();
-    const trimmed = name.trim();
-    if (!trimmed || saving) return;
+    if (!canSave || saving) return;
     setSaving(true);
     try {
-      const updated = await updateMe({ name: trimmed });
-      onUpdated(updated);
+      // Updating the session also refreshes the name in the side bar and account menu.
+      setMe(await updateMe({ name: trimmed }));
       toast({ message: "Display name updated." });
     } catch (err) {
       toast({ message: err instanceof Error ? err.message : "Could not save. Try again." });
@@ -50,11 +48,11 @@ function ProfileSection({ me, onUpdated }: { me: Me; onUpdated: (me: Me) => void
             className="field"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            maxLength={100}
+            maxLength={LIMITS.nameChars}
             autoComplete="name"
           />
         </label>
-        <Button type="submit" loading={saving} disabled={!dirty}>
+        <Button type="submit" loading={saving} disabled={!canSave}>
           {saving ? "Saving…" : "Save"}
         </Button>
       </form>
@@ -73,10 +71,6 @@ function ProfileSection({ me, onUpdated }: { me: Me; onUpdated: (me: Me) => void
     </section>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Data section
-// ---------------------------------------------------------------------------
 
 function DataSection() {
   const [downloading, setDownloading] = useState(false);
@@ -114,22 +108,13 @@ function DataSection() {
         <p className="text-sm text-muted">Download a copy of your designs, folders, and profile as a JSON file.</p>
       </div>
       <div>
-        <Button
-          variant="secondary"
-          onClick={downloadExport}
-          loading={downloading}
-          icon={<Download aria-hidden className="size-4" />}
-        >
+        <Button variant="secondary" onClick={downloadExport} loading={downloading} icon={<Download aria-hidden className="size-4" />}>
           {downloading ? "Preparing…" : "Download my data"}
         </Button>
       </div>
     </section>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Delete account section and confirmation dialog
-// ---------------------------------------------------------------------------
 
 function DeleteConfirmDialog({ open, onClose, email }: { open: boolean; onClose: () => void; email: string }) {
   const id = useId();
@@ -144,8 +129,8 @@ function DeleteConfirmDialog({ open, onClose, email }: { open: boolean; onClose:
     setDeleting(true);
     setError(null);
     try {
+      // The server ends the session as part of deleting the account.
       await deleteMe(confirm.trim());
-      await signOut().catch(() => {});
       window.location.href = "/";
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Try again.");
@@ -157,8 +142,7 @@ function DeleteConfirmDialog({ open, onClose, email }: { open: boolean; onClose:
     <Dialog open={open} onClose={onClose} title="Delete your account">
       <form onSubmit={handleDelete} className="flex flex-col gap-5">
         <p className="text-sm text-muted">
-          This will permanently delete your account, all your designs, uploaded media, and folders. This cannot be
-          undone.
+          This will permanently delete your account, all your designs, uploaded media, and folders. This cannot be undone.
         </p>
         <label htmlFor={`${id}-confirm`} className="flex flex-col gap-2 text-[13px] font-medium">
           Type your email to confirm
@@ -175,7 +159,11 @@ function DeleteConfirmDialog({ open, onClose, email }: { open: boolean; onClose:
             autoComplete="off"
           />
         </label>
-        {error && <p className="text-[13px] text-danger">{error}</p>}
+        {error && (
+          <p role="alert" className="text-[13px] text-danger">
+            {error}
+          </p>
+        )}
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onClose} disabled={deleting}>
             Cancel
@@ -196,16 +184,10 @@ function DangerSection({ email }: { email: string }) {
     <section className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
         <h2 className="text-lg font-semibold tracking-[-0.02em]">Danger zone</h2>
-        <p className="text-sm text-muted">
-          Deleting your account removes all your data from VASH. Download a backup first if you need one.
-        </p>
+        <p className="text-sm text-muted">Deleting your account removes all your data from VASH. Download a backup first if you need one.</p>
       </div>
       <div>
-        <Button
-          variant="danger"
-          onClick={() => setDialogOpen(true)}
-          icon={<Trash2 aria-hidden className="size-4" />}
-        >
+        <Button variant="danger" onClick={() => setDialogOpen(true)} icon={<Trash2 aria-hidden className="size-4" />}>
           Delete my account
         </Button>
       </div>
@@ -214,20 +196,12 @@ function DangerSection({ email }: { email: string }) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Main settings view
-// ---------------------------------------------------------------------------
-
 function Divider() {
   return <div aria-hidden className="h-[.5px] bg-line" />;
 }
 
 export function SettingsView() {
   const session = useSession();
-  const [me, setMe] = useState<Me | null>(null);
-
-  // Once the session loads, seed the local me state for optimistic updates.
-  const currentMe = me ?? (session.status === "user" ? session.me : null);
 
   if (session.status === "loading") {
     return (
@@ -241,7 +215,7 @@ export function SettingsView() {
     );
   }
 
-  if (session.status !== "user" || !currentMe) {
+  if (session.status !== "user") {
     return (
       <div className="flex flex-col gap-4">
         <h1 className="text-[clamp(30px,5vw,40px)] leading-[1.02] font-bold tracking-[-0.035em]">Settings</h1>
@@ -250,15 +224,16 @@ export function SettingsView() {
     );
   }
 
+  const { me } = session;
   return (
     <div className="flex flex-col gap-10">
       <h1 className="text-[clamp(30px,5vw,40px)] leading-[1.02] font-bold tracking-[-0.035em]">Settings</h1>
       <div className="flex max-w-[560px] flex-col gap-8">
-        <ProfileSection me={currentMe} onUpdated={setMe} />
+        <ProfileSection me={me} />
         <Divider />
         <DataSection />
         <Divider />
-        <DangerSection email={currentMe.email} />
+        <DangerSection email={me.email} />
       </div>
     </div>
   );
