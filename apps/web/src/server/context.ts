@@ -13,6 +13,7 @@ import { healthHandlers } from "./health/handlers";
 import type { Handler } from "./http/types";
 import { createLogger } from "./logging";
 import { meHandlers } from "./me/handlers";
+import { shareHandlers } from "./shares/handlers";
 import { s3Storage } from "./storage/s3";
 import { templateHandlers } from "./templates/handlers";
 
@@ -33,6 +34,7 @@ function build() {
     designs: designHandlers(deps),
     me: meHandlers(deps),
     templates: templateHandlers(deps, storage),
+    shares: shareHandlers(deps, storage),
     assets: assetHandlers(deps, storage),
     cron: cronHandlers(deps, storage, config.cronSecret),
   };
