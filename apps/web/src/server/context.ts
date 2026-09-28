@@ -1,4 +1,5 @@
 import "server-only";
+import { adminHandlers } from "./admin/handlers";
 import { assetHandlers } from "./assets/handlers";
 import { createAuth, createAuthRoute } from "./auth/auth";
 import { createAuthenticator } from "./auth/current-user";
@@ -37,6 +38,7 @@ function build() {
     templates: templateHandlers(deps, storage),
     shares: shareHandlers(deps, storage),
     users: userHandlers(deps),
+    admin: adminHandlers(deps),
     assets: assetHandlers(deps, storage),
     cron: cronHandlers(deps, storage, config.cronSecret),
   };
