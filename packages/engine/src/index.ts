@@ -9,6 +9,7 @@ export { hitTest, nodesInBox, worldBounds } from "./hit-test";
 export { drawOrder, parentOf, topLevelOf, worldMatrix } from "./scene";
 export { layoutText, type Measure, type TextLayout } from "./text";
 export { fontRequests } from "./fonts";
+export { createNode, insertLayer, newNodeId, type InsertKind } from "./insert";
 export { createFilterRenderer, FILTER_KEYS, FILTER_PRESETS, isNeutral, presetFilters, type FilterFn, type FilterValues } from "./filters";
 export { textEditBox, type TextEditBox } from "./text-edit";
 export { checkExport, exportPng, EXPORT_MAX_SIDE, type ExportCheck, type ExportOptions } from "./export";
