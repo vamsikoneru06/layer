@@ -15,7 +15,7 @@ export function Avatar({ me, size = 32 }: { me: Me; size?: number }) {
   return (
     <span
       aria-hidden
-      className="glass-primary flex flex-none items-center justify-center rounded-full font-semibold text-white"
+      className="glass-primary flex flex-none items-center justify-center rounded-full font-semibold text-white transition-[transform,filter,box-shadow] duration-200 ease-(--ease) group-hover:-translate-y-px group-hover:shadow-(--bpsh-h) group-hover:brightness-110 group-active:scale-95 motion-reduce:transition-none"
       style={{ width: size, height: size, fontSize: size * 0.38 }}
     >
       {initials(me)}

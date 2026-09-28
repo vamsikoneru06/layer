@@ -35,7 +35,8 @@ function Tip({ children }: { children: ReactNode }) {
   );
 }
 
-const ITEM_CLASS = "group relative flex size-11 items-center justify-center rounded-xl text-muted transition-colors hover:text-text focus-visible:text-text";
+const ITEM_CLASS =
+  "group relative flex size-11 items-center justify-center rounded-xl text-muted transition-colors hover:bg-field hover:text-text focus-visible:text-text aria-[current=page]:hover:bg-transparent";
 
 function Profile() {
   const session = useSession();
@@ -86,7 +87,7 @@ export function SideNav() {
 
   return (
     <aside className="fixed top-1/2 left-4 z-40 hidden -translate-y-1/2 flex-col items-center gap-3 rounded-2xl bg-bg p-2 shadow-[0_0_0_.5px_var(--line),0_12px_32px_rgba(0,0,0,.12)] md:flex">
-      <Link href="/home" aria-label="VASH home" className="group relative flex size-11 items-center justify-center rounded-xl">
+      <Link href="/home" aria-label="VASH home" className="group relative flex size-11 items-center justify-center rounded-xl transition-colors hover:bg-field">
         <Image src="/vash-logo.png" alt="" width={30} height={30} className="size-[30px] rounded-lg object-cover" priority />
         <Tip>VASH</Tip>
       </Link>
