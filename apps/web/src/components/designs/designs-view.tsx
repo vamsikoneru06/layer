@@ -8,7 +8,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Menu } from "@/components/ui/menu";
-import { useToast } from "@/components/ui/toast";
+import { useDismissToast, useToast } from "@/components/ui/toast";
 import * as api from "@/lib/api";
 import type { DesignItem, Folder } from "@/lib/api";
 import { parseDraggedIds, sortDesigns, type SortKey } from "@/lib/designs";
@@ -154,6 +154,8 @@ export function DesignsView() {
   const [renamingFolder, setRenamingFolder] = useState<string | null>(null);
   const [deletingFolder, setDeletingFolder] = useState<Folder | null>(null);
   const pendingDeletes = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const undoToasts = useRef(new Set<number>());
+  const dismissToast = useDismissToast();
 
   useEffect(() => setView(readView()), []);
 
@@ -188,11 +190,15 @@ export function DesignsView() {
       pending.clear();
     };
     window.addEventListener("pagehide", flush);
+    const toasts = undoToasts.current;
     return () => {
       window.removeEventListener("pagehide", flush);
       flush();
+      // The deletes are committed now, so their Undo toasts must not outlive the page.
+      for (const id of toasts) dismissToast(id);
+      toasts.clear();
     };
-  }, []);
+  }, [dismissToast]);
 
   const visible = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -261,7 +267,7 @@ export function DesignsView() {
         }, UNDO_MS),
       );
     }
-    toast({
+    const toastId = toast({
       icon: <Trash2 aria-hidden className="size-4 flex-none" />,
       message: ids.length === 1 ? `“${titles[0]}” deleted` : `${ids.length} designs deleted`,
       duration: UNDO_MS,
@@ -273,10 +279,12 @@ export function DesignsView() {
             pendingDeletes.current.delete(id);
           }
           setHidden((h) => new Set([...h].filter((x) => !ids.includes(x))));
+          undoToasts.current.delete(toastId);
           toast({ message: "Restored. Nothing was lost.", duration: 2500 });
         },
       },
     });
+    undoToasts.current.add(toastId);
   }
 
   async function rename(d: DesignItem, title: string) {
