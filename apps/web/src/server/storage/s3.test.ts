@@ -34,11 +34,11 @@ describe("s3Storage", () => {
     expect(url.searchParams.get("X-Amz-Expires")).toBe("3600");
   });
 
-  it("copies within a bucket, URL-encoding the source", async () => {
+  it("copies within or across buckets, URL-encoding the source", async () => {
     const sent: { input: unknown }[] = [];
     const client = { send: async (cmd: { input: unknown }) => void sent.push(cmd) } as unknown as S3Client;
-    await s3Storage(config, client).copy("private", "staging/user 1/a", "u/user 1/a");
-    expect(sent.map((c) => c.input)).toEqual([{ Bucket: "vash-private", Key: "u/user 1/a", CopySource: "vash-private/staging/user%201/a" }]);
+    await s3Storage(config, client).copy({ bucket: "private", key: "u/user 1/a" }, { bucket: "public", key: "t/tpl/a" });
+    expect(sent.map((c) => c.input)).toEqual([{ Bucket: "vash-public", Key: "t/tpl/a", CopySource: "vash-private/u/user%201/a" }]);
   });
 
   it("builds public URLs under the public base, encoding each key segment", () => {

@@ -45,9 +45,9 @@ export function s3Storage(
       const res = await client.send(new GetObjectCommand({ Bucket: bucketName(bucket), Key: key, Range: `bytes=0-${length - 1}` }));
       return (await res.Body?.transformToByteArray()) ?? new Uint8Array();
     },
-    async copy(bucket, from, to) {
-      const name = bucketName(bucket);
-      await client.send(new CopyObjectCommand({ Bucket: name, Key: to, CopySource: [name, ...from.split("/")].map(encodeURIComponent).join("/") }));
+    async copy(from, to) {
+      const CopySource = [bucketName(from.bucket), ...from.key.split("/")].map(encodeURIComponent).join("/");
+      await client.send(new CopyObjectCommand({ Bucket: bucketName(to.bucket), Key: to.key, CopySource }));
     },
     async remove(bucket, key) {
       await client.send(new DeleteObjectCommand({ Bucket: bucketName(bucket), Key: key }));

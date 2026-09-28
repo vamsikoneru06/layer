@@ -29,6 +29,13 @@
       "when": 1790422442230,
       "tag": "0003_storage_deletions_schedule",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790522857383,
+      "tag": "0004_templates_community",
+      "breakpoints": true
     }
   ]
 }

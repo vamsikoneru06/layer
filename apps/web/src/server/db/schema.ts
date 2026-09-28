@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, check, date, index, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, date, index, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uuid, type AnyPgColumn } from "drizzle-orm/pg-core";
 import type { Doc } from "@vash/schema";
 
 /** Millisecond precision so keyset cursors round-trip through JavaScript Dates exactly. */
@@ -105,11 +105,17 @@ export const assets = pgTable(
     bytes: integer("bytes").notNull(),
     width: integer("width"),
     height: integer("height"),
+    /** Set on the system-owned public copies a published template uses; they go when it goes. */
+    templateId: uuid("template_id").references((): AnyPgColumn => templates.id, { onDelete: "cascade" }),
+    /** The original a published copy was made from, so a republish can reuse the copy. No FK: the original may be deleted. */
+    sourceAssetId: uuid("source_asset_id"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
   (t) => [
     index("assets_owner_idx").on(t.ownerId, t.createdAt, t.id),
+    index("assets_template_idx").on(t.templateId),
+    check("assets_template_copy_check", sql`${t.templateId} is null or (${t.ownerId} is null and ${t.visibility} = 'public')`),
     index("assets_pending_idx").on(t.status, t.createdAt),
     check("assets_kind_check", sql`${t.kind} in ('photo', 'thumbnail', 'sticker')`),
     check("assets_visibility_check", sql`${t.visibility} in ('private', 'public')`),
@@ -145,6 +151,7 @@ export const templates = pgTable(
     index("templates_search_idx").using("gin", sql`to_tsvector('simple', ${t.searchText})`),
     index("templates_gallery_idx").on(t.status, t.createdAt, t.id),
     index("templates_author_idx").on(t.authorId),
+    index("templates_popular_idx").on(t.status, t.usesCount, t.id),
     check("templates_status_check", sql`${t.status} in ('published', 'hidden')`),
   ],
 );

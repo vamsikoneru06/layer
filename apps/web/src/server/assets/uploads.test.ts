@@ -7,6 +7,7 @@ import { call } from "../../../tests/support/invoke";
 import { memoryStorage } from "../../../tests/support/storage";
 import { assets, storageDeletions } from "../db/schema";
 import { processStorageDeletions } from "../storage/outbox";
+import type { ObjectRef } from "../storage/types";
 import { assetHandlers } from "./handlers";
 import { UPLOAD_LIMITS } from "./service";
 
@@ -183,8 +184,8 @@ describe("POST /api/assets/:id/complete", () => {
     storage.put("private", stagingOf(alice.id, body.asset.id), file(64));
     const racing = {
       ...storage,
-      copy: async (bucket: "private" | "public", from: string, to: string) => {
-        await storage.copy(bucket, from, to);
+      copy: async (from: ObjectRef, to: ObjectRef) => {
+        await storage.copy(from, to);
         await t.db.delete(assets).where(eq(assets.id, body.asset.id));
       },
     };

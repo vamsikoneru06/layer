@@ -93,3 +93,17 @@ export function scrubForPublish(doc: Doc, keep: ReadonlySet<AssetId>): Doc {
   }
   return next;
 }
+
+/** Returns a copy of `doc` with asset ids renamed (old → new) in frames, stickers and the assets map. */
+export function replaceAssetIds(doc: Doc, ids: ReadonlyMap<AssetId, AssetId>): Doc {
+  const rename = (id: AssetId) => ids.get(id) ?? id;
+  const nodes: Doc["nodes"] = {};
+  for (const [nodeId, node] of Object.entries(doc.nodes)) {
+    if (node.type === "frame" && node.content) nodes[nodeId] = { ...node, content: { ...node.content, assetId: rename(node.content.assetId) } };
+    else if (node.type === "sticker") nodes[nodeId] = { ...node, assetId: rename(node.assetId) };
+    else nodes[nodeId] = node;
+  }
+  const assets: Doc["assets"] = {};
+  for (const [id, ref] of Object.entries(doc.assets)) assets[rename(id)] = { ...ref, id: rename(id) };
+  return { ...doc, nodes, assets };
+}
