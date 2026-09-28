@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { EditorCore } from "./editor-core";
 import { handleKey, type KeyInput } from "./shortcuts";
-import { docWith, rect } from "./test-docs";
+import { docWith, rect, text } from "./test-docs";
 
 const key = (k: string, o: Partial<KeyInput> = {}): KeyInput => ({ key: k, mod: false, shift: false, alt: false, ...o });
 const setup = () => new EditorCore(docWith([rect("a", { x: 100, y: 100 }), rect("b", { x: 300, y: 300 }), { ...rect("locked", { x: 500 }), lock: "locked" }]));
@@ -53,5 +53,16 @@ describe("handleKey", () => {
   it("leaves unrelated keys to the browser", () => {
     expect(handleKey(setup(), key("q"))).toBe(false);
     expect(handleKey(setup(), key("ArrowLeft"))).toBe(false); // nothing selected
+  });
+
+  it("starts typing into a selected text layer on Enter, and leaves other layers alone", () => {
+    const c = new EditorCore(docWith([text("t", {}), rect("r", {})]));
+    c.select(["t"]);
+    expect(handleKey(c, key("Enter"))).toBe(true);
+    expect(c.getState().editing).toBe("t");
+    c.endTextEdit(true);
+    c.select(["r"]);
+    expect(handleKey(c, key("Enter"))).toBe(false);
+    expect(c.getState().editing).toBeNull();
   });
 });

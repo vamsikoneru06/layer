@@ -13,7 +13,13 @@ import { Menu } from "@/components/ui/menu";
 import { getDesign, saveDesign, saveDesignAsCopy, type Design } from "@/lib/api";
 import { createAutosaver, type Autosaver, type SaveStatus } from "@/lib/autosave";
 import { cn } from "@/lib/utils";
+import { ExportPopover } from "./export-popover";
+import { Segmented } from "./fields";
 import { LayersPanel } from "./layers-panel";
+import { PropertiesPanel } from "./properties-panel";
+import { TextEditor } from "./text-editor";
+// Self-hosted allowlisted fonts, loaded only on the editor route.
+import "./fonts.css";
 
 const NO_EDITOR = { subscribe: () => () => {}, get: () => null };
 
@@ -68,6 +74,7 @@ export function Workspace({ design }: { design: Design }) {
   const saver = useRef<Autosaver<Doc> | null>(null);
   const [editor, setEditor] = useState<Editor | null>(null);
   const [status, setStatus] = useState<SaveStatus>("saved");
+  const [panel, setPanel] = useState<"properties" | "layers">("properties");
   const state = useEditorState(editor);
 
   useEffect(() => {
@@ -107,6 +114,7 @@ export function Workspace({ design }: { design: Design }) {
   async function reloadTheirs() {
     if (!editor || !saver.current) return;
     const fresh = await getDesign(design.id);
+    editor.core.endTextEdit(false);
     editor.core.history.reset(fresh.doc);
     saver.current.reset(fresh.version);
   }
@@ -150,6 +158,7 @@ export function Workspace({ design }: { design: Design }) {
             </button>
           )}
         />
+        <ExportPopover editor={editor} doc={state?.doc ?? design.doc} />
       </header>
 
       <div className="flex min-h-0 flex-1">
@@ -157,6 +166,7 @@ export function Workspace({ design }: { design: Design }) {
           <div ref={container} className="relative min-h-0 flex-1 overflow-hidden bg-bg2">
             <canvas ref={scene} className="absolute inset-0" aria-hidden />
             <canvas ref={overlay} className="absolute inset-0 touch-none" aria-label="Design canvas. Use the Layers panel to select layers with the keyboard." />
+            {state && editor && <TextEditor editor={editor} state={state} />}
             {notice && (
               <div role="status" className="glass-primary pointer-events-none absolute top-4 left-1/2 max-w-[80%] -translate-x-1/2 rounded-xl px-4 py-2 text-[13px] text-white">
                 {notice}
@@ -180,9 +190,24 @@ export function Workspace({ design }: { design: Design }) {
             </span>
           </footer>
         </div>
-        <aside className="flex w-[300px] flex-none flex-col border-l-[.5px] border-line" aria-label="Layers">
-          <h2 className="px-4 pt-4 pb-2 text-[13px] font-semibold">Layers</h2>
-          {state && editor && <LayersPanel state={state} core={editor.core} />}
+        <aside className="flex w-[288px] flex-none flex-col border-l-[.5px] border-line text-[13px]" aria-label="Design panel">
+          <div className="px-4 pt-3.5 pb-3">
+            <Segmented
+              name="Panel"
+              value={panel}
+              options={[
+                { value: "properties", label: "Properties" },
+                { value: "layers", label: "Layers" },
+              ]}
+              onChange={setPanel}
+            />
+          </div>
+          {state && editor && panel === "properties" && (
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+              <PropertiesPanel state={state} core={editor.core} />
+            </div>
+          )}
+          {state && editor && panel === "layers" && <LayersPanel state={state} core={editor.core} />}
         </aside>
       </div>
 

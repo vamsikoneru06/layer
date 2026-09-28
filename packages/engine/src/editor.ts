@@ -1,12 +1,17 @@
 import type { Doc } from "@vash/schema";
 import { EditorCore, type EditorState } from "./editor-core";
+import { exportPng } from "./export";
+import { createFilterRenderer, type FilterFn } from "./filters";
+import { fontRequests } from "./fonts";
 import { createInteraction, type PointerInput } from "./interaction";
 import { renderOverlay } from "./overlay";
 import type { EditMode } from "./policy";
 import { renderScene, type ImageState } from "./render";
+import { hitTest } from "./hit-test";
 import { handleKey } from "./shortcuts";
 import type { Measure } from "./text";
-import { fitViewport, zoomAt } from "./viewport";
+import { textEditBox, type TextEditBox } from "./text-edit";
+import { fitViewport, toWorld, zoomAt } from "./viewport";
 
 export interface EditorOptions {
   /** Element the two canvases fill; its size drives the canvas size. */
@@ -28,6 +33,10 @@ export interface Editor {
   zoomTo(zoom: number): void;
   /** Redraw on the next frame (e.g. after fonts or images load). */
   invalidate(): void;
+  /** The current document as a PNG at 1×/2×/3×. */
+  exportPng(o: { scale: number; transparent: boolean }): Promise<Blob>;
+  /** Placement of the on-canvas text box while a text layer is being edited. */
+  textEditBox(): TextEditBox | null;
   destroy(): void;
 }
 
@@ -58,11 +67,25 @@ export function createEditor(o: EditorOptions): Editor {
   let frame = 0;
   let fitted = false;
 
+  // The WebGL2 filter pipeline starts on first use, so designs without filtered photos never create a context.
+  let filters: ReturnType<typeof createFilterRenderer> | null = null;
+  let warned = false;
+  const filter: FilterFn = (source, width, height, f) => {
+    filters ??= createFilterRenderer({ onRestored: () => invalidate() });
+    const out = filters.apply(source, width, height, f);
+    if (!out && !filters.available && !warned) {
+      warned = true;
+      queueMicrotask(() => core.setChrome({ notice: "Photo filters aren't available in this browser, so photos show without them." }));
+    }
+    return out;
+  };
+
   const draw = () => {
     frame = 0;
     const s = core.getState();
-    renderScene(sceneCtx, s.doc, s.viewport, { measure, image, dpr });
-    renderOverlay(overlayCtx, s.doc, s.viewport, dpr, s);
+    renderScene(sceneCtx, s.doc, s.viewport, { measure, image, filter, dpr, hidden: s.editing });
+    // While typing, the text box is the chrome: outline only, no handles.
+    renderOverlay(overlayCtx, s.doc, s.viewport, dpr, { ...s, dragging: s.dragging || s.editing !== null });
     o.overlay.style.cursor = ui.cursor();
   };
   const invalidate = () => {
@@ -70,6 +93,16 @@ export function createEditor(o: EditorOptions): Editor {
   };
 
   const fit = () => core.setChrome({ viewport: fitViewport(size, core.doc.artboard) });
+
+  // Ask for every font the document uses once; when one arrives, text is measured again.
+  const requested = new Set<string>();
+  const loadFonts = () => {
+    for (const font of fontRequests(core.doc)) {
+      if (requested.has(font) || !document.fonts) continue;
+      requested.add(font);
+      document.fonts.load(font).then(onFonts, () => {});
+    }
+  };
 
   const resize = () => {
     const r = o.container.getBoundingClientRect();
@@ -96,6 +129,8 @@ export function createEditor(o: EditorOptions): Editor {
     return { x: e.clientX - r.left, y: e.clientY - r.top, button: e.button, shift: e.shiftKey, alt: e.altKey };
   };
   const onDown = (e: PointerEvent) => {
+    // A press anywhere on the canvas ends typing before it does anything else.
+    core.endTextEdit(true);
     o.overlay.setPointerCapture(e.pointerId);
     ui.pointerDown(input(e));
     invalidate();
@@ -109,6 +144,11 @@ export function createEditor(o: EditorOptions): Editor {
     invalidate();
   };
   const onCancel = () => ui.cancel();
+  // Double-clicking text (even inside a group) starts typing into it.
+  const onDoubleClick = (e: MouseEvent) => {
+    const hit = hitTest(core.doc, toWorld(core.getState().viewport, input(e)));
+    if (hit && core.doc.nodes[hit]?.type === "text") core.startTextEdit(hit);
+  };
   const onWheel = (e: WheelEvent) => {
     e.preventDefault();
     const r = o.overlay.getBoundingClientRect();
@@ -141,11 +181,16 @@ export function createEditor(o: EditorOptions): Editor {
   o.overlay.addEventListener("pointermove", onMove);
   o.overlay.addEventListener("pointerup", onUp);
   o.overlay.addEventListener("pointercancel", onCancel);
+  o.overlay.addEventListener("dblclick", onDoubleClick);
   o.overlay.addEventListener("wheel", onWheel, { passive: false });
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", onKeyUp);
   document.fonts?.addEventListener("loadingdone", onFonts);
-  const unsubscribe = core.subscribe(invalidate);
+  const unsubscribe = core.subscribe(() => {
+    loadFonts();
+    invalidate();
+  });
+  loadFonts();
 
   return {
     core,
@@ -154,14 +199,21 @@ export function createEditor(o: EditorOptions): Editor {
     fit,
     zoomTo: (zoom) => core.setChrome({ viewport: zoomAt(core.getState().viewport, { x: size.width / 2, y: size.height / 2 }, zoom) }),
     invalidate,
+    exportPng: (e) => exportPng(core.doc, { ...e, measure, image, filter }),
+    textEditBox: () => {
+      const s = core.getState();
+      return s.editing ? textEditBox(s.doc, s.editing, s.viewport, measure) : null;
+    },
     destroy() {
       unsubscribe();
       observer.disconnect();
+      filters?.destroy();
       if (frame) cancelAnimationFrame(frame);
       o.overlay.removeEventListener("pointerdown", onDown);
       o.overlay.removeEventListener("pointermove", onMove);
       o.overlay.removeEventListener("pointerup", onUp);
       o.overlay.removeEventListener("pointercancel", onCancel);
+      o.overlay.removeEventListener("dblclick", onDoubleClick);
       o.overlay.removeEventListener("wheel", onWheel);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
