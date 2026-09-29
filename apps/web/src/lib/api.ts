@@ -119,4 +119,8 @@ export const createFolder = (name: string) => request<Folder>("/api/folders", { 
 export const renameFolder = (id: string, name: string) => request<Folder>(`/api/folders/${id}`, { method: "PATCH", json: { name } });
 export const deleteFolder = (id: string) => request<void>(`/api/folders/${id}`, { method: "DELETE" });
 
+export const updateMe = (patch: { name?: string }) => request<Me>("/api/me", { method: "PATCH", json: patch });
+
+export const deleteMe = (confirm: string) => request<void>("/api/me", { method: "DELETE", json: { confirm } });
+
 export const signOut = () => request<unknown>("/api/auth/sign-out", { method: "POST", json: {} });
