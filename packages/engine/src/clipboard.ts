@@ -83,6 +83,8 @@ function parsePayload(text: string): { roots: NodeId[]; nodes: Node[] } | null {
 export function planPaste(doc: Doc, text: string, mode: EditMode): Plan {
   const payload = parsePayload(text);
   if (!payload) return refuse(NOTHING_TO_PASTE);
+  // Real copies never hold more layers than a design can, so this also bounds nesting depth (no stack overflow below).
+  if (payload.nodes.length > nodeCap(doc)) return refuse(layerLimit(doc));
   const byId = new Map<NodeId, Node>();
   for (const n of payload.nodes) {
     if (byId.has(n.id)) return refuse(NOTHING_TO_PASTE);

@@ -69,6 +69,21 @@ describe("planPaste", () => {
     expect(reason(planPaste(doc, payload([rect("a", {})], ["a", "a"]), "design"))).toBe(NOTHING);
   });
 
+  it("refuses a very deep or very large payload instead of overflowing the stack", () => {
+    const doc = docWith([]);
+    const chain: unknown[] = [rect("leaf", {})];
+    for (let i = 0; i < 3000; i++) chain.push(group(`g${i}`, {}, [i === 0 ? "leaf" : `g${i - 1}`]));
+    const text = payload(chain, ["g2999"]);
+    expect(() => planPaste(doc, text, "design")).not.toThrow();
+    expect(planPaste(doc, text, "design").ok).toBe(false);
+  });
+
+  it("still pastes a payload well under the layer cap", () => {
+    const rects = Array.from({ length: 50 }, (_, i) => rect(`r${i}`, {}));
+    const plan = ok(planPaste(docWith([]), payload(rects, rects.map((r) => r.id)), "design"));
+    expect(plan.select).toHaveLength(50);
+  });
+
   it("does not throw on nodes with missing or odd fields (Review Focus 1)", () => {
     const doc = docWith([]);
     expect(() => planPaste(doc, payload([{ id: "x", type: "shape" }], ["x"]), "design")).not.toThrow();
