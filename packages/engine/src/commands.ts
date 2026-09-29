@@ -14,6 +14,8 @@ export type Command =
   | { type: "reorder"; id: NodeId; index: number }
   /** Changes the artboard's size and/or background. */
   | { type: "artboard"; patch: Partial<Doc["artboard"]> }
+  /** Changes the design's title. */
+  | { type: "meta"; patch: Partial<Pick<Doc["meta"], "title">> }
   | { type: "batch"; commands: Command[] };
 
 export interface Applied {
@@ -104,6 +106,12 @@ export function applyCommand(doc: Doc, cmd: Command): Applied {
       const previous: Record<string, unknown> = {};
       for (const key of Object.keys(cmd.patch)) previous[key] = doc.artboard[key as keyof Doc["artboard"]];
       return { doc: { ...doc, artboard: { ...doc.artboard, ...cmd.patch } }, inverse: { type: "artboard", patch: previous as Partial<Doc["artboard"]> } };
+    }
+
+    case "meta": {
+      const { title } = cmd.patch;
+      if (title === undefined || title === doc.meta.title) return { doc, inverse: NOOP };
+      return { doc: { ...doc, meta: { ...doc.meta, title } }, inverse: { type: "meta", patch: { title: doc.meta.title } } };
     }
 
     case "batch": {
