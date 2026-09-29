@@ -1,4 +1,4 @@
-import type { Doc, GroupNode, Node, NodeId } from "@vash/schema";
+import { LIMITS, type Doc, type GroupNode, type Node, type NodeId } from "@vash/schema";
 import type { Command } from "./commands";
 import { newNodeId } from "./insert";
 import { aabb, boxCorners, decompose, fromTransform, matricesClose, multiply } from "./math";
@@ -83,6 +83,12 @@ export function planUngroup(doc: Doc, ids: readonly NodeId[], mode: EditMode): P
       const m = multiply(groupMatrix, fromTransform(child.transform));
       const transform = decompose(m);
       if (!matricesClose(fromTransform(transform), m)) return refuse("This group is stretched too far to ungroup.");
+      const scales = [transform.scaleX, transform.scaleY].map(Math.abs);
+      const outOfRange =
+        scales.some((s) => s < LIMITS.scaleMin || s > LIMITS.scaleMax) ||
+        Math.abs(transform.x) > LIMITS.coordinate ||
+        Math.abs(transform.y) > LIMITS.coordinate;
+      if (outOfRange) return refuse("This group is scaled too far to ungroup.");
       const [self, ...rest] = subtreeOf((n) => doc.nodes[n], childId);
       lifted.push([{ ...self!, transform, opacity: self!.opacity * g.opacity, visible: self!.visible && g.visible }, ...rest]);
     }

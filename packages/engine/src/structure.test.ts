@@ -93,6 +93,17 @@ describe("planUngroup", () => {
     expect(reason(planUngroup(doc, ["g"], "design"))).toMatch(/stretched/);
   });
 
+  it("refuses when the children would end up outside the scale or coordinate limits", () => {
+    const tooSmall = docWith([group("g", { x: 500, y: 500, scaleX: 0.1, scaleY: 0.1 }, ["c"])], [rect("c", { scaleX: 0.05, scaleY: 0.05 })]);
+    expect(reason(planUngroup(tooSmall, ["g"], "design"))).toMatch(/scaled too far/);
+    const tooBig = docWith([group("g", { x: 500, y: 500, scaleX: 2, scaleY: 2 }, ["c"])], [rect("c", { scaleX: 60, scaleY: 60 })]);
+    expect(reason(planUngroup(tooBig, ["g"], "design"))).toMatch(/scaled too far/);
+    const farAway = docWith([group("g", { x: 90_000, y: 500, scaleX: 2, scaleY: 2 }, ["c"])], [rect("c", { x: 50_000 })]);
+    expect(reason(planUngroup(farAway, ["g"], "design"))).toMatch(/scaled too far/);
+    const inRange = docWith([group("g", { x: 500, y: 500, scaleX: 0.1, scaleY: 0.1 }, ["c"])], [rect("c", { scaleX: 0.5, scaleY: 0.5 })]);
+    expect(planUngroup(inRange, ["g"], "design").ok).toBe(true);
+  });
+
   it("puts children where their group was, for several groups at once", () => {
     const doc = docWith(
       [rect("x", {}), group("g1", { x: 200, y: 200 }, ["a1", "a2"]), rect("y", {}), group("g2", { x: 600, y: 600 }, ["b1", "b2"])],
