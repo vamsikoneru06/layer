@@ -546,13 +546,20 @@ const centre = (doc: Doc, id: string) => apply(worldMatrix(doc, id), { x: 0, y: 
 
 describe("planGroup", () => {
   it("groups two layers around their combined centre without moving them on screen", () => {
-    const doc = docWith([rect("a", { x: 100, y: 100 }), rect("b", { x: 300, y: 300, rotation: 30 }), rect("c", { x: 700 })]);
+    const doc = docWith([rect("a", { x: 100, y: 100 }), rect("b", { x: 300, y: 300 }), rect("c", { x: 700 })]);
     const plan = ok(planGroup(doc, ["a", "b"], "design"));
     const next = applyCommand(doc, plan.command).doc;
     const g = next.nodes[plan.select[0]!]!;
     expect(g).toMatchObject({ type: "group", children: ["a", "b"], transform: { x: 200, y: 200 }, width: 300, height: 300 });
     expect(next.root).toEqual([g.id, "c"]);
     for (const id of ["a", "b", "c"]) expect(matricesClose(worldMatrix(next, id), worldMatrix(doc, id))).toBe(true);
+    expect(validateDoc(next)).toMatchObject({ ok: true });
+  });
+
+  it("keeps rotated and scaled members exactly where they were (Review Focus 2)", () => {
+    const doc = docWith([rect("a", { x: 100, y: 100, rotation: 30 }), { ...rect("b", { x: 300, y: 250, rotation: -70, scaleX: -1.5, scaleY: 2 }), width: 80 }]);
+    const next = run(doc, planGroup(doc, ["a", "b"], "design")).doc;
+    for (const id of ["a", "b"]) expect(matricesClose(worldMatrix(next, id), worldMatrix(doc, id))).toBe(true);
     expect(validateDoc(next)).toMatchObject({ ok: true });
   });
 
