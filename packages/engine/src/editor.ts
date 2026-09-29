@@ -50,8 +50,9 @@ function canvasMeasure(): Measure {
   };
 }
 
+/** Keys typed into a field, or pressed while a dialog is open, belong to that field or dialog. */
 const isTyping = (t: EventTarget | null) =>
-  t instanceof HTMLElement && (t.isContentEditable || t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT");
+  t instanceof HTMLElement && (t.isContentEditable || t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.closest("dialog") !== null);
 
 /**
  * Binds the engine to two stacked canvases: the design below, selection chrome above (which also

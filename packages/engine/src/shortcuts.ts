@@ -1,4 +1,5 @@
 import type { Command } from "./commands";
+import { duplicateSelection, groupSelection, ungroupSelection } from "./edit-ops";
 import type { EditorCore } from "./editor-core";
 
 /** A key press; `mod` is ⌘ on macOS and Ctrl elsewhere. */
@@ -27,6 +28,16 @@ export function handleKey(core: EditorCore, e: KeyInput): boolean {
   }
   if (e.mod && k === "a") {
     core.select(doc.root);
+    return true;
+  }
+  // With nothing selected these still count as used, so the browser's bookmark (D) and find (G) stay quiet.
+  if (e.mod && !e.alt && k === "d" && !e.shift) {
+    duplicateSelection(core);
+    return true;
+  }
+  if (e.mod && !e.alt && k === "g") {
+    if (e.shift) ungroupSelection(core);
+    else groupSelection(core);
     return true;
   }
   if (e.key === "Escape") {
