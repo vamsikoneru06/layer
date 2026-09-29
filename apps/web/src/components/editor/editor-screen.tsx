@@ -5,6 +5,7 @@ import { FileQuestion, LockKeyhole, Monitor } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ToastProvider } from "@/components/ui/toast";
 import { ApiError, getDesign, type Design } from "@/lib/api";
 import { Workspace } from "./workspace";
 
@@ -99,6 +100,10 @@ function Screen({ load }: { load: Load }) {
         </Centered>
       );
     case "ready":
-      return <Workspace design={load.design} />;
+      return (
+        <ToastProvider>
+          <Workspace design={load.design} />
+        </ToastProvider>
+      );
   }
 }

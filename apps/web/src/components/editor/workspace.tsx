@@ -10,6 +10,7 @@ import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } fro
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Menu } from "@/components/ui/menu";
+import { useToast } from "@/components/ui/toast";
 import { getDesign, saveDesign, saveDesignAsCopy, type Design } from "@/lib/api";
 import { createAutosaver, type Autosaver, type SaveStatus } from "@/lib/autosave";
 import { createImageLoader } from "@/lib/images";
@@ -20,6 +21,7 @@ import { InsertRail } from "./insert-rail";
 import { LayersPanel } from "./layers-panel";
 import { PropertiesPanel } from "./properties-panel";
 import { TextEditor } from "./text-editor";
+import { useClipboard } from "./use-clipboard";
 // Self-hosted allowlisted fonts, loaded only on the editor route.
 import "./fonts.css";
 
@@ -97,6 +99,8 @@ export function Workspace({ design }: { design: Design }) {
   const [conflictBusy, setConflictBusy] = useState(false);
   const [conflictError, setConflictError] = useState<string | null>(null);
   const state = useEditorState(editor);
+  const toast = useToast();
+  useClipboard(editor);
 
   useEffect(() => {
     // Photos load in the background; the canvas redraws as each arrives.
@@ -133,13 +137,13 @@ export function Workspace({ design }: { design: Design }) {
     };
   }, [design]);
 
-  // Refusals ("Layout locked by template…") show briefly, then clear.
+  // Refusals ("Layout locked by the template.") and other engine messages show as a toast, then clear.
   const notice = state?.notice ?? null;
   useEffect(() => {
     if (!notice || !editor) return;
-    const t = setTimeout(() => editor.core.setChrome({ notice: null }), 3500);
-    return () => clearTimeout(t);
-  }, [notice, editor]);
+    toast({ message: notice, duration: 3500 });
+    editor.core.setChrome({ notice: null });
+  }, [notice, editor, toast]);
 
   // A new conflict always shows the dialog again.
   useEffect(() => {
@@ -223,11 +227,6 @@ export function Workspace({ design }: { design: Design }) {
             <canvas ref={scene} className="absolute inset-0" aria-hidden />
             <canvas ref={overlay} className="absolute inset-0 touch-none" aria-label="Design canvas. Use the Layers panel to select layers with the keyboard." />
             {state && editor && <TextEditor editor={editor} state={state} />}
-            {notice && (
-              <div role="status" className="glass-primary pointer-events-none absolute top-4 left-1/2 max-w-[80%] -translate-x-1/2 rounded-xl px-4 py-2 text-[13px] text-white">
-                {notice}
-              </div>
-            )}
           </div>
           <footer className="flex h-10 flex-none items-center gap-1 border-t-[.5px] border-line px-3 text-[13px] text-muted">
             <IconButton label="Zoom out" onClick={() => editor?.zoomTo(zoom / 1.25)}>
