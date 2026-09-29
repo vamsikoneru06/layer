@@ -2,21 +2,18 @@
 
 import { createEditor, type Editor, type EditorState } from "@vash/engine";
 import { parseDoc, type Doc } from "@vash/schema";
-import { ChevronDown, CloudAlert, CloudCheck, CloudOff, CloudUpload, Redo2, Undo2, ZoomIn, ZoomOut } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
+import { ZoomIn, ZoomOut } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { Menu } from "@/components/ui/menu";
 import { useToast } from "@/components/ui/toast";
 import { getDesign, saveDesign, saveDesignAsCopy, type Design } from "@/lib/api";
 import { createAutosaver, type Autosaver, type SaveStatus } from "@/lib/autosave";
 import { createImageLoader } from "@/lib/images";
-import { cn } from "@/lib/utils";
-import { ExportPopover } from "./export-popover";
+import { EditorHeader } from "./editor-header";
 import { Segmented } from "./fields";
+import { IconButton } from "./icon-button";
 import { InsertRail } from "./insert-rail";
 import { LayersPanel } from "./layers-panel";
 import { PropertiesPanel } from "./properties-panel";
@@ -31,61 +28,6 @@ function useEditorState(editor: Editor | null): EditorState | null {
   return useSyncExternalStore(editor ? editor.subscribe : NO_EDITOR.subscribe, editor ? editor.getState : NO_EDITOR.get, NO_EDITOR.get);
 }
 
-function IconButton({ label, onClick, disabled, children }: { label: string; onClick: () => void; disabled?: boolean; children: ReactNode }) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      onClick={onClick}
-      disabled={disabled}
-      className="flex size-8 items-center justify-center rounded-lg text-text hover:bg-field disabled:opacity-35 disabled:hover:bg-transparent [&_svg]:size-[18px]"
-    >
-      {children}
-    </button>
-  );
-}
-
-const STATUS: Record<SaveStatus, { icon: ReactNode; label: string }> = {
-  saved: { icon: <CloudCheck aria-hidden />, label: "Saved" },
-  unsaved: { icon: <CloudUpload aria-hidden />, label: "Unsaved changes" },
-  saving: { icon: <CloudUpload aria-hidden />, label: "Saving…" },
-  offline: { icon: <CloudOff aria-hidden />, label: "Offline, retrying" },
-  retrying: { icon: <CloudAlert aria-hidden />, label: "Couldn’t save, retrying" },
-  "signed-out": { icon: <CloudAlert aria-hidden />, label: "Signed out, changes not saved" },
-  error: { icon: <CloudAlert aria-hidden />, label: "Couldn’t save" },
-  conflict: { icon: <CloudAlert aria-hidden />, label: "Changed elsewhere" },
-};
-
-const LINK = "font-medium text-text underline-offset-4 hover:underline";
-
-function SaveIndicator({ status, onRetry, onResolve }: { status: SaveStatus; onRetry: () => void; onResolve: () => void }) {
-  const s = STATUS[status];
-  const alarming = status === "error" || status === "conflict" || status === "signed-out";
-  return (
-    <span role="status" className={cn("flex items-center gap-1.5 text-[13px] text-muted [&_svg]:size-4", alarming && "text-danger")}>
-      {s.icon}
-      {s.label}
-      {status === "signed-out" && (
-        // A new tab, so this editor and its unsaved changes stay open; saving resumes on return.
-        <a href="/signin" target="_blank" rel="noopener" className={LINK}>
-          Sign in
-        </a>
-      )}
-      {(status === "error" || status === "signed-out" || status === "retrying") && (
-        <button type="button" onClick={onRetry} className={LINK}>
-          Retry
-        </button>
-      )}
-      {status === "conflict" && (
-        <button type="button" onClick={onResolve} className={LINK}>
-          Resolve
-        </button>
-      )}
-    </span>
-  );
-}
-
 export function Workspace({ design }: { design: Design }) {
   const router = useRouter();
   const container = useRef<HTMLDivElement>(null);
@@ -98,6 +40,8 @@ export function Workspace({ design }: { design: Design }) {
   const [conflictOpen, setConflictOpen] = useState(true);
   const [conflictBusy, setConflictBusy] = useState(false);
   const [conflictError, setConflictError] = useState<string | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [renaming, setRenaming] = useState(false);
   const state = useEditorState(editor);
   const toast = useToast();
   useClipboard(editor);
@@ -191,34 +135,19 @@ export function Workspace({ design }: { design: Design }) {
 
   return (
     <main className="flex h-svh flex-col overflow-hidden bg-bg text-text">
-      <header className="flex h-14 flex-none items-center gap-3 border-b-[.5px] border-line px-3">
-        <Link href="/designs" aria-label="Back to your designs" className="flex-none rounded-md transition-opacity hover:opacity-75">
-          <Image src="/vash-logo.png" alt="" width={28} height={28} className="size-7 rounded-md" priority />
-        </Link>
-        <h1 className="max-w-[320px] truncate text-sm font-semibold">{state?.doc.meta.title ?? design.title}</h1>
-        <SaveIndicator status={status} onRetry={() => void saver.current?.flush()} onResolve={() => setConflictOpen(true)} />
-        <div className="flex-1" />
-        <IconButton label="Undo (Ctrl+Z)" onClick={() => editor?.core.undo()} disabled={!state?.canUndo}>
-          <Undo2 aria-hidden />
-        </IconButton>
-        <IconButton label="Redo (Ctrl+Shift+Z)" onClick={() => editor?.core.redo()} disabled={!state?.canRedo}>
-          <Redo2 aria-hidden />
-        </IconButton>
-        <Menu
-          items={[
-            { label: "Fit to screen", onSelect: () => editor?.fit() },
-            "separator",
-            ...[0.5, 1, 2].map((z) => ({ label: `${z * 100}%`, onSelect: () => editor?.zoomTo(z) })),
-          ]}
-          trigger={(props) => (
-            <button type="button" {...props} aria-label="Zoom" className="flex h-8 items-center gap-1 rounded-lg px-2.5 text-[13px] font-medium tabular-nums hover:bg-field">
-              {Math.round(zoom * 100)}%
-              <ChevronDown aria-hidden className="size-3.5 text-muted" />
-            </button>
-          )}
-        />
-        <ExportPopover editor={editor} doc={state?.doc ?? design.doc} />
-      </header>
+      <EditorHeader
+        editor={editor}
+        doc={state?.doc ?? design.doc}
+        canUndo={state?.canUndo ?? false}
+        canRedo={state?.canRedo ?? false}
+        status={status}
+        onRetry={() => void saver.current?.flush()}
+        onResolve={() => setConflictOpen(true)}
+        exportOpen={exportOpen}
+        onExportOpenChange={setExportOpen}
+        renaming={renaming}
+        onRenamingChange={setRenaming}
+      />
 
       <div className="flex min-h-0 flex-1">
         <InsertRail editor={editor} />

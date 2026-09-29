@@ -21,8 +21,7 @@ function save(blob: Blob, name: string) {
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
-export function ExportPopover({ editor, doc }: { editor: Editor | null; doc: Doc }) {
-  const [open, setOpen] = useState(false);
+export function ExportPopover({ editor, doc, open, onOpenChange }: { editor: Editor | null; doc: Doc; open: boolean; onOpenChange: (open: boolean) => void }) {
   const [scale, setScale] = useState<number>(2);
   const [transparent, setTransparent] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
@@ -33,11 +32,11 @@ export function ExportPopover({ editor, doc }: { editor: Editor | null; doc: Doc
   useEffect(() => {
     if (!open) return;
     const onDown = (e: PointerEvent) => {
-      if (!root.current?.contains(e.target as Node)) setOpen(false);
+      if (!root.current?.contains(e.target as Node)) onOpenChange(false);
     };
     document.addEventListener("pointerdown", onDown);
     return () => document.removeEventListener("pointerdown", onDown);
-  }, [open]);
+  }, [open, onOpenChange]);
 
   useEffect(() => {
     if (phase !== "done") return;
@@ -67,11 +66,11 @@ export function ExportPopover({ editor, doc }: { editor: Editor | null; doc: Doc
       className="relative"
       onKeyDown={(e) => {
         if (e.key !== "Escape") return;
-        setOpen(false);
+        onOpenChange(false);
         root.current?.querySelector<HTMLElement>("[aria-haspopup]")?.focus();
       }}
     >
-      <button type="button" className={buttonClass("primary", "sm")} aria-haspopup="dialog" aria-expanded={open} aria-controls={id} onClick={() => setOpen((o) => !o)}>
+      <button type="button" className={buttonClass("primary", "sm")} aria-haspopup="dialog" aria-expanded={open} aria-controls={id} onClick={() => onOpenChange(!open)}>
         <span className="glass-label">Export</span>
         <ChevronDown aria-hidden className="size-3.5" />
       </button>
