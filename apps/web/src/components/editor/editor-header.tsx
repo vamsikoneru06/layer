@@ -6,8 +6,10 @@ import { Redo2, Undo2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import type { SaveStatus } from "@/lib/autosave";
+import type { Action, ActionId } from "./editor-actions";
 import { ExportPopover } from "./export-popover";
 import { IconButton } from "./icon-button";
+import { MenuBar } from "./menu-bar";
 import { SaveIndicator } from "./save-indicator";
 import { TitleField } from "./title-field";
 
@@ -23,6 +25,8 @@ export function EditorHeader({
   onExportOpenChange,
   renaming,
   onRenamingChange,
+  actions,
+  mac,
 }: {
   editor: Editor | null;
   doc: Doc;
@@ -35,12 +39,15 @@ export function EditorHeader({
   onExportOpenChange: (open: boolean) => void;
   renaming: boolean;
   onRenamingChange: (renaming: boolean) => void;
+  actions: Record<ActionId, Action> | null;
+  mac: boolean;
 }) {
   return (
     <header className="flex h-14 flex-none items-center gap-3 border-b-[.5px] border-line px-3">
       <Link href="/designs" aria-label="Back to your designs" className="flex-none rounded-md transition-opacity hover:opacity-75">
         <Image src="/vash-logo.png" alt="" width={28} height={28} className="size-7 rounded-md" priority />
       </Link>
+      {actions && <MenuBar actions={actions} mac={mac} />}
       <TitleField title={doc.meta.title} editing={renaming} onEditingChange={onRenamingChange} onCommit={(title) => editor?.core.dispatch({ type: "meta", patch: { title } })} />
       <SaveIndicator status={status} onRetry={onRetry} onResolve={onResolve} />
       <div className="flex-1" />

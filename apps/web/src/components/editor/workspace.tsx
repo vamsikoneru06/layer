@@ -4,21 +4,26 @@ import { createEditor, type Editor, type EditorState } from "@vash/engine";
 import { parseDoc, type Doc } from "@vash/schema";
 import { ZoomIn, ZoomOut } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
-import { getDesign, saveDesign, saveDesignAsCopy, type Design } from "@/lib/api";
+import { duplicateDesign, getDesign, saveDesign, saveDesignAsCopy, type Design } from "@/lib/api";
 import { createAutosaver, type Autosaver, type SaveStatus } from "@/lib/autosave";
 import { createImageLoader } from "@/lib/images";
+import { DesignInfoDialog } from "./design-info-dialog";
+import { buildActions, type ActionHost } from "./editor-actions";
 import { EditorHeader } from "./editor-header";
 import { Segmented } from "./fields";
 import { IconButton } from "./icon-button";
 import { InsertRail } from "./insert-rail";
 import { LayersPanel } from "./layers-panel";
+import { MoveDialog } from "./move-dialog";
 import { PropertiesPanel } from "./properties-panel";
+import { ShortcutsDialog } from "./shortcuts-dialog";
 import { TextEditor } from "./text-editor";
 import { useClipboard } from "./use-clipboard";
+import { useFullscreen } from "./use-fullscreen";
 // Self-hosted allowlisted fonts, loaded only on the editor route.
 import "./fonts.css";
 
@@ -44,7 +49,16 @@ export function Workspace({ design }: { design: Design }) {
   const [renaming, setRenaming] = useState(false);
   const state = useEditorState(editor);
   const toast = useToast();
-  useClipboard(editor);
+  const clipboard = useClipboard(editor);
+  const root = useRef<HTMLElement>(null);
+  const fullscreen = useFullscreen(root);
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [moveOpen, setMoveOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [panelsHidden, setPanelsHidden] = useState(false);
+  const [savedAt, setSavedAt] = useState(design.updatedAt);
+  const [folderId, setFolderId] = useState(design.folderId);
+  const mac = useMemo(() => typeof navigator !== "undefined" && navigator.platform.startsWith("Mac"), []);
 
   useEffect(() => {
     // Photos load in the background; the canvas redraws as each arrives.
@@ -130,11 +144,95 @@ export function Workspace({ design }: { design: Design }) {
       router.push(`/edit/${id}`);
     });
 
+  // When a save finishes, "Last saved" in Design info moves on.
+  const wasSaved = useRef(true);
+  useEffect(() => {
+    if (status === "saved" && !wasSaved.current) setSavedAt(new Date().toISOString());
+    wasSaved.current = status === "saved";
+  }, [status]);
+
+  /** Saves now. `flush` never throws; a leftover `dirty` means the save did not go through. */
+  async function saveNow() {
+    const s = saver.current;
+    if (!s) return;
+    await s.flush();
+    toast({ message: s.dirty ? "Not saved yet. The status at the top shows why." : "All changes saved.", duration: 3000 });
+  }
+
+  async function makeCopy() {
+    const s = saver.current;
+    try {
+      if (s?.dirty) await s.flush();
+      if (s?.dirty) {
+        toast({ message: "Your latest changes are still saving. Try again in a moment." });
+        return;
+      }
+      const copy = await duplicateDesign(design.id);
+      router.push(`/edit/${copy.id}`);
+    } catch (err) {
+      toast({ message: err instanceof Error ? err.message : "Couldn’t make a copy. Try again." });
+    }
+  }
+
+  // Ctrl+S saves and keeps the browser's Save dialog away.
+  const save = useRef(saveNow);
+  save.current = saveNow;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((mac ? e.metaKey : e.ctrlKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        void save.current();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mac]);
+
+  // Escape brings hidden panels back.
+  useEffect(() => {
+    if (!panelsHidden) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPanelsHidden(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [panelsHidden]);
+
+  // The canvas area changes size when panels hide or fullscreen starts: fit once the layout has settled.
+  useEffect(() => {
+    if (!editor) return;
+    const frame = requestAnimationFrame(() => requestAnimationFrame(() => editor.fit()));
+    return () => cancelAnimationFrame(frame);
+  }, [editor, panelsHidden, fullscreen.active]);
+
+  const host: ActionHost = {
+    panelsHidden,
+    canFullscreen: fullscreen.supported,
+    copy: () => void clipboard.copy(),
+    cut: () => void clipboard.cut(),
+    paste: () => void clipboard.paste(),
+    newDesign: () => router.push("/home#create"),
+    open: () => router.push("/designs"),
+    makeCopy: () => void makeCopy(),
+    rename: () => setRenaming(true),
+    moveToFolder: () => setMoveOpen(true),
+    designInfo: () => setInfoOpen(true),
+    save: () => void saveNow(),
+    download: () => setExportOpen(true),
+    zoomIn: () => editor?.zoomTo(editor.getState().viewport.zoom * 1.25),
+    zoomOut: () => editor?.zoomTo(editor.getState().viewport.zoom / 1.25),
+    fit: () => editor?.fit(),
+    fullscreen: () => void fullscreen.toggle().catch(() => toast({ message: "Fullscreen isn’t available right now." })),
+    togglePanels: () => setPanelsHidden((hidden) => !hidden),
+    shortcuts: () => setShortcutsOpen(true),
+  };
+  const actions = state && editor ? buildActions(state, editor.core, host) : null;
+
   const zoom = state?.viewport.zoom ?? 1;
   const artboard = state?.doc.artboard ?? design.doc.artboard;
 
   return (
-    <main className="flex h-svh flex-col overflow-hidden bg-bg text-text">
+    <main ref={root} className="flex h-svh flex-col overflow-hidden bg-bg text-text">
       <EditorHeader
         editor={editor}
         doc={state?.doc ?? design.doc}
@@ -147,52 +245,63 @@ export function Workspace({ design }: { design: Design }) {
         onExportOpenChange={setExportOpen}
         renaming={renaming}
         onRenamingChange={setRenaming}
+        actions={actions}
+        mac={mac}
       />
 
       <div className="flex min-h-0 flex-1">
-        <InsertRail editor={editor} />
+        {!panelsHidden && <InsertRail editor={editor} />}
         <div className="relative flex min-w-0 flex-1 flex-col">
           <div ref={container} className="relative min-h-0 flex-1 overflow-hidden bg-bg2">
             <canvas ref={scene} className="absolute inset-0" aria-hidden />
             <canvas ref={overlay} className="absolute inset-0 touch-none" aria-label="Design canvas. Use the Layers panel to select layers with the keyboard." />
             {state && editor && <TextEditor editor={editor} state={state} />}
+            {panelsHidden && (
+              <button type="button" onClick={() => setPanelsHidden(false)} className="glass-btn glass-secondary absolute top-3 right-3 h-8 rounded-lg px-3 text-[13px]">
+                <span className="glass-label">Show panels</span>
+              </button>
+            )}
           </div>
-          <footer className="flex h-10 flex-none items-center gap-1 border-t-[.5px] border-line px-3 text-[13px] text-muted">
-            <IconButton label="Zoom out" onClick={() => editor?.zoomTo(zoom / 1.25)}>
-              <ZoomOut aria-hidden />
-            </IconButton>
-            <IconButton label="Zoom in" onClick={() => editor?.zoomTo(zoom * 1.25)}>
-              <ZoomIn aria-hidden />
-            </IconButton>
-            <span className="w-12 text-center tabular-nums">{Math.round(zoom * 100)}%</span>
-            <button type="button" onClick={() => editor?.fit()} className="h-7 rounded-md px-2 font-medium text-text hover:bg-field">
-              Fit
-            </button>
-            <div className="flex-1" />
-            <span className="tabular-nums">
-              {artboard.width} × {artboard.height}
-            </span>
-          </footer>
-        </div>
-        <aside className="flex w-[288px] flex-none flex-col border-l-[.5px] border-line text-[13px]" aria-label="Design panel">
-          <div className="px-4 pt-3.5 pb-3">
-            <Segmented
-              name="Panel"
-              value={panel}
-              options={[
-                { value: "properties", label: "Properties" },
-                { value: "layers", label: "Layers" },
-              ]}
-              onChange={setPanel}
-            />
-          </div>
-          {state && editor && panel === "properties" && (
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
-              <PropertiesPanel state={state} core={editor.core} />
-            </div>
+          {!panelsHidden && (
+            <footer className="flex h-10 flex-none items-center gap-1 border-t-[.5px] border-line px-3 text-[13px] text-muted">
+              <IconButton label="Zoom out" onClick={() => editor?.zoomTo(zoom / 1.25)}>
+                <ZoomOut aria-hidden />
+              </IconButton>
+              <IconButton label="Zoom in" onClick={() => editor?.zoomTo(zoom * 1.25)}>
+                <ZoomIn aria-hidden />
+              </IconButton>
+              <span className="w-12 text-center tabular-nums">{Math.round(zoom * 100)}%</span>
+              <button type="button" onClick={() => editor?.fit()} className="h-7 rounded-md px-2 font-medium text-text hover:bg-field">
+                Fit
+              </button>
+              <div className="flex-1" />
+              <span className="tabular-nums">
+                {artboard.width} × {artboard.height}
+              </span>
+            </footer>
           )}
-          {state && editor && panel === "layers" && <LayersPanel state={state} core={editor.core} />}
-        </aside>
+        </div>
+        {!panelsHidden && (
+          <aside className="flex w-[288px] flex-none flex-col border-l-[.5px] border-line text-[13px]" aria-label="Design panel">
+            <div className="px-4 pt-3.5 pb-3">
+              <Segmented
+                name="Panel"
+                value={panel}
+                options={[
+                  { value: "properties", label: "Properties" },
+                  { value: "layers", label: "Layers" },
+                ]}
+                onChange={setPanel}
+              />
+            </div>
+            {state && editor && panel === "properties" && (
+              <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+                <PropertiesPanel state={state} core={editor.core} />
+              </div>
+            )}
+            {state && editor && panel === "layers" && <LayersPanel state={state} core={editor.core} />}
+          </aside>
+        )}
       </div>
 
       <Dialog open={status === "conflict" && conflictOpen} onClose={() => setConflictOpen(false)} title="This design changed in another tab">
@@ -216,6 +325,19 @@ export function Workspace({ design }: { design: Design }) {
           </Button>
         </div>
       </Dialog>
+
+      {actions && <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} actions={actions} mac={mac} />}
+      <DesignInfoDialog open={infoOpen} onClose={() => setInfoOpen(false)} doc={state?.doc ?? design.doc} savedAt={savedAt} />
+      <MoveDialog
+        open={moveOpen}
+        onClose={() => setMoveOpen(false)}
+        designId={design.id}
+        folderId={folderId}
+        onMoved={(id, name) => {
+          setFolderId(id);
+          toast({ message: name ? `Moved to ${name}.` : "Removed from its folder." });
+        }}
+      />
     </main>
   );
 }
