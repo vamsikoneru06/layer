@@ -151,12 +151,18 @@ export function Workspace({ design }: { design: Design }) {
     wasSaved.current = status === "saved";
   }, [status]);
 
-  /** Saves now. `flush` never throws; a leftover `dirty` means the save did not go through. */
+  // The latest status, for async code that reads it after an await.
+  const statusRef = useRef(status);
+  statusRef.current = status;
+  const saveInProgress = () => statusRef.current === "saving" || statusRef.current === "unsaved";
+
+  /** Saves now. `flush` never throws and returns at once if a save is already running, so a leftover `dirty` needs the status to tell progress from failure. */
   async function saveNow() {
     const s = saver.current;
     if (!s) return;
     await s.flush();
-    toast({ message: s.dirty ? "Not saved yet. The status at the top shows why." : "All changes saved.", duration: 3000 });
+    const message = !s.dirty ? "All changes saved." : saveInProgress() ? "Saving your changes." : "Not saved yet. The status at the top shows why.";
+    toast({ message, duration: 3000 });
   }
 
   async function makeCopy() {
@@ -164,7 +170,11 @@ export function Workspace({ design }: { design: Design }) {
     try {
       if (s?.dirty) await s.flush();
       if (s?.dirty) {
-        toast({ message: "Your latest changes are still saving. Try again in a moment." });
+        toast({
+          message: saveInProgress()
+            ? "Your latest changes are still saving. Try again in a moment."
+            : "Your latest changes could not be saved, so the copy would miss them. Check the status at the top.",
+        });
         return;
       }
       const copy = await duplicateDesign(design.id);
