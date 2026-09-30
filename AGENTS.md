@@ -48,6 +48,13 @@ The look is "Liquid Glass" and monochrome: colour tokens in `apps/web/src/app/gl
   add third-party script, font or image hosts.
 - Documents never contain URLs: assets are referenced by id and resolved to short-lived signed URLs by the API.
 
+### Legal
+- `/terms` and `/privacy` must stay true. Any change to what data is collected, where it's stored, which services
+  process it, cookies, or who can see content must update those pages in the same PR.
+- Indian law applies (IT Act 2000, IT Rules 2021, DPDP Act 2023, CERT-In Directions). The review and open items are in
+  `docs/legal/compliance-review.md`; the breach plan is `docs/legal/incident-response.md`.
+- Users must be 18 or older. Features that make content public need a way to report it.
+
 ## Stack and layout
 
 pnpm monorepo (pnpm 12 via corepack, Node 24+), TypeScript everywhere.
