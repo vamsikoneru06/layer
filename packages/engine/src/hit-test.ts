@@ -1,17 +1,33 @@
-import type { Doc, Node, NodeId } from "@vash/schema";
+import type { Doc, Node, NodeId, ShapeGeometry } from "@vash/schema";
 import { aabb, apply, boxCorners, invert, type Box, type Point } from "./math";
+import { insideRings, insideRoundRect, nearRings, pathRings, polygonRing } from "./outline";
 import { drawOrder, topLevelOf, worldMatrix } from "./scene";
 
-function isEllipse(node: Node): boolean {
-  return (node.type === "shape" && node.geometry.kind === "ellipse") || (node.type === "frame" && node.shape.kind === "ellipse");
-}
+const outlineOf = (node: Node): ShapeGeometry | null => (node.type === "shape" ? node.geometry : node.type === "frame" ? node.shape : null);
 
-/** Is a point in the node's own (centred) coordinates inside it? Polygons and paths use their box for now. */
+/** Is a point in the node's own (centred) coordinates inside it? Shapes and frames are tested by their exact outline. */
 function containsLocal(node: Node, p: Point, pad: number): boolean {
-  const hw = node.width / 2 + pad;
-  const hh = node.height / 2 + pad;
-  if (isEllipse(node)) return hw > 0 && hh > 0 && (p.x / hw) ** 2 + (p.y / hh) ** 2 <= 1;
-  return Math.abs(p.x) <= hw && Math.abs(p.y) <= hh;
+  const { width: w, height: h } = node;
+  const hw = w / 2 + pad;
+  const hh = h / 2 + pad;
+  if (Math.abs(p.x) > hw || Math.abs(p.y) > hh) return false;
+  const outline = outlineOf(node);
+  switch (outline?.kind) {
+    case "ellipse":
+      return hw > 0 && hh > 0 && (p.x / hw) ** 2 + (p.y / hh) ** 2 <= 1;
+    case "rect":
+      return insideRoundRect(p, w, h, outline.cornerRadius, pad);
+    case "polygon": {
+      const rings = [polygonRing(outline.sides, w, h)];
+      return insideRings(rings, p) || nearRings(rings, p, pad);
+    }
+    case "path": {
+      const rings = pathRings(outline.d, w, h);
+      return insideRings(rings, p) || nearRings(rings, p, pad);
+    }
+    default:
+      return true;
+  }
 }
 
 /**

@@ -114,6 +114,16 @@ export function listTemplatesByStatus(db: Db, q: { status: TemplateRow["status"]
     .limit(q.limit + 1);
 }
 
+/** Id and last change of published templates, newest first (served by templates_gallery_idx): the sitemap's template pages. */
+export function listPublishedTemplateUrls(db: Db, limit: number): Promise<{ id: string; updatedAt: Date }[]> {
+  return db
+    .select({ id: templates.id, updatedAt: templates.updatedAt })
+    .from(templates)
+    .where(eq(templates.status, "published"))
+    .orderBy(desc(templates.createdAt), desc(templates.id))
+    .limit(limit);
+}
+
 export async function getTemplateVersion(db: Db, templateId: string, version: number): Promise<TemplateVersionRow | undefined> {
   const [row] = await db
     .select()

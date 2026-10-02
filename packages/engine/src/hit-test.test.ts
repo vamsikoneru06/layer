@@ -36,6 +36,39 @@ describe("hitTest", () => {
     expect(hitTest(docWith([f]), { x: 55, y: 55 })).toBeNull();
     expect(hitTest(docWith([f]), { x: 100, y: 100 })).toBe("f");
   });
+
+  it("tests polygons by their outline, not their box", () => {
+    // A triangle in a 100×100 box centred at (100, 100): apex at the top, base 25 px below the centre.
+    const tri = { ...rect("tri", { x: 100, y: 100 }), geometry: { kind: "polygon" as const, sides: 3 } };
+    expect(hitTest(docWith([tri]), { x: 100, y: 110 })).toBe("tri");
+    expect(hitTest(docWith([tri]), { x: 60, y: 60 })).toBeNull(); // top-left corner of the box
+    expect(hitTest(docWith([tri]), { x: 100, y: 140 })).toBeNull(); // below the base
+  });
+
+  it("tests SVG paths by their outline, curves and arcs included", () => {
+    // A unit-box diamond and a unit-box circle drawn with two arcs, both 100×100 at (100, 100).
+    const diamond = { ...rect("d", { x: 100, y: 100 }), geometry: { kind: "path" as const, d: "M0.5 0 L1 0.5 L0.5 1 L0 0.5 Z" } };
+    expect(hitTest(docWith([diamond]), { x: 100, y: 100 })).toBe("d");
+    expect(hitTest(docWith([diamond]), { x: 60, y: 60 })).toBeNull();
+    const circle = { ...frame("c", { x: 100, y: 100 }), shape: { kind: "path" as const, d: "M0 0.5 A0.5 0.5 0 1 1 1 0.5 A0.5 0.5 0 1 1 0 0.5 Z" } };
+    expect(hitTest(docWith([circle]), { x: 100, y: 145 })).toBe("c");
+    expect(hitTest(docWith([circle]), { x: 57, y: 57 })).toBeNull();
+    const blob = { ...rect("b", { x: 100, y: 100 }), geometry: { kind: "path" as const, d: "M0 1 C0 0 1 0 1 1 Z" } };
+    expect(hitTest(docWith([blob]), { x: 100, y: 120 })).toBe("b");
+    expect(hitTest(docWith([blob]), { x: 55, y: 55 })).toBeNull();
+  });
+
+  it("misses the cut-away corners of a rounded rectangle", () => {
+    const r = { ...rect("r", { x: 100, y: 100 }), geometry: { kind: "rect" as const, cornerRadius: 40 } };
+    expect(hitTest(docWith([r]), { x: 52, y: 52 })).toBeNull();
+    expect(hitTest(docWith([r]), { x: 52, y: 100 })).toBe("r");
+  });
+
+  it("lets the pad reach a thin or pointed outline", () => {
+    const tri = { ...rect("tri", { x: 100, y: 100 }), geometry: { kind: "polygon" as const, sides: 3 } };
+    expect(hitTest(docWith([tri]), { x: 100, y: 128 }, 0)).toBeNull();
+    expect(hitTest(docWith([tri]), { x: 100, y: 128 }, 4)).toBe("tri");
+  });
 });
 
 describe("nodesInBox", () => {
