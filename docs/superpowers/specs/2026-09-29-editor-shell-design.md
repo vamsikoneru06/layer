@@ -51,9 +51,7 @@ Rejected: wiring every menu and shortcut by hand. Faster to start, but the enabl
 
 ### 3.2 Engine (`packages/engine`)
 
-- New commands `group` and `ungroup`, each one undo step. Group children are stored relative to the group centre
-  (engine convention), so grouping re-expresses child transforms against the new centre, and ungrouping applies the
-  group transform back into each child.
+- Group and ungroup are plan builders that emit the existing `insert` and `delete` commands as one batch (one undo step), so the lock policy applies unchanged. The only new command is `meta`, used by rename. Grouping re-expresses child transforms against the new group centre (the group only translates), and ungrouping multiplies the group's matrix into each child.
 - Duplicate: deep clone with fresh ids and a small offset, as one undo step.
 - Clipboard payload: a pure function turns a selection into a serialized subtree of nodes plus the asset ids they
   use. Never URLs. Paste builds an `insert` batch with fresh ids and an offset.
@@ -64,6 +62,7 @@ Rejected: wiring every menu and shortcut by hand. Faster to start, but the enabl
   ungrouped. Copy of a locked node is allowed in design mode.
 - `shortcuts.ts` gains Ctrl+D, Ctrl+G and Ctrl+Shift+G. Copy, cut and paste use DOM events (section 3.3), because
   key handlers cannot read the system clipboard reliably.
+- Every plan is validated with `validateDoc` before it is applied. Duplicated and pasted layers get `lock: free` in a design. Ungroup is refused when a stretched group would need shear, or when a child would leave the schema's scale and coordinate limits. A pasted payload is refused when it has more nodes than the layer cap or references any id more than once.
 
 ### 3.3 Web (`apps/web/src/components/editor`)
 
@@ -85,10 +84,8 @@ Behaviour:
 - **Clipboard:** the payload is written to the system clipboard as text with a `vash:` prefix, so it works across
   tabs. If the clipboard is blocked, an in-memory copy is the fallback. Pasted text that is not a valid payload is
   ignored with a toast, "Nothing to paste." Image paste from the clipboard belongs to the Photos work
-  (`docs/superpowers/plans/2026-09-27-p1-editor-m2.md`, Task 5), not S1.
-- **Rename:** trimmed, length limited, reverts on failure with an error toast. An unsaved rename is never lost on
-  navigation. The header title and `doc.meta.title` must not disagree; the spec plan step verifies how the server
-  stores the title and updates both if needed.
+  (`docs/superpowers/plans/2026-09-27-p1-editor-m2.md`, Task 5), not S1. Photos and stickers the design does not already use are left out of a paste, and the user is told.
+- **Rename:** trimmed, length limited. An unsaved rename is never lost on navigation. Rename dispatches the `meta` command and autosave stores it, because `PUT` sets the stored title from `doc.meta.title` and would undo a separate `PATCH`. Ctrl+Z can undo a rename.
 - **Ctrl+S:** flushes the autosaver, shows the result as a toast, and suppresses the browser's Save dialog.
 - **Toasts:** the single `notice` line in `workspace.tsx` is replaced by the existing `ui/toast` (queued, supports
   an action such as Undo).
@@ -100,6 +97,7 @@ Behaviour:
 - **Save status:** already implemented (saved, unsaved, saving, offline, retrying, signed-out, error, conflict).
   S1 keeps it and adds nothing.
 - **Design settings and info:** Design info dialog only. Guides and units settings arrive with S3.
+- The engine ignores keys pressed inside any menu (`role=menu`) or dialog, so menu navigation never moves or deletes layers.
 
 Menus in S1 (only actions that work):
 - **File:** New design, Open (Your designs), Make a copy (`duplicateDesign`, then open the copy), Rename, Move to
@@ -115,7 +113,7 @@ Menus in S1 (only actions that work):
 - Nothing usable to paste: toast "Nothing to paste."
 - Locked layer selected: Cut, Delete, Group and Ungroup are disabled and the reason is available as a tooltip.
 - Clipboard permission denied: fall back to the in-memory buffer, no error shown.
-- Rename fails: title reverts, error toast.
+- Rename is local; save failures show in the save indicator.
 - Make a copy fails: error toast, the current design is untouched.
 - Fullscreen unsupported or refused: the menu item is hidden or a toast explains, no exception.
 - Keyboard focus in a text field (rename, properties panel, text editor): design shortcuts do not fire.
