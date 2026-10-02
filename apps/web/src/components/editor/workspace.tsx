@@ -41,6 +41,8 @@ export function Workspace({ design }: { design: Design }) {
   const saver = useRef<Autosaver<Doc> | null>(null);
   const [editor, setEditor] = useState<Editor | null>(null);
   const [status, setStatus] = useState<SaveStatus>("saved");
+  // Written where the status is produced, so async code that resumes after `flush()` sees it before React re-renders.
+  const statusRef = useRef<SaveStatus>("saved");
   const [panel, setPanel] = useState<"properties" | "layers">("properties");
   const [conflictOpen, setConflictOpen] = useState(true);
   const [conflictBusy, setConflictBusy] = useState(false);
@@ -66,7 +68,16 @@ export function Workspace({ design }: { design: Design }) {
     const images = createImageLoader(() => e?.invalidate());
     e = createEditor({ container: container.current!, scene: scene.current!, overlay: overlay.current!, doc: design.doc, image: images.image, imagesReady: images.ready });
     setEditor(e);
-    const s = createAutosaver<Doc>({ version: design.version, delayMs: 1500, retryMs: 5000, save: (doc, v) => saveDesign(design.id, doc, v), onStatus: setStatus });
+    const s = createAutosaver<Doc>({
+      version: design.version,
+      delayMs: 1500,
+      retryMs: 5000,
+      save: (doc, v) => saveDesign(design.id, doc, v),
+      onStatus: (st) => {
+        statusRef.current = st;
+        setStatus(st);
+      },
+    });
     saver.current = s;
     let last = e.getState().doc;
     const off = e.subscribe(() => {
@@ -151,9 +162,6 @@ export function Workspace({ design }: { design: Design }) {
     wasSaved.current = status === "saved";
   }, [status]);
 
-  // The latest status, for async code that reads it after an await.
-  const statusRef = useRef(status);
-  statusRef.current = status;
   const saveInProgress = () => statusRef.current === "saving" || statusRef.current === "unsaved";
 
   /** Saves now. `flush` never throws and returns at once if a save is already running, so a leftover `dirty` needs the status to tell progress from failure. */
