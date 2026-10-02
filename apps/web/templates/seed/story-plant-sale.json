@@ -1,0 +1,231 @@
+{
+  "schemaVersion": 1,
+  "id": "story-plant-sale",
+  "kind": "template",
+  "meta": {
+    "title": "Plant Sale",
+    "category": "sale",
+    "tags": [
+      "plants",
+      "sale",
+      "green",
+      "shop"
+    ],
+    "format": "ig-story"
+  },
+  "artboard": {
+    "width": 1080,
+    "height": 1920,
+    "background": {
+      "type": "solid",
+      "color": "#E7F0E4"
+    }
+  },
+  "root": [
+    "title",
+    "offer",
+    "photo",
+    "details",
+    "button",
+    "button-label"
+  ],
+  "nodes": {
+    "title": {
+      "id": "title",
+      "name": "Title",
+      "transform": {
+        "x": 540,
+        "y": 240,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 960,
+      "height": 160,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "PLANT SALE",
+      "font": {
+        "family": "Archivo Black",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 140,
+      "color": "#1F4D2B",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 16
+    },
+    "offer": {
+      "id": "offer",
+      "name": "Offer",
+      "transform": {
+        "x": 540,
+        "y": 372,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 900,
+      "height": 64,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Up to 30% off indoor plants",
+      "font": {
+        "family": "Poppins",
+        "weight": 600,
+        "style": "normal"
+      },
+      "size": 44,
+      "color": "#2F6B3D",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 40
+    },
+    "photo": {
+      "id": "photo",
+      "name": "Plant photo",
+      "transform": {
+        "x": 540,
+        "y": 1000,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 800,
+      "height": 1060,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "path",
+        "d": "M0 1 L0 0.5 A0.5 0.5 0 0 1 1 0.5 L1 1 Z"
+      },
+      "content": {
+        "assetId": "87b04c2e-b48c-8ab6-9f25-11ce1d2a6859",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "details": {
+      "id": "details",
+      "name": "Details",
+      "transform": {
+        "x": 540,
+        "y": 1625,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 900,
+      "height": 50,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "This weekend only · Green Corner Nursery",
+      "font": {
+        "family": "Inter",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 32,
+      "color": "#1F4D2B",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 60
+    },
+    "button": {
+      "id": "button",
+      "name": "Button",
+      "transform": {
+        "x": 540,
+        "y": 1755,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 500,
+      "height": 110,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 24
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#1F4D2B"
+      },
+      "stroke": null
+    },
+    "button-label": {
+      "id": "button-label",
+      "name": "Button label",
+      "transform": {
+        "x": 540,
+        "y": 1755,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 500,
+      "height": 56,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Visit the shop",
+      "font": {
+        "family": "Poppins",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 40,
+      "color": "#FFFFFF",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 20
+    }
+  },
+  "assets": {
+    "87b04c2e-b48c-8ab6-9f25-11ce1d2a6859": {
+      "id": "87b04c2e-b48c-8ab6-9f25-11ce1d2a6859",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 933,
+      "height": 1400
+    }
+  }
+}

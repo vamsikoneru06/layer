@@ -15,7 +15,7 @@ export function Avatar({ me, size = 32 }: { me: Me; size?: number }) {
   return (
     <span
       aria-hidden
-      className="glass-primary flex flex-none items-center justify-center rounded-full font-semibold text-white"
+      className="glass-btn glass-primary flex-none rounded-full"
       style={{ width: size, height: size, fontSize: size * 0.38 }}
     >
       {initials(me)}

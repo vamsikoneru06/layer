@@ -1,5 +1,13 @@
-/** "unsaved": waiting out the debounce. "offline": network failed, retrying. "conflict": the server has a newer version. */
-export type SaveStatus = "saved" | "unsaved" | "saving" | "offline" | "error" | "conflict";
+/**
+ * "unsaved": waiting out the debounce. "offline": network failed, retrying. "retrying": the server was
+ * busy or failed (429, 5xx), retrying with backoff. "signed-out": the session ended (401); saving resumes
+ * after signing in and a retry. "conflict": the server has a newer version. "error": a failure a retry
+ * won't fix by itself (for example a document the server refuses).
+ */
+export type SaveStatus = "saved" | "unsaved" | "saving" | "offline" | "retrying" | "signed-out" | "error" | "conflict";
+
+/** Longest wait between automatic retries. */
+export const MAX_RETRY_MS = 60_000;
 
 export interface Autosaver<D> {
   /** Record a new document; saves after `delayMs` of quiet. */
@@ -31,6 +39,7 @@ export function createAutosaver<D>(o: {
   let conflict = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let status: SaveStatus = "saved";
+  let failures = 0;
 
   const set = (s: SaveStatus) => {
     if (s === status) return;
@@ -52,6 +61,7 @@ export function createAutosaver<D>(o: {
     try {
       version = await o.save(doc, version);
       saving = false;
+      failures = 0;
       if (latest) return void (await flush());
       set("saved");
     } catch (err) {
@@ -64,6 +74,12 @@ export function createAutosaver<D>(o: {
       } else if (code === 0) {
         set("offline");
         schedule(o.retryMs);
+      } else if (code === 429 || (code !== undefined && code >= 500)) {
+        // Busy or failing server: back off (retryMs, then twice as long each time, up to a minute).
+        set("retrying");
+        schedule(Math.min(MAX_RETRY_MS, o.retryMs * 2 ** failures++));
+      } else if (code === 401) {
+        set("signed-out");
       } else {
         set("error");
       }
@@ -74,7 +90,7 @@ export function createAutosaver<D>(o: {
     change(doc) {
       latest = { doc };
       if (conflict) return;
-      if (!saving && status !== "offline") set("unsaved");
+      if (!saving && status !== "offline" && status !== "retrying" && status !== "signed-out") set("unsaved");
       schedule(o.delayMs);
     },
     flush,

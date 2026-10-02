@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, check, date, index, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uuid, type AnyPgColumn } from "drizzle-orm/pg-core";
+import { boolean, check, customType, date, index, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uuid, type AnyPgColumn } from "drizzle-orm/pg-core";
 import type { Doc } from "@vash/schema";
 
 /** Millisecond precision so keyset cursors round-trip through JavaScript Dates exactly. */
@@ -277,4 +277,27 @@ export const storageDeletions = pgTable(
     index("storage_deletions_owner_idx").on(t.ownerId),
     index("storage_deletions_asset_idx").on(t.assetId),
   ],
+);
+
+const bytea = customType<{ data: Uint8Array; driverData: Uint8Array }>({
+  dataType: () => "bytea",
+  toDriver: (v) => (typeof Buffer !== "undefined" ? Buffer.from(v.buffer, v.byteOffset, v.byteLength) : v),
+  fromDriver: (v) => new Uint8Array(v),
+});
+
+/**
+ * File bytes for the built-in storage used when no external object storage (S3 API) is configured:
+ * photos live in the database itself, so uploads work with no extra service.
+ */
+export const storedObjects = pgTable(
+  "stored_objects",
+  {
+    bucket: text("bucket", { enum: ["private", "public"] }).notNull(),
+    key: text("key").notNull(),
+    contentType: text("content_type").notNull(),
+    size: integer("size").notNull(),
+    data: bytea("data").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.bucket, t.key] }), check("stored_objects_bucket_check", sql`${t.bucket} in ('private', 'public')`)],
 );

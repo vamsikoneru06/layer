@@ -15,6 +15,7 @@ import {
   storageUsedBytes,
   type AssetRow,
 } from "./repository";
+import { bundledUrl, isBundled } from "./bundled";
 import { SNIFF_BYTES, sniffImageMime } from "./sniff";
 
 const MB = 1024 * 1024;
@@ -36,6 +37,11 @@ const STAGING_LINGER_MS = (UPLOAD_LIMITS.uploadUrlSeconds + 3600) * 1000;
 
 export const UPLOAD_MIMES = ["image/jpeg", "image/png", "image/webp"] as const;
 export type UploadMime = (typeof UPLOAD_MIMES)[number];
+
+/** The per-user allowance: the spec's 500 MB, or less on a storage backend with little room. */
+export const quotaFor = (storage: ObjectStorage) => Math.min(UPLOAD_LIMITS.storageQuotaBytes, storage.quotaBytes ?? Infinity);
+export const quotaMessage = (quota: number, action: string) =>
+  `${action} would go over your ${Math.round(quota / MB)} MB of storage. Delete some photos to make room.`;
 
 export interface AssetContext {
   db: Db;
@@ -61,9 +67,10 @@ export async function requestUpload(ctx: AssetContext, ownerId: string, input: {
     // Same row lock as quotas.ts, so two concurrent requests can't both fit under the quota.
     await tx.select({ id: user.id }).from(user).where(eq(user.id, ownerId)).for("no key update");
     const used = await storageUsedBytes(tx, ownerId);
-    if (used + input.bytes > UPLOAD_LIMITS.storageQuotaBytes) {
-      throw unprocessable("This upload would go over your 500 MB of storage. Delete some photos to make room.", {
-        limitBytes: UPLOAD_LIMITS.storageQuotaBytes,
+    const quota = quotaFor(ctx.storage);
+    if (used + input.bytes > quota) {
+      throw unprocessable(quotaMessage(quota, "This upload"), {
+        limitBytes: quota,
         usedBytes: used,
       });
     }
@@ -146,14 +153,27 @@ export async function completeUpload(ctx: AssetContext, ownerId: string, id: str
   throw notFound();
 }
 
-export async function resolveAssets(ctx: AssetContext, viewerId: string | null, ids: string[], opts: { admin?: boolean } = {}) {
+/**
+ * Short-lived URLs for the assets the viewer may see. Bundled assets (sample photos) resolve to the
+ * site's own files and need no storage; without storage, other assets are left out.
+ */
+export async function resolveAssets(
+  ctx: Omit<AssetContext, "storage"> & { storage: ObjectStorage | null },
+  viewerId: string | null,
+  ids: string[],
+  opts: { admin?: boolean } = {},
+) {
   const rows = await findResolvableAssets(ctx.db, viewerId, [...new Set(ids)], opts);
   const expiresAt = new Date(ctx.now().getTime() + UPLOAD_LIMITS.downloadUrlSeconds * 1000).toISOString();
-  return Promise.all(
-    rows.map(async (a) =>
-      a.visibility === "public"
-        ? { id: a.id, url: ctx.storage.publicUrl(a.storageKey), expiresAt: null }
-        : { id: a.id, url: await ctx.storage.presignDownload("private", a.storageKey, UPLOAD_LIMITS.downloadUrlSeconds), expiresAt },
-    ),
+  const { storage } = ctx;
+  const resolved = await Promise.all(
+    rows.map(async (a) => {
+      if (isBundled(a.storageKey)) return { id: a.id, url: bundledUrl(a.storageKey), expiresAt: null };
+      if (!storage) return null;
+      return a.visibility === "public"
+        ? { id: a.id, url: storage.publicUrl(a.storageKey), expiresAt: null }
+        : { id: a.id, url: await storage.presignDownload("private", a.storageKey, UPLOAD_LIMITS.downloadUrlSeconds), expiresAt };
+    }),
   );
+  return resolved.filter((r) => r !== null);
 }

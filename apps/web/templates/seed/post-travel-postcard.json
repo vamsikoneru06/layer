@@ -1,0 +1,173 @@
+{
+  "schemaVersion": 1,
+  "id": "post-travel-postcard",
+  "kind": "template",
+  "meta": {
+    "title": "Travel Postcard",
+    "category": "travel",
+    "tags": [
+      "travel",
+      "postcard",
+      "mountains",
+      "holiday"
+    ],
+    "format": "ig-post"
+  },
+  "artboard": {
+    "width": 1080,
+    "height": 1080,
+    "background": {
+      "type": "solid",
+      "color": "#F7F2E8"
+    }
+  },
+  "root": [
+    "photo",
+    "greeting",
+    "place",
+    "handle"
+  ],
+  "nodes": {
+    "photo": {
+      "id": "photo",
+      "name": "Photo",
+      "transform": {
+        "x": 540,
+        "y": 420,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 960,
+      "height": 720,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 24
+      },
+      "content": {
+        "assetId": "766d9713-f9fc-85c2-bd09-a2f8688af6e8",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "greeting": {
+      "id": "greeting",
+      "name": "Greeting",
+      "transform": {
+        "x": 540,
+        "y": 840,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 960,
+      "height": 80,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "greetings from",
+      "font": {
+        "family": "Caveat",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 64,
+      "color": "#2B2B2B",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 30
+    },
+    "place": {
+      "id": "place",
+      "name": "Place",
+      "transform": {
+        "x": 540,
+        "y": 935,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 960,
+      "height": 130,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "THE MOUNTAINS",
+      "font": {
+        "family": "Bebas Neue",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 124,
+      "color": "#1F3A2E",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 20
+    },
+    "handle": {
+      "id": "handle",
+      "name": "Handle",
+      "transform": {
+        "x": 540,
+        "y": 1023,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 960,
+      "height": 36,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "@yourhandle",
+      "font": {
+        "family": "Inter",
+        "weight": 500,
+        "style": "normal"
+      },
+      "size": 22,
+      "color": "#6B6259",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 24
+    }
+  },
+  "assets": {
+    "766d9713-f9fc-85c2-bd09-a2f8688af6e8": {
+      "id": "766d9713-f9fc-85c2-bd09-a2f8688af6e8",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 1400,
+      "height": 1400
+    }
+  }
+}

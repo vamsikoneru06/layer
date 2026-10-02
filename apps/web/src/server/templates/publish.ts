@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { parseDoc, replaceAssetIds, type PiiFinding } from "@vash/schema";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { getOwnedAsset, storageUsedBytes } from "../assets/repository";
-import { UPLOAD_LIMITS } from "../assets/service";
+import { quotaFor, quotaMessage } from "../assets/service";
 import { assets, templates, user } from "../db/schema";
 import type { Db } from "../db/types";
 import type { CurrentUser } from "../deps";
@@ -29,9 +29,9 @@ export interface PublishContext {
   storage: ObjectStorage;
 }
 
-const overQuota = (used: number) =>
-  unprocessable("Publishing these photos would go over your 500 MB of storage. Delete some photos to make room.", {
-    limitBytes: UPLOAD_LIMITS.storageQuotaBytes,
+const overQuota = (quota: number, used: number) =>
+  unprocessable(quotaMessage(quota, "Publishing these photos"), {
+    limitBytes: quota,
     usedBytes: used,
   });
 
@@ -72,7 +72,8 @@ export async function publishTemplate(
   const keyOf = (assetId: string) => `t/${id}/${assetId}`;
   const bytes = fresh.reduce((n, c) => n + c.source.bytes, 0);
   const used = await storageUsedBytes(ctx.db, author.id);
-  if (used + bytes > UPLOAD_LIMITS.storageQuotaBytes) throw overQuota(used);
+  const quota = quotaFor(ctx.storage);
+  if (used + bytes > quota) throw overQuota(quota, used);
 
   // The thumbnail is always last and isn't referenced by the document.
   const renamed = replaceAssetIds(draft.doc, new Map(copies.slice(0, -1).map((c) => [c.source.id, c.id])));
@@ -98,7 +99,7 @@ export async function publishTemplate(
       // The copies were charged while in flight; release that first so they aren't counted twice.
       await releaseCopies(tx, reserved);
       const usedNow = await storageUsedBytes(tx, author.id);
-      if (usedNow + bytes > UPLOAD_LIMITS.storageQuotaBytes) throw overQuota(usedNow);
+      if (usedNow + bytes > quota) throw overQuota(quota, usedNow);
       const fields = {
         title: doc.meta.title,
         description: input.description,
