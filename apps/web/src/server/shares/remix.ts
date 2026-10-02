@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { LIMITS, referencedAssetIds, replaceAssetIds, scrubForPublish, type Doc } from "@vash/schema";
 import { and, eq, inArray } from "drizzle-orm";
 import { assetKey, findUnusableAssets, storageUsedBytes } from "../assets/repository";
-import { UPLOAD_LIMITS } from "../assets/service";
+import { quotaFor, quotaMessage, UPLOAD_LIMITS } from "../assets/service";
 import { assets } from "../db/schema";
 import type { Db } from "../db/types";
 import type { CurrentUser } from "../deps";
@@ -14,12 +14,6 @@ import { truncate } from "../text";
 import { copyAll, dropCopies, releaseCopies, type Copy } from "../storage/copies";
 import type { ObjectStorage } from "../storage/types";
 import { openShare } from "./service";
-
-const overQuota = (used: number) =>
-  unprocessable("Remixing this design would go over your 500 MB of storage. Delete some photos to make room.", {
-    limitBytes: UPLOAD_LIMITS.storageQuotaBytes,
-    usedBytes: used,
-  });
 
 /**
  * Journey 4. The remixer gets their own design with copies of the sharer's photos (counted toward
@@ -44,8 +38,10 @@ export async function remixShare(ctx: { db: Db; now: () => Date; storage: Object
   const copies = owned.map((source) => ({ source, id: randomUUID() }));
   if (copies.length > 0 && !ctx.storage) throw new HttpError(503, "Service Unavailable", "Photo storage isn't configured on this server.");
   const bytes = copies.reduce((n, c) => n + c.source.bytes, 0);
+  const quota = ctx.storage ? quotaFor(ctx.storage) : UPLOAD_LIMITS.storageQuotaBytes;
+  const overQuota = (used: number) => unprocessable(quotaMessage(quota, "Remixing this design"), { limitBytes: quota, usedBytes: used });
   const used = await storageUsedBytes(ctx.db, remixer.id);
-  if (used + bytes > UPLOAD_LIMITS.storageQuotaBytes) throw overQuota(used);
+  if (used + bytes > quota) throw overQuota(used);
 
   const designId = randomUUID();
   const now = ctx.now();
@@ -66,7 +62,7 @@ export async function remixShare(ctx: { db: Db; now: () => Date; storage: Object
       // The copies were charged while in flight; release that first so they aren't counted twice.
       await releaseCopies(tx, reserved);
       const usedNow = await storageUsedBytes(tx, remixer.id);
-      if (usedNow + bytes > UPLOAD_LIMITS.storageQuotaBytes) throw overQuota(usedNow);
+      if (usedNow + bytes > quota) throw overQuota(usedNow);
       if (copies.length > 0) {
         await tx.insert(assets).values(
           copies.map((c) => ({

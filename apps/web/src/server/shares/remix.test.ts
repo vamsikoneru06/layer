@@ -117,6 +117,17 @@ describe("POST /api/shared/:token/remix", () => {
     expect(await storageUsedBytes(t.db, bob.id)).toBe(before + photo.bytes);
   });
 
+  it("uses the storage's own quota when it is smaller (database storage)", async () => {
+    const { token, photo } = await sharedWithPhoto();
+    const bob = await createUser(t.db);
+    await createAsset(t.db, { ownerId: bob.id, bytes: 1_500 });
+    const small = shareHandlers(testDeps(t.db), { ...storage, quotaBytes: 2_000 });
+    const res = await remix(bob, token, small);
+    expect(res.status).toBe(422);
+    expect(res.body).toMatchObject({ limitBytes: 2_000 });
+    expect(photo.bytes).toBe(1_000);
+  });
+
   it("keeps a long title with an emoji at the cut valid", async () => {
     const owner = await createUser(t.db);
     const doc = emptyDoc("a".repeat(110) + "😀");
