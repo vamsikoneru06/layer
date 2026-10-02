@@ -5,7 +5,7 @@ import { MENU_PANEL, MenuItems, moveMenuFocus, type MenuItem } from "@/component
 import { clampMenuPosition } from "@/lib/menu-position";
 import { cn } from "@/lib/utils";
 
-/** A menu at the pointer (viewport pixels). Escape, an outside click, scrolling or resizing closes it. */
+/** A menu at the pointer (viewport pixels). Escape, an outside click or resizing closes it. */
 export function ContextMenu({ at, items, onClose }: { at: { x: number; y: number } | null; items: MenuItem[]; onClose: () => void }) {
   const list = useRef<HTMLDivElement>(null);
 

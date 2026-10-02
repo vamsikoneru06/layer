@@ -50,9 +50,9 @@ function canvasMeasure(): Measure {
   };
 }
 
-/** Keys typed into a field, or pressed while a dialog is open, belong to that field or dialog. */
+/** Keys typed into a field, or pressed inside an open menu or dialog, belong to that field, menu or dialog. */
 const isTyping = (t: EventTarget | null) =>
-  t instanceof HTMLElement && (t.isContentEditable || t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.closest("dialog") !== null);
+  t instanceof HTMLElement && (t.isContentEditable || t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.closest("dialog") !== null || t.closest("[role=menu]") !== null);
 
 /**
  * Binds the engine to two stacked canvases: the design below, selection chrome above (which also
