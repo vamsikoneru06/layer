@@ -72,6 +72,8 @@ const EnvSchema = z
       }
     }
     if (env.NODE_ENV === "production") {
+      // The database photo store is for development only: Vercel caps request bodies near 4.5 MB and the free
+      // Neon database is 0.5 GB for everything, so production needs a real bucket.
       if (storageSet.length === 0) ctx.addIssue({ code: "custom", path: ["STORAGE_ENDPOINT"], message: "required in production (photo uploads)" });
       for (const k of ["STORAGE_ENDPOINT", "STORAGE_PUBLIC_BASE_URL"] as const) {
         if (env[k] && !env[k].startsWith("https://")) ctx.addIssue({ code: "custom", path: [k], message: "must use https in production" });

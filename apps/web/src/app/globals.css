@@ -150,6 +150,18 @@
     outline: 2px solid var(--text);
     outline-offset: 2px;
   }
+
+  /* Every control eases between states and gives a little under the finger. Interaction only: no scroll effects. */
+  @media (prefers-reduced-motion: no-preference) {
+    :where(button, a, select, summary, [role="button"], [role="tab"], [role="radio"], [role="switch"], [role="menuitem"]) {
+      transition-property: color, background-color, border-color, box-shadow, opacity, filter, translate, scale;
+      transition-duration: 0.18s;
+      transition-timing-function: var(--ease);
+    }
+    :where(button, summary, [role="button"], [role="tab"], [role="radio"], [role="menuitem"]):active:not(:disabled, [aria-disabled="true"]) {
+      scale: 0.97;
+    }
+  }
 }
 
 @layer components {

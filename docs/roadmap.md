@@ -1,7 +1,7 @@
 # VASH roadmap
 
 Where VASH stands, what it is for, and what to build next, in order. Written 2026-10-03 from an outside product
-review and a backend engineering checklist, both checked against the code on `main` (5392cf4) and open PRs #23 to #25.
+review and a backend engineering checklist, both checked against the code on `main` (678ba4f, which includes #23 and #24) and open PR #25.
 The full spec stays in `docs/superpowers/specs/2026-09-24-vash-design.md`; this file decides the order.
 
 Every item must fit `docs/free-stack.md`. Anything that needs a new service is marked **owner decision**.
@@ -15,9 +15,9 @@ Every item must fit `docs/free-stack.md`. Anything that needs a new service is m
 | Accounts: magic link + Google, sessions, settings, export and delete account | Done | `server/auth`, `server/me`, `/settings` |
 | Designs: save, folders, duplicate, autosave with conflict handling | Done | `server/designs`, `lib/autosave.ts` |
 | Template gallery and template detail pages, "Use template" | Done (#13, #20) | `/templates`, `/templates/[id]` |
-| Photo uploads, Media page | Done (#11, #20); works without Supabase keys in #24 | `server/assets`, `/media` |
-| Photos visible in editor and previews, 36 templates with sample photos | **Open PR #24** | `lib/images.ts`, `templates/seed` |
-| Hidden-template photo fix, storage deletion backoff | **Open PR #23** | `server/storage/outbox.ts` |
+| Photo uploads, Media page | Done (#11, #20); works without Supabase keys (#24) | `server/assets`, `/media` |
+| Photos visible in editor and previews, 36 templates with sample photos | Done (#24) | `lib/images.ts`, `templates/seed` |
+| Hidden-template photo fix, storage deletion backoff | Done (#23) | `server/storage/outbox.ts` |
 | Share links, remix, profiles, reports, moderation API | **Open PR #25** (API only, no UI yet) | `server/shares`, `server/admin` |
 | Exact hit testing for polygons, paths, rounded corners | Done in this PR | `packages/engine/src/outline.ts` |
 | sitemap.xml and robots.txt | Done in this PR | `server/seo` |
@@ -49,8 +49,9 @@ Each milestone ends with something a user can do that they couldn't before. Do t
 milestone, the list is in order too.
 
 ### M0. Land what's already built
-1. Merge #24, then #23, then #25 (merge-train notes: #23 and #24 conflict in `server/assets/*`; keep both sides).
+1. #24 and #23 are merged. Merge #25 next (in `remix.ts` and `publish.ts`, switch `UPLOAD_LIMITS.storageQuotaBytes` to #24's `quotaFor(storage)`).
 2. Then this branch (roadmap, sitemap, hit testing, timeouts).
+3. Refresh AGENTS.md "What's next" to point at this roadmap.
 
 ### M1. The first result, without an account
 Goal: landing page to exported PNG with your own photos, no sign-up, as spec §1 and flow 1 describe.

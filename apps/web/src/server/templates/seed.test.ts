@@ -28,9 +28,9 @@ const NOW = new Date("2026-09-26T12:00:00.000Z");
 describe("loadSeedTemplates", () => {
   it("creates every seed as a published system template, and a rerun changes nothing", async () => {
     const docs = seedDocs();
-    expect(await loadSeedTemplates(t.db, docs, NOW)).toEqual({ created: 20, updated: 0, unchanged: 0 });
+    expect(await loadSeedTemplates(t.db, docs, NOW)).toEqual({ created: docs.length, updated: 0, unchanged: 0 });
     const rows = await t.db.select().from(templates);
-    expect(rows).toHaveLength(20);
+    expect(rows).toHaveLength(docs.length);
     for (const row of rows) expect(row).toMatchObject({ authorId: null, status: "published", currentVersion: 1, featured: false, usesCount: 0 });
     const first = docs[0]!;
     const [row] = await t.db.select().from(templates).where(eq(templates.id, seedTemplateId(first.id)));
@@ -39,8 +39,8 @@ describe("loadSeedTemplates", () => {
     const [version] = await t.db.select().from(templateVersions).where(eq(templateVersions.templateId, row!.id));
     expect(version!.doc.id).toBe(row!.id);
 
-    expect(await loadSeedTemplates(t.db, seedDocs(), NOW)).toEqual({ created: 0, updated: 0, unchanged: 20 });
-    expect(await t.db.select().from(templateVersions)).toHaveLength(20);
+    expect(await loadSeedTemplates(t.db, seedDocs(), NOW)).toEqual({ created: 0, updated: 0, unchanged: seedDocs().length });
+    expect(await t.db.select().from(templateVersions)).toHaveLength(seedDocs().length);
   });
 
   it("adds a version when a seed changes, keeping the old version and the counters", async () => {
@@ -48,7 +48,7 @@ describe("loadSeedTemplates", () => {
     const id = seedTemplateId(docs[0]!.id);
     await t.db.update(templates).set({ usesCount: 7, featured: true }).where(eq(templates.id, id));
     docs[0] = { ...docs[0]!, meta: { ...docs[0]!.meta, title: "Renamed seed" } };
-    expect(await loadSeedTemplates(t.db, docs, NOW)).toEqual({ created: 0, updated: 1, unchanged: 19 });
+    expect(await loadSeedTemplates(t.db, docs, NOW)).toEqual({ created: 0, updated: 1, unchanged: docs.length - 1 });
     const [row] = await t.db.select().from(templates).where(eq(templates.id, id));
     expect(row).toMatchObject({ title: "Renamed seed", currentVersion: 2, usesCount: 7, featured: true });
     const versions = await t.db.select().from(templateVersions).where(eq(templateVersions.templateId, id)).orderBy(asc(templateVersions.version));

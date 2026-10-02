@@ -3,7 +3,9 @@ import { parseDoc, type Doc } from "@vash/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import * as schema from "../src/server/db/schema";
+import { upsertSystemAssets } from "../src/server/assets/repository";
 import { loadSeedTemplates } from "../src/server/templates/seed";
+import { sampleAssetRows } from "../templates/samples";
 
 const url = process.env.DATABASE_URL;
 if (!url) {
@@ -23,7 +25,12 @@ const docs: Doc[] = readdirSync(dir)
 
 const pool = new Pool({ connectionString: url, max: 1 });
 try {
-  const r = await loadSeedTemplates(drizzle(pool, { schema }), docs, new Date());
+  const db = drizzle(pool, { schema });
+  // Sample photos first: seed templates' frames reference them.
+  const samples = sampleAssetRows();
+  await upsertSystemAssets(db, samples);
+  console.log(`sample photos: ${samples.length}`);
+  const r = await loadSeedTemplates(db, docs, new Date());
   console.log(`seed templates: ${r.created} created, ${r.updated} updated, ${r.unchanged} unchanged`);
 } finally {
   await pool.end();

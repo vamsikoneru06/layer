@@ -1,7 +1,7 @@
 # VASH threat model
 
 What VASH protects, who might attack it, and which control stops each attack. Update this file when data
-handling, auth or storage changes. Last reviewed 2026-10-03 against `main` at 5392cf4 plus PRs #23 to #25.
+handling, auth or storage changes. Last reviewed 2026-10-03 against `main` at 678ba4f plus PR #25.
 
 ## What we protect
 
@@ -40,11 +40,11 @@ before they are stored or rendered.
 | Repudiation | An admin hides a template and denies it | Each moderation action writes an audit row in the same transaction (PR #25) | `server/admin/service.ts` |
 | Information disclosure | Hot-linking, tracking pixels, SSRF through documents | Documents hold asset ids only, never URLs; ids resolve to short-lived signed URLs | spec §5, `server/assets` |
 | Information disclosure | Share token or email in logs | Share tokens are stripped from logged paths; with PR #25 they are stored only as a SHA-256 hash, and profiles show name and handle only | `server/http/endpoint.ts`, `server/shares` |
-| Information disclosure | A hidden template's photos stay reachable | Resolve refuses for hidden templates (PR #23); moving public copies out of the public bucket is still open (decision row 40) | `server/assets/service.ts` |
+| Information disclosure | A hidden template's photos stay reachable | Resolve refuses for hidden templates (#23); moving public copies out of the public bucket is still open (decision row 40) | `server/assets/service.ts` |
 | Information disclosure | XSS reads the session | Strict CSP with a per-request nonce, no third-party script/font/image hosts; React escaping | `proxy.ts`, `security/headers.ts` |
 | Information disclosure | Clickjacking | `frame-ancestors 'none'` | `security/headers.ts` |
 | Denial of service | Flood sign-in, uploads, saves, publishes | Postgres-backed rate limits per user, IP or hashed email (shared by all instances) | `rate-limit/` |
-| Denial of service | Fill the free storage tier | 500 MB per user (50 MB with database storage, PR #24), 15 MB per file, quota includes staged and queued objects | `server/assets/service.ts` (`UPLOAD_LIMITS`) |
+| Denial of service | Fill the free storage tier | 500 MB per user (50 MB with database storage), 15 MB per file, quota includes staged and queued objects | `server/assets/service.ts` (`UPLOAD_LIMITS`) |
 | Denial of service | A slow database or storage call ties up functions | Pool connect timeout 5 s, query timeout 15 s; S3 connect 5 s, request 20 s | `db/client.ts`, `storage/s3.ts` |
 | Elevation of privilege | A user calls admin endpoints | `endpoint(..., { auth: "admin" })` checks the stored role on every request | `server/http/endpoint.ts` |
 | Supply chain | A compromised dependency or leaked key | gitleaks, CodeQL, `pnpm audit`, dependency review in CI; Dependabot | `.github/workflows` |

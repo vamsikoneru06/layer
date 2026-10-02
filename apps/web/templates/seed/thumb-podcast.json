@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "id": "thumb-podcast",
+  "kind": "template",
+  "meta": {
+    "title": "Podcast Episode",
+    "category": "business",
+    "tags": [
+      "podcast",
+      "episode",
+      "dark",
+      "interview"
+    ],
+    "format": "yt-thumbnail"
+  },
+  "artboard": {
+    "width": 1280,
+    "height": 720,
+    "background": {
+      "type": "solid",
+      "color": "#16161A"
+    }
+  },
+  "root": [
+    "photo",
+    "episode",
+    "title",
+    "line",
+    "guest"
+  ],
+  "nodes": {
+    "photo": {
+      "id": "photo",
+      "name": "Photo",
+      "transform": {
+        "x": 1020,
+        "y": 360,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 520,
+      "height": 720,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "content": {
+        "assetId": "72df35cf-94f5-88eb-a7c7-03435c77062e",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "episode": {
+      "id": "episode",
+      "name": "Episode",
+      "transform": {
+        "x": 320,
+        "y": 110,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 500,
+      "height": 40,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "EP. 12",
+      "font": {
+        "family": "Inter",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 30,
+      "color": "#FF5A36",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 6,
+      "fit": "shrink",
+      "maxChars": 12
+    },
+    "title": {
+      "id": "title",
+      "name": "Title",
+      "transform": {
+        "x": 390,
+        "y": 310,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 640,
+      "height": 320,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Why small brands win",
+      "font": {
+        "family": "Archivo Black",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 88,
+      "color": "#FFFFFF",
+      "align": "left",
+      "lineHeight": 1,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 40
+    },
+    "line": {
+      "id": "line",
+      "name": "Line",
+      "transform": {
+        "x": 130,
+        "y": 514,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 120,
+      "height": 8,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#FF5A36"
+      },
+      "stroke": null
+    },
+    "guest": {
+      "id": "guest",
+      "name": "Guest",
+      "transform": {
+        "x": 390,
+        "y": 570,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 640,
+      "height": 50,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "with Priya Nair",
+      "font": {
+        "family": "Poppins",
+        "weight": 500,
+        "style": "normal"
+      },
+      "size": 36,
+      "color": "#CFCFD6",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 40
+    }
+  },
+  "assets": {
+    "72df35cf-94f5-88eb-a7c7-03435c77062e": {
+      "id": "72df35cf-94f5-88eb-a7c7-03435c77062e",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 933,
+      "height": 1400
+    }
+  }
+}

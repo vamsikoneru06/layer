@@ -6,7 +6,8 @@ import { SignInForm } from "./sign-in-form";
 
 export const metadata = { title: "Sign in · VASH" };
 
-const STREAM = Array.from({ length: 9 }, (_, i) => `/images/stream/${i + 1}.jpg`);
+// 1–9 from the design handoff (Unsplash); 10–18 from Pexels (credits in public/samples/CREDITS.txt).
+const STREAM = Array.from({ length: 18 }, (_, i) => `/images/stream/${i + 1}.jpg`);
 
 export default async function SignInPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { error } = await searchParams;

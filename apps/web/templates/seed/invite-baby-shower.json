@@ -1,0 +1,239 @@
+{
+  "schemaVersion": 1,
+  "id": "invite-baby-shower",
+  "kind": "template",
+  "meta": {
+    "title": "Baby Shower",
+    "category": "birthday",
+    "tags": [
+      "baby shower",
+      "soft",
+      "pastel",
+      "celebration"
+    ],
+    "format": "invitation"
+  },
+  "artboard": {
+    "width": 1500,
+    "height": 2100,
+    "background": {
+      "type": "linear",
+      "angle": 180,
+      "stops": [
+        {
+          "offset": 0,
+          "color": "#EAF4F4"
+        },
+        {
+          "offset": 1,
+          "color": "#FDF1E7"
+        }
+      ]
+    }
+  },
+  "root": [
+    "title",
+    "ring",
+    "photo",
+    "name",
+    "details",
+    "rsvp"
+  ],
+  "nodes": {
+    "title": {
+      "id": "title",
+      "name": "Title",
+      "transform": {
+        "x": 750,
+        "y": 280,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1200,
+      "height": 220,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Oh baby!",
+      "font": {
+        "family": "Pacifico",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 150,
+      "color": "#5C8D89",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 20
+    },
+    "ring": {
+      "id": "ring",
+      "name": "Photo ring",
+      "transform": {
+        "x": 750,
+        "y": 770,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 640,
+      "height": 640,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#FFFFFF"
+      },
+      "stroke": null
+    },
+    "photo": {
+      "id": "photo",
+      "name": "Photo",
+      "transform": {
+        "x": 750,
+        "y": 770,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 600,
+      "height": 600,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "ellipse"
+      },
+      "content": {
+        "assetId": "4ca41ba9-dfcf-8ba5-bb85-7d6d9b959f84",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "name": {
+      "id": "name",
+      "name": "Name",
+      "transform": {
+        "x": 750,
+        "y": 1225,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1200,
+      "height": 110,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Baby shower for Meera",
+      "font": {
+        "family": "Playfair Display",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 80,
+      "color": "#3D5A58",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 40
+    },
+    "details": {
+      "id": "details",
+      "name": "Details",
+      "transform": {
+        "x": 750,
+        "y": 1395,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1200,
+      "height": 150,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Saturday, 20 July · 4 PM\n24 Lake View Road",
+      "font": {
+        "family": "Inter",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 44,
+      "color": "#5C6B6A",
+      "align": "center",
+      "lineHeight": 1.5,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 70
+    },
+    "rsvp": {
+      "id": "rsvp",
+      "name": "RSVP",
+      "transform": {
+        "x": 750,
+        "y": 1568,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1200,
+      "height": 56,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "RSVP by 10 July",
+      "font": {
+        "family": "Inter",
+        "weight": 600,
+        "style": "normal"
+      },
+      "size": 36,
+      "color": "#C98A5A",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 30
+    }
+  },
+  "assets": {
+    "4ca41ba9-dfcf-8ba5-bb85-7d6d9b959f84": {
+      "id": "4ca41ba9-dfcf-8ba5-bb85-7d6d9b959f84",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 1400,
+      "height": 1400
+    }
+  }
+}
