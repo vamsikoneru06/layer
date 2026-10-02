@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { checkExport } from "./export";
+import { checkExport, exportPng, PHOTOS_NOT_READY, referencedImages } from "./export";
 import { recordingContext } from "./recording-ctx";
 import { renderDoc } from "./render";
-import { docWith } from "./test-docs";
+import { docWith, frame } from "./test-docs";
 
 describe("checkExport", () => {
   it("gives the output size for a scale", () => {
@@ -25,5 +25,22 @@ describe("renderDoc background option", () => {
     renderDoc(transparent.ctx, docWith([]), [1, 0, 0, 1, 0, 0], { measure: () => 0, image: () => "loading", dpr: 1 }, { background: false });
     expect(withBg.calls.filter((c) => c.op === "fillRect")).toHaveLength(1);
     expect(transparent.calls.filter((c) => c.op === "fillRect")).toHaveLength(0);
+  });
+});
+
+describe("exportPng with photos", () => {
+  const withPhoto = () => docWith([{ ...frame("f", { x: 500, y: 500 }), content: { assetId: "p1", offsetX: 0, offsetY: 0, scale: 1 } }, frame("empty", { x: 100, y: 100 })]);
+
+  it("lists the photos the design draws", () => {
+    expect(referencedImages(withPhoto())).toEqual(["p1"]);
+  });
+
+  it("waits for the design's photos, and refuses rather than export an empty box", async () => {
+    const waited: string[][] = [];
+    const run = (state: "loading" | "missing") =>
+      exportPng(withPhoto(), { scale: 1, transparent: false, measure: () => 0, image: () => state, imagesReady: async (ids) => void waited.push(ids) });
+    await expect(run("loading")).rejects.toThrow(PHOTOS_NOT_READY);
+    await expect(run("missing")).rejects.toThrow(PHOTOS_NOT_READY);
+    expect(waited).toEqual([["p1"], ["p1"]]);
   });
 });

@@ -54,7 +54,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             key={href}
             href={href}
             aria-current={active(href) ? "page" : undefined}
-            className={cn("flex h-14 flex-1 flex-col items-center justify-center gap-1 text-[11px] text-muted", active(href) && "font-semibold text-text")}
+            className={cn("flex h-14 flex-1 flex-col items-center justify-center gap-1 text-[11px] text-muted transition-colors hover:text-text", active(href) && "font-semibold text-text")}
           >
             <Icon aria-hidden className="size-5" strokeWidth={1.75} />
             {label}

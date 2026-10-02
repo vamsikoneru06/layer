@@ -1,7 +1,7 @@
 "use client";
 
 import { createEditor, type Editor, type EditorState } from "@vash/engine";
-import type { Doc } from "@vash/schema";
+import { parseDoc, type Doc } from "@vash/schema";
 import { ChevronDown, CloudAlert, CloudCheck, CloudOff, CloudUpload, Redo2, Undo2, ZoomIn, ZoomOut } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -12,9 +12,11 @@ import { Dialog } from "@/components/ui/dialog";
 import { Menu } from "@/components/ui/menu";
 import { getDesign, saveDesign, saveDesignAsCopy, type Design } from "@/lib/api";
 import { createAutosaver, type Autosaver, type SaveStatus } from "@/lib/autosave";
+import { createImageLoader } from "@/lib/images";
 import { cn } from "@/lib/utils";
 import { ExportPopover } from "./export-popover";
 import { Segmented } from "./fields";
+import { InsertRail } from "./insert-rail";
 import { LayersPanel } from "./layers-panel";
 import { PropertiesPanel } from "./properties-panel";
 import { TextEditor } from "./text-editor";
@@ -47,19 +49,35 @@ const STATUS: Record<SaveStatus, { icon: ReactNode; label: string }> = {
   unsaved: { icon: <CloudUpload aria-hidden />, label: "Unsaved changes" },
   saving: { icon: <CloudUpload aria-hidden />, label: "Saving…" },
   offline: { icon: <CloudOff aria-hidden />, label: "Offline, retrying" },
+  retrying: { icon: <CloudAlert aria-hidden />, label: "Couldn’t save, retrying" },
+  "signed-out": { icon: <CloudAlert aria-hidden />, label: "Signed out, changes not saved" },
   error: { icon: <CloudAlert aria-hidden />, label: "Couldn’t save" },
   conflict: { icon: <CloudAlert aria-hidden />, label: "Changed elsewhere" },
 };
 
-function SaveIndicator({ status, onRetry }: { status: SaveStatus; onRetry: () => void }) {
+const LINK = "font-medium text-text underline-offset-4 hover:underline";
+
+function SaveIndicator({ status, onRetry, onResolve }: { status: SaveStatus; onRetry: () => void; onResolve: () => void }) {
   const s = STATUS[status];
+  const alarming = status === "error" || status === "conflict" || status === "signed-out";
   return (
-    <span role="status" className={cn("flex items-center gap-1.5 text-[13px] text-muted [&_svg]:size-4", (status === "error" || status === "conflict") && "text-danger")}>
+    <span role="status" className={cn("flex items-center gap-1.5 text-[13px] text-muted [&_svg]:size-4", alarming && "text-danger")}>
       {s.icon}
       {s.label}
-      {status === "error" && (
-        <button type="button" onClick={onRetry} className="font-medium text-text underline-offset-4 hover:underline">
+      {status === "signed-out" && (
+        // A new tab, so this editor and its unsaved changes stay open; saving resumes on return.
+        <a href="/signin" target="_blank" rel="noopener" className={LINK}>
+          Sign in
+        </a>
+      )}
+      {(status === "error" || status === "signed-out" || status === "retrying") && (
+        <button type="button" onClick={onRetry} className={LINK}>
           Retry
+        </button>
+      )}
+      {status === "conflict" && (
+        <button type="button" onClick={onResolve} className={LINK}>
+          Resolve
         </button>
       )}
     </span>
@@ -75,10 +93,16 @@ export function Workspace({ design }: { design: Design }) {
   const [editor, setEditor] = useState<Editor | null>(null);
   const [status, setStatus] = useState<SaveStatus>("saved");
   const [panel, setPanel] = useState<"properties" | "layers">("properties");
+  const [conflictOpen, setConflictOpen] = useState(true);
+  const [conflictBusy, setConflictBusy] = useState(false);
+  const [conflictError, setConflictError] = useState<string | null>(null);
   const state = useEditorState(editor);
 
   useEffect(() => {
-    const e = createEditor({ container: container.current!, scene: scene.current!, overlay: overlay.current!, doc: design.doc });
+    // Photos load in the background; the canvas redraws as each arrives.
+    let e: Editor | null = null;
+    const images = createImageLoader(() => e?.invalidate());
+    e = createEditor({ container: container.current!, scene: scene.current!, overlay: overlay.current!, doc: design.doc, image: images.image, imagesReady: images.ready });
     setEditor(e);
     const s = createAutosaver<Doc>({ version: design.version, delayMs: 1500, retryMs: 5000, save: (doc, v) => saveDesign(design.id, doc, v), onStatus: setStatus });
     saver.current = s;
@@ -94,8 +118,14 @@ export function Workspace({ design }: { design: Design }) {
       if (s.dirty) ev.preventDefault();
     };
     window.addEventListener("beforeunload", warn);
+    // Back from signing in (or from another tab): try the pending save again.
+    const resume = () => {
+      if (document.visibilityState === "visible" && s.dirty) void s.flush();
+    };
+    document.addEventListener("visibilitychange", resume);
     return () => {
       window.removeEventListener("beforeunload", warn);
+      document.removeEventListener("visibilitychange", resume);
       off();
       // Leaving within the app: send whatever is pending, then stop.
       void s.flush().finally(() => s.dispose());
@@ -111,21 +141,46 @@ export function Workspace({ design }: { design: Design }) {
     return () => clearTimeout(t);
   }, [notice, editor]);
 
-  async function reloadTheirs() {
-    if (!editor || !saver.current) return;
-    const fresh = await getDesign(design.id);
-    editor.core.endTextEdit(false);
-    editor.core.history.reset(fresh.doc);
-    saver.current.reset(fresh.version);
+  // A new conflict always shows the dialog again.
+  useEffect(() => {
+    if (status !== "conflict") return;
+    setConflictOpen(true);
+    setConflictError(null);
+  }, [status]);
+
+  /** Runs a conflict action, keeping the dialog open with the reason if it fails. */
+  async function resolving(action: () => Promise<void>) {
+    setConflictBusy(true);
+    setConflictError(null);
+    try {
+      await action();
+    } catch (err) {
+      setConflictError(err instanceof Error ? err.message : "That didn’t work. Try again.");
+    } finally {
+      setConflictBusy(false);
+    }
   }
 
-  async function keepMineAsCopy() {
-    if (!editor) return;
-    const doc = editor.getState().doc;
-    const { id } = await saveDesignAsCopy(doc, `Copy of ${doc.meta.title}`.slice(0, 120));
-    saver.current?.reset(saver.current.version);
-    router.push(`/edit/${id}`);
-  }
+  const reloadTheirs = () =>
+    resolving(async () => {
+      if (!editor || !saver.current) return;
+      const fresh = await getDesign(design.id);
+      // The same validation as on first open; never hand the engine a malformed document.
+      const parsed = parseDoc(fresh.doc, { kind: "design" });
+      if (!parsed.ok) throw new Error("The newer version couldn’t be opened. Keep yours as a copy instead.");
+      editor.core.endTextEdit(false);
+      editor.core.history.reset(parsed.doc);
+      saver.current.reset(fresh.version);
+    });
+
+  const keepMineAsCopy = () =>
+    resolving(async () => {
+      if (!editor) return;
+      const doc = editor.getState().doc;
+      const { id } = await saveDesignAsCopy(doc, `Copy of ${doc.meta.title}`.slice(0, 120));
+      saver.current?.reset(saver.current.version);
+      router.push(`/edit/${id}`);
+    });
 
   const zoom = state?.viewport.zoom ?? 1;
   const artboard = state?.doc.artboard ?? design.doc.artboard;
@@ -133,11 +188,11 @@ export function Workspace({ design }: { design: Design }) {
   return (
     <main className="flex h-svh flex-col overflow-hidden bg-bg text-text">
       <header className="flex h-14 flex-none items-center gap-3 border-b-[.5px] border-line px-3">
-        <Link href="/designs" aria-label="Back to your designs" className="flex-none rounded-md">
+        <Link href="/designs" aria-label="Back to your designs" className="flex-none rounded-md transition-opacity hover:opacity-75">
           <Image src="/vash-logo.png" alt="" width={28} height={28} className="size-7 rounded-md" priority />
         </Link>
         <h1 className="max-w-[320px] truncate text-sm font-semibold">{state?.doc.meta.title ?? design.title}</h1>
-        <SaveIndicator status={status} onRetry={() => void saver.current?.flush()} />
+        <SaveIndicator status={status} onRetry={() => void saver.current?.flush()} onResolve={() => setConflictOpen(true)} />
         <div className="flex-1" />
         <IconButton label="Undo (Ctrl+Z)" onClick={() => editor?.core.undo()} disabled={!state?.canUndo}>
           <Undo2 aria-hidden />
@@ -162,6 +217,7 @@ export function Workspace({ design }: { design: Design }) {
       </header>
 
       <div className="flex min-h-0 flex-1">
+        <InsertRail editor={editor} />
         <div className="relative flex min-w-0 flex-1 flex-col">
           <div ref={container} className="relative min-h-0 flex-1 overflow-hidden bg-bg2">
             <canvas ref={scene} className="absolute inset-0" aria-hidden />
@@ -211,13 +267,25 @@ export function Workspace({ design }: { design: Design }) {
         </aside>
       </div>
 
-      <Dialog open={status === "conflict"} onClose={() => {}} title="This design changed in another tab">
-        <p className="text-sm text-muted">Someone (maybe you, in another tab) saved a newer version. Choose which one to keep.</p>
-        <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => void keepMineAsCopy()}>
+      <Dialog open={status === "conflict" && conflictOpen} onClose={() => setConflictOpen(false)} title="This design changed in another tab">
+        <p className="text-sm text-muted">
+          Someone (maybe you, in another tab) saved a newer version. Choose which one to keep. Until you do, your changes here aren&apos;t saved.
+        </p>
+        {conflictError && (
+          <p role="alert" className="text-sm text-danger">
+            {conflictError}
+          </p>
+        )}
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button variant="secondary" onClick={() => setConflictOpen(false)} disabled={conflictBusy}>
+            Decide later
+          </Button>
+          <Button variant="secondary" onClick={() => void keepMineAsCopy()} disabled={conflictBusy}>
             Keep mine as a copy
           </Button>
-          <Button onClick={() => void reloadTheirs()}>Reload their version</Button>
+          <Button onClick={() => void reloadTheirs()} loading={conflictBusy}>
+            Reload their version
+          </Button>
         </div>
       </Dialog>
     </main>

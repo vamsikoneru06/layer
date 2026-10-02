@@ -52,7 +52,12 @@
         "kind": "rect",
         "cornerRadius": 24
       },
-      "content": null,
+      "content": {
+        "assetId": "f9e4b2dc-1da2-8793-9adf-4c17ec9cdaa0",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
       "filters": {
         "preset": null,
         "brightness": 0,
@@ -89,7 +94,12 @@
         "kind": "rect",
         "cornerRadius": 24
       },
-      "content": null,
+      "content": {
+        "assetId": "54aa1b02-905a-88c7-87a9-884187ceec48",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
       "filters": {
         "preset": null,
         "brightness": 0,
@@ -277,5 +287,20 @@
       "maxChars": 14
     }
   },
-  "assets": {}
+  "assets": {
+    "f9e4b2dc-1da2-8793-9adf-4c17ec9cdaa0": {
+      "id": "f9e4b2dc-1da2-8793-9adf-4c17ec9cdaa0",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 1050,
+      "height": 1400
+    },
+    "54aa1b02-905a-88c7-87a9-884187ceec48": {
+      "id": "54aa1b02-905a-88c7-87a9-884187ceec48",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 934,
+      "height": 1400
+    }
+  }
 }

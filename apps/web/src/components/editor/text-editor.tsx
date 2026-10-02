@@ -34,6 +34,8 @@ export function TextEditor({ editor, state }: { editor: Editor; state: EditorSta
       onChange={(e) => editor.core.editText(e.target.value)}
       onBlur={() => editor.core.endTextEdit(true)}
       onKeyDown={(e) => {
+        // While an input method (Telugu, Devanagari, CJK...) is composing, Escape and Enter belong to it.
+        if (e.nativeEvent.isComposing) return;
         if (e.key === "Escape") {
           e.preventDefault();
           editor.core.endTextEdit(false);

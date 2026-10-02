@@ -16,4 +16,6 @@ export interface ObjectStorage {
   copy(from: ObjectRef, to: ObjectRef): Promise<void>;
   /** Idempotent: removing a missing object succeeds. */
   remove(bucket: Bucket, key: string): Promise<void>;
+  /** A lower per-user storage allowance, for backends with little room (the built-in database storage). */
+  readonly quotaBytes?: number;
 }

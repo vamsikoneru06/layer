@@ -51,11 +51,11 @@ export function assetHandlers(deps: Deps, storage: ObjectStorage | null) {
       return Response.json(toPage(rows, q.limit, (r) => ({ at: r.createdAt.toISOString(), id: r.id }), service.toAssetJson));
     }),
 
+    // Works without storage too: bundled sample photos resolve to the site's own files.
     resolve: endpoint(deps, { auth: "optional", rateLimit: { name: "assetResolve", rule: RATE_LIMITS.publicRead, by: "user" } }, async ({ req, user }) => {
-      const c = ctx();
       const body = await readJson(req, ResolveBody);
       const ids = body.ids.map((id) => id.toLowerCase());
-      return Response.json({ assets: await service.resolveAssets(c, user?.id ?? null, ids, { admin: user?.role === "admin" }) });
+      return Response.json({ assets: await service.resolveAssets({ db: deps.db, now: deps.now, storage }, user?.id ?? null, ids, { admin: user?.role === "admin" }) });
     }),
 
     remove: endpoint(deps, { auth: "user", rateLimit: writeLimit }, async ({ user, params }) => {

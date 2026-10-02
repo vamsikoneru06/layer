@@ -2,6 +2,7 @@ import type { Doc } from "@vash/schema";
 import type { FilterFn } from "./filters";
 import { fontRequests } from "./fonts";
 import { renderDoc, type Ctx, type ImageState } from "./render";
+import { drawOrder } from "./scene";
 import type { Measure } from "./text";
 
 /** Browsers cap canvas sides (and memory); 8192 px keeps every major browser happy. */
@@ -23,13 +24,34 @@ export interface ExportOptions {
   measure: Measure;
   /** Full-resolution images for export (not the on-screen working copies). */
   image: (assetId: string) => ImageState;
+  /** Resolves once the given photos have finished loading (or failed); lets export wait for them. */
+  imagesReady?: (assetIds: string[]) => Promise<void>;
   filter?: FilterFn;
 }
 
-/** Renders the artboard at `scale` to a PNG, after the document's fonts have loaded. */
+/** Every photo and sticker the visible design draws. */
+export function referencedImages(doc: Doc): string[] {
+  const ids = new Set<string>();
+  for (const id of drawOrder(doc)) {
+    const n = doc.nodes[id];
+    if (n?.type === "frame" && n.content) ids.add(n.content.assetId);
+    if (n?.type === "sticker") ids.add(n.assetId);
+  }
+  return [...ids];
+}
+
+export const PHOTOS_NOT_READY = "Some photos haven't loaded, so the image would have empty spaces. Check your connection and try again.";
+
+/**
+ * Renders the artboard at `scale` to a PNG once the design's fonts and photos have loaded. Refuses
+ * rather than export a photo as an empty box.
+ */
 export async function exportPng(doc: Doc, o: ExportOptions): Promise<Blob> {
   const size = checkExport(doc, o.scale);
   if (!size.ok) throw new Error(size.reason);
+  const photos = referencedImages(doc);
+  await o.imagesReady?.(photos);
+  if (photos.some((id) => typeof o.image(id) !== "object")) throw new Error(PHOTOS_NOT_READY);
   if (typeof document !== "undefined" && document.fonts) {
     await Promise.all(fontRequests(doc).map((f) => document.fonts.load(f).catch(() => [])));
   }
