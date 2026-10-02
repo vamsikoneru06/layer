@@ -1,10 +1,14 @@
 "use client";
 
 import { apply, checkPolicy, FILTER_PRESETS, isNeutral, presetFilters, rotation, type Command, type EditorCore, type EditorState, type FilterValues } from "@vash/engine";
-import { defaultFilters, FONT_FAMILIES, LIMITS, type Fill, type FrameNode, type Node, type ShapeNode, type TextNode } from "@vash/schema";
+import { defaultFilters, FONT_FAMILIES, LIMITS, type FrameNode, type Node, type ShapeNode, type TextNode } from "@vash/schema";
 import { AlignCenter, AlignJustify, AlignLeft, AlignRight, Lock } from "lucide-react";
+import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
+import { docColors } from "@/lib/color";
+import { DocColorsContext } from "./color-picker";
 import { ColorField, NumberField, Row, Section, Segmented, SelectField, Slider, Switch } from "./fields";
+import { FillField } from "./fill-field";
 import { FONT_FACES } from "./font-faces";
 
 const TYPE_LABEL: Record<Node["type"], string> = { frame: "Photo frame", text: "Text", shape: "Shape", sticker: "Sticker", group: "Group" };
@@ -22,9 +26,6 @@ function changer(core: EditorCore) {
   };
 }
 
-/** The first colour of a fill, for the swatch; gradients show their first stop. */
-const fillColor = (fill: Fill) => (fill.type === "solid" ? fill.color : (fill.stops[0]?.color ?? "#000000"));
-
 /** Nearest weight a family ships, so switching fonts never asks for a face that doesn't exist. */
 function nearestWeight(family: string, weight: number): number {
   const weights = FONT_FACES[family]?.weights ?? [400];
@@ -34,6 +35,15 @@ function nearestWeight(family: string, weight: number): number {
 const WEIGHT_NAMES: Record<number, string> = { 100: "Thin", 200: "Extra light", 300: "Light", 400: "Regular", 500: "Medium", 600: "Semibold", 700: "Bold", 800: "Extra bold", 900: "Black" };
 
 export function PropertiesPanel({ state, core }: { state: EditorState; core: EditorCore }) {
+  const colors = useMemo(() => docColors(state.doc), [state.doc]);
+  return (
+    <DocColorsContext value={colors}>
+      <PanelBody state={state} core={core} />
+    </DocColorsContext>
+  );
+}
+
+function PanelBody({ state, core }: { state: EditorState; core: EditorCore }) {
   const { doc, selection, mode } = state;
   const change = changer(core);
   const allowed = (cmd: Command) => checkPolicy(doc, cmd, mode).ok;
@@ -56,12 +66,7 @@ export function PropertiesPanel({ state, core }: { state: EditorState; core: Edi
           {!resizable && <p className="text-[12px] text-muted">The template sets this design&apos;s size.</p>}
         </Section>
         <Section title="Background">
-          <ColorField
-            name="Background"
-            value={fillColor(art.background)}
-            display={art.background.type === "linear" ? "Gradient" : undefined}
-            onChange={(color, final) => change({ type: "artboard", patch: { background: { type: "solid", color } } }, final)}
-          />
+          <FillField name="Background" value={art.background} onChange={(background, final) => change({ type: "artboard", patch: { background } }, final)} />
         </Section>
       </div>
     );
@@ -205,21 +210,16 @@ function ShapeSection({ node, disabled, update }: { node: ShapeNode; disabled: b
     <Section title="Shape">
       <Row label="Fill">
         {node.fill ? (
-          <div className="flex w-[150px] items-center gap-1">
-            <ColorField
-              name="Fill"
-              value={fillColor(node.fill)}
-              display={node.fill.type === "linear" ? "Gradient" : undefined}
-              disabled={disabled}
-              onChange={(color, final) => update({ fill: { type: "solid", color } }, final)}
-            />
-          </div>
+          <button type="button" disabled={disabled} onClick={() => update({ fill: null })} className="px-1 text-[13px] text-muted hover:text-text disabled:opacity-45">
+            Remove
+          </button>
         ) : (
           <button type="button" disabled={disabled} onClick={() => update({ fill: { type: "solid", color: "#D9D9D9" } })} className="text-[13px] font-medium hover:underline disabled:opacity-45">
             Add fill
           </button>
         )}
       </Row>
+      {node.fill && <FillField name="Fill" value={node.fill} disabled={disabled} onChange={(fill, final) => update({ fill }, final)} />}
       <Row label="Stroke">
         {node.stroke ? (
           <div className="flex w-[150px] items-center gap-1">
