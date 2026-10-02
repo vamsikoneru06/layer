@@ -2,7 +2,6 @@
 
 import { createEditor, type Editor, type EditorState } from "@vash/engine";
 import { parseDoc, type Doc } from "@vash/schema";
-import { ZoomIn, ZoomOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
@@ -11,11 +10,11 @@ import { useToast } from "@/components/ui/toast";
 import { duplicateDesign, getDesign, saveDesign, saveDesignAsCopy, type Design } from "@/lib/api";
 import { createAutosaver, type Autosaver, type SaveStatus } from "@/lib/autosave";
 import { createImageLoader } from "@/lib/images";
+import { BottomBar } from "./bottom-bar";
 import { DesignInfoDialog } from "./design-info-dialog";
 import { buildActions, type ActionHost } from "./editor-actions";
 import { EditorHeader } from "./editor-header";
 import { Segmented } from "./fields";
-import { IconButton } from "./icon-button";
 import { InsertRail } from "./insert-rail";
 import { LayersPanel } from "./layers-panel";
 import { MoveDialog } from "./move-dialog";
@@ -280,24 +279,7 @@ export function Workspace({ design }: { design: Design }) {
               </button>
             )}
           </div>
-          {!panelsHidden && (
-            <footer className="flex h-10 flex-none items-center gap-1 border-t-[.5px] border-line px-3 text-[13px] text-muted">
-              <IconButton label="Zoom out" onClick={() => editor?.zoomTo(zoom / 1.25)}>
-                <ZoomOut aria-hidden />
-              </IconButton>
-              <IconButton label="Zoom in" onClick={() => editor?.zoomTo(zoom * 1.25)}>
-                <ZoomIn aria-hidden />
-              </IconButton>
-              <span className="w-12 text-center tabular-nums">{Math.round(zoom * 100)}%</span>
-              <button type="button" onClick={() => editor?.fit()} className="h-7 rounded-md px-2 font-medium text-text hover:bg-field">
-                Fit
-              </button>
-              <div className="flex-1" />
-              <span className="tabular-nums">
-                {artboard.width} × {artboard.height}
-              </span>
-            </footer>
-          )}
+          {!panelsHidden && <BottomBar editor={editor} zoom={zoom} size={artboard} actions={actions} />}
         </div>
         {!panelsHidden && (
           <aside className="flex w-[288px] flex-none flex-col border-l-[.5px] border-line text-[13px]" aria-label="Design panel">
