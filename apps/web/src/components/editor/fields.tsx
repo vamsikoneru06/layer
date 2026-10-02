@@ -220,7 +220,7 @@ export function Switch({ checked, onChange, label, disabled }: { checked: boolea
       aria-label={label}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={cn("relative h-[22px] w-[38px] flex-none rounded-full bg-field shadow-[inset_0_0_0_.5px_var(--line)] transition-colors disabled:opacity-45", checked && "bg-text")}
+      className={cn("relative h-[22px] w-[38px] flex-none rounded-full bg-field shadow-[inset_0_0_0_.5px_var(--line)] transition-[background-color,box-shadow] hover:shadow-[inset_0_0_0_.5px_var(--line),0_0_0_3px_var(--field)] disabled:opacity-45", checked && "bg-text")}
     >
       <span
         aria-hidden

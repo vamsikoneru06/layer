@@ -9,7 +9,7 @@ export function LegalPage({ title, updated, children }: { title: string; updated
       <header className="mx-auto flex h-16 max-w-[720px] items-center px-4 sm:px-6">
         <Logo />
       </header>
-      <article className="mx-auto flex max-w-[720px] flex-col gap-5 px-4 pt-8 pb-20 text-[15px] leading-relaxed sm:px-6 [&_a]:underline [&_a]:underline-offset-4 [&_h2]:mt-4 [&_h2]:text-lg [&_h2]:font-semibold [&_li]:ml-5 [&_li]:list-disc [&_ul]:flex [&_ul]:flex-col [&_ul]:gap-1.5">
+      <article className="mx-auto flex max-w-[720px] flex-col gap-5 px-4 pt-8 pb-20 text-[15px] leading-relaxed sm:px-6 [&_a]:underline [&_a]:underline-offset-4 [&_a]:transition-opacity [&_a:hover]:opacity-65 [&_h2]:mt-4 [&_h2]:text-lg [&_h2]:font-semibold [&_li]:ml-5 [&_li]:list-disc [&_ul]:flex [&_ul]:flex-col [&_ul]:gap-1.5">
         <div className="flex flex-col gap-2">
           <h1 className="text-[clamp(30px,5vw,40px)] leading-tight font-bold tracking-[-0.03em]">{title}</h1>
           <p className="text-sm text-muted">Last updated {updated}</p>

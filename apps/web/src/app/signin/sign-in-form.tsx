@@ -194,11 +194,11 @@ export function SignInForm({ googleEnabled, initialError }: { googleEnabled: boo
       </form>
       <p className="text-[13px] leading-normal text-muted">
         No password needed. The link expires in 10 minutes. By continuing you agree to the{" "}
-        <Link href="/terms" className="text-text underline underline-offset-4">
+        <Link href="/terms" className="text-text underline underline-offset-4 transition-opacity hover:opacity-65">
           Terms
         </Link>{" "}
         and confirm you&apos;ve read the{" "}
-        <Link href="/privacy" className="text-text underline underline-offset-4">
+        <Link href="/privacy" className="text-text underline underline-offset-4 transition-opacity hover:opacity-65">
           Privacy Policy
         </Link>
         . You must be 18 or older.

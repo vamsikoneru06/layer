@@ -13,14 +13,27 @@
   --ok: #1f9d55;
   --warn: #b25e00;
 
-  --bp: radial-gradient(120% 70% at 50% 0%, rgba(255, 255, 255, 0.22), transparent 60%), linear-gradient(180deg, #2a2a2c, #0a0a0a);
+  --bp: radial-gradient(120% 90% at 50% -20%, rgba(255, 255, 255, 0.3), transparent 55%), linear-gradient(180deg, rgba(48, 48, 52, 0.74), rgba(8, 8, 10, 0.86));
   --bpc: #fff;
-  --bpsh: inset 0 1px 0 rgba(255, 255, 255, 0.28), inset 0 0 0 0.5px rgba(255, 255, 255, 0.14), 0 1px 2px rgba(0, 0, 0, 0.2), 0 8px 20px rgba(0, 0, 0, 0.14);
-  --bpsh-h: inset 0 1px 0 rgba(255, 255, 255, 0.34), inset 0 0 0 0.5px rgba(255, 255, 255, 0.18), 0 2px 4px rgba(0, 0, 0, 0.2), 0 14px 28px rgba(0, 0, 0, 0.2);
-  --bs: radial-gradient(120% 70% at 50% 0%, #fff, rgba(255, 255, 255, 0) 70%), rgba(0, 0, 0, 0.035);
-  --bssh: inset 0 1px 0 #fff, inset 0 0 0 0.5px rgba(0, 0, 0, 0.14), 0 1px 2px rgba(0, 0, 0, 0.05), 0 6px 16px rgba(0, 0, 0, 0.05);
-  --bssh-h: inset 0 1px 0 #fff, inset 0 0 0 0.5px rgba(0, 0, 0, 0.2), 0 2px 4px rgba(0, 0, 0, 0.06), 0 10px 24px rgba(0, 0, 0, 0.1);
-  --bd: radial-gradient(120% 70% at 50% 0%, rgba(255, 255, 255, 0.3), transparent 60%), linear-gradient(180deg, #e5484d, #b8282d);
+  --bpsh: inset 0 1px 0 rgba(255, 255, 255, 0.34), inset 0 -1px 1px rgba(255, 255, 255, 0.1), 0 1px 2px rgba(0, 0, 0, 0.2), 0 8px 22px rgba(0, 0, 0, 0.16);
+  --bpsh-h: inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -1px 1px rgba(255, 255, 255, 0.14), 0 2px 4px rgba(0, 0, 0, 0.2), 0 14px 30px rgba(0, 0, 0, 0.22), 0 0 0 4px rgba(0, 0, 0, 0.05);
+  --bs: radial-gradient(120% 90% at 50% -20%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0) 65%), rgba(255, 255, 255, 0.55);
+  --bssh: inset 0 1px 0 #fff, inset 0 -1px 1px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06), 0 6px 16px rgba(0, 0, 0, 0.06);
+  --bssh-h: inset 0 1px 0 #fff, inset 0 -1px 1px rgba(0, 0, 0, 0.05), 0 2px 5px rgba(0, 0, 0, 0.08), 0 12px 26px rgba(0, 0, 0, 0.12), 0 0 0 4px rgba(0, 0, 0, 0.04);
+  --bd: radial-gradient(120% 90% at 50% -20%, rgba(255, 255, 255, 0.34), transparent 55%), linear-gradient(180deg, rgba(229, 72, 77, 0.9), rgba(170, 34, 39, 0.94));
+  --rim-p: linear-gradient(160deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.1) 35%, rgba(255, 255, 255, 0) 60%, rgba(255, 255, 255, 0.22));
+  --rim-s: linear-gradient(180deg, rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.2));
+  --sheen-p: rgba(255, 255, 255, 0.3);
+  --sheen-s: rgba(255, 255, 255, 0.85);
+  --gc-p: radial-gradient(90% 70% at 25% 0%, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0) 60%), linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.28)), rgba(29, 29, 31, 0.05);
+  --glass-backdrop: blur(14px) saturate(160%) brightness(1.25);
+  --gc-s: radial-gradient(90% 70% at 25% 0%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0) 60%), linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.22));
+  --gcsh-p: inset 1px 1px 0 rgba(255, 255, 255, 0.95), inset -1px -1px 0 rgba(0, 0, 0, 0.07), inset 0 -10px 14px -12px rgba(0, 0, 0, 0.16), 0 0 0 0.5px rgba(0, 0, 0, 0.16), 0 2px 6px rgba(0, 0, 0, 0.08), 0 10px 26px rgba(0, 0, 0, 0.1);
+  --gcsh-p-h: inset 1px 1px 0 #fff, inset -1px -1px 0 rgba(0, 0, 0, 0.08), inset 0 -10px 14px -12px rgba(0, 0, 0, 0.18), 0 0 0 0.5px rgba(0, 0, 0, 0.2), 0 4px 10px rgba(0, 0, 0, 0.1), 0 16px 34px rgba(0, 0, 0, 0.14), 0 0 0 4px rgba(0, 0, 0, 0.04);
+  --gcsh-s: inset 1px 1px 0 rgba(255, 255, 255, 0.9), inset -1px -1px 0 rgba(0, 0, 0, 0.05), inset 0 -10px 14px -12px rgba(0, 0, 0, 0.1), 0 0 0 0.5px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.05), 0 6px 18px rgba(0, 0, 0, 0.06);
+  --gcsh-s-h: inset 1px 1px 0 #fff, inset -1px -1px 0 rgba(0, 0, 0, 0.06), inset 0 -10px 14px -12px rgba(0, 0, 0, 0.12), 0 0 0 0.5px rgba(0, 0, 0, 0.16), 0 3px 8px rgba(0, 0, 0, 0.08), 0 12px 28px rgba(0, 0, 0, 0.1), 0 0 0 4px rgba(0, 0, 0, 0.03);
+  --rim-c: linear-gradient(160deg, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0.25) 40%, rgba(0, 0, 0, 0.04) 70%, rgba(0, 0, 0, 0.14));
+  --sheen-c: rgba(255, 255, 255, 0.95);
   --lp: linear-gradient(180deg, #fff 0%, rgba(255, 255, 255, 0.7) 55%, #fff 100%);
   --ls: linear-gradient(180deg, #1d1d1f 0%, rgba(29, 29, 31, 0.6) 55%, #1d1d1f 100%);
   --seg: #fff;
@@ -45,13 +58,26 @@
     --ok: #34c774;
     --warn: #f5b83d;
 
-    --bp: radial-gradient(120% 70% at 50% 0%, rgba(255, 255, 255, 0.28), transparent 60%), linear-gradient(180deg, #3a3a3c, #1c1c1e);
-    --bpsh: inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 0 0 0.5px rgba(255, 255, 255, 0.2), 0 8px 24px rgba(0, 0, 0, 0.6);
-    --bpsh-h: inset 0 1px 0 rgba(255, 255, 255, 0.42), inset 0 0 0 0.5px rgba(255, 255, 255, 0.3), 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 0 4px rgba(255, 255, 255, 0.06);
-    --bs: radial-gradient(120% 70% at 50% 0%, rgba(255, 255, 255, 0.1), transparent 70%), rgba(255, 255, 255, 0.04);
-    --bssh: inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 0 0 0.5px rgba(255, 255, 255, 0.16);
-    --bssh-h: inset 0 1px 0 rgba(255, 255, 255, 0.22), inset 0 0 0 0.5px rgba(255, 255, 255, 0.32), 0 0 0 4px rgba(255, 255, 255, 0.05);
-    --bd: radial-gradient(120% 70% at 50% 0%, rgba(255, 255, 255, 0.3), transparent 60%), linear-gradient(180deg, #e5484d, #a52227);
+    --bp: radial-gradient(120% 90% at 50% -20%, rgba(255, 255, 255, 0.3), transparent 55%), linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.08));
+    --bpsh: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -1px 1px rgba(255, 255, 255, 0.08), 0 8px 24px rgba(0, 0, 0, 0.55);
+    --bpsh-h: inset 0 1px 0 rgba(255, 255, 255, 0.5), inset 0 -1px 1px rgba(255, 255, 255, 0.12), 0 12px 30px rgba(0, 0, 0, 0.65), 0 0 0 4px rgba(255, 255, 255, 0.07);
+    --bs: radial-gradient(120% 90% at 50% -20%, rgba(255, 255, 255, 0.14), transparent 65%), rgba(255, 255, 255, 0.05);
+    --bssh: inset 0 1px 0 rgba(255, 255, 255, 0.16), inset 0 -1px 1px rgba(255, 255, 255, 0.04);
+    --bssh-h: inset 0 1px 0 rgba(255, 255, 255, 0.26), inset 0 -1px 1px rgba(255, 255, 255, 0.06), 0 8px 22px rgba(0, 0, 0, 0.5), 0 0 0 4px rgba(255, 255, 255, 0.05);
+    --bd: radial-gradient(120% 90% at 50% -20%, rgba(255, 255, 255, 0.3), transparent 55%), linear-gradient(180deg, rgba(229, 72, 77, 0.88), rgba(150, 30, 34, 0.92));
+    --rim-p: linear-gradient(160deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.14) 35%, rgba(255, 255, 255, 0.02) 60%, rgba(255, 255, 255, 0.28));
+    --rim-s: linear-gradient(160deg, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.06) 40%, rgba(255, 255, 255, 0) 60%, rgba(255, 255, 255, 0.14));
+    --sheen-p: rgba(255, 255, 255, 0.34);
+    --sheen-s: rgba(255, 255, 255, 0.22);
+    --gc-p: radial-gradient(90% 70% at 25% 0%, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0) 60%), linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04)), rgba(255, 255, 255, 0.05);
+    --glass-backdrop: blur(14px) saturate(160%) brightness(0.72);
+    --gc-s: radial-gradient(90% 70% at 25% 0%, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 60%), linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+    --gcsh-p: inset 1px 1px 0 rgba(255, 255, 255, 0.4), inset -1px -1px 0 rgba(0, 0, 0, 0.45), inset 0 -10px 14px -12px rgba(255, 255, 255, 0.22), 0 0 0 0.5px rgba(255, 255, 255, 0.18), 0 8px 26px rgba(0, 0, 0, 0.55);
+    --gcsh-p-h: inset 1px 1px 0 rgba(255, 255, 255, 0.55), inset -1px -1px 0 rgba(0, 0, 0, 0.5), inset 0 -10px 14px -12px rgba(255, 255, 255, 0.3), 0 0 0 0.5px rgba(255, 255, 255, 0.26), 0 12px 32px rgba(0, 0, 0, 0.65), 0 0 0 4px rgba(255, 255, 255, 0.06);
+    --gcsh-s: inset 1px 1px 0 rgba(255, 255, 255, 0.28), inset -1px -1px 0 rgba(0, 0, 0, 0.4), inset 0 -10px 14px -12px rgba(255, 255, 255, 0.14), 0 0 0 0.5px rgba(255, 255, 255, 0.12);
+    --gcsh-s-h: inset 1px 1px 0 rgba(255, 255, 255, 0.4), inset -1px -1px 0 rgba(0, 0, 0, 0.45), inset 0 -10px 14px -12px rgba(255, 255, 255, 0.2), 0 0 0 0.5px rgba(255, 255, 255, 0.2), 0 8px 22px rgba(0, 0, 0, 0.5), 0 0 0 4px rgba(255, 255, 255, 0.05);
+    --rim-c: linear-gradient(160deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.14) 38%, rgba(255, 255, 255, 0.02) 62%, rgba(255, 255, 255, 0.3));
+    --sheen-c: rgba(255, 255, 255, 0.28);
     --lp: linear-gradient(180deg, #fff 0%, rgba(255, 255, 255, 0.66) 55%, #fff 100%);
     --ls: linear-gradient(180deg, #fff 0%, rgba(255, 255, 255, 0.62) 55%, #fff 100%);
     --seg: rgba(255, 255, 255, 0.16);
@@ -72,13 +98,26 @@
   --ok: #34c774;
   --warn: #f5b83d;
 
-  --bp: radial-gradient(120% 70% at 50% 0%, rgba(255, 255, 255, 0.28), transparent 60%), linear-gradient(180deg, #3a3a3c, #1c1c1e);
-  --bpsh: inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 0 0 0.5px rgba(255, 255, 255, 0.2), 0 8px 24px rgba(0, 0, 0, 0.6);
-  --bpsh-h: inset 0 1px 0 rgba(255, 255, 255, 0.42), inset 0 0 0 0.5px rgba(255, 255, 255, 0.3), 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 0 4px rgba(255, 255, 255, 0.06);
-  --bs: radial-gradient(120% 70% at 50% 0%, rgba(255, 255, 255, 0.1), transparent 70%), rgba(255, 255, 255, 0.04);
-  --bssh: inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 0 0 0.5px rgba(255, 255, 255, 0.16);
-  --bssh-h: inset 0 1px 0 rgba(255, 255, 255, 0.22), inset 0 0 0 0.5px rgba(255, 255, 255, 0.32), 0 0 0 4px rgba(255, 255, 255, 0.05);
-  --bd: radial-gradient(120% 70% at 50% 0%, rgba(255, 255, 255, 0.3), transparent 60%), linear-gradient(180deg, #e5484d, #a52227);
+  --bp: radial-gradient(120% 90% at 50% -20%, rgba(255, 255, 255, 0.3), transparent 55%), linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.08));
+  --bpsh: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -1px 1px rgba(255, 255, 255, 0.08), 0 8px 24px rgba(0, 0, 0, 0.55);
+  --bpsh-h: inset 0 1px 0 rgba(255, 255, 255, 0.5), inset 0 -1px 1px rgba(255, 255, 255, 0.12), 0 12px 30px rgba(0, 0, 0, 0.65), 0 0 0 4px rgba(255, 255, 255, 0.07);
+  --bs: radial-gradient(120% 90% at 50% -20%, rgba(255, 255, 255, 0.14), transparent 65%), rgba(255, 255, 255, 0.05);
+  --bssh: inset 0 1px 0 rgba(255, 255, 255, 0.16), inset 0 -1px 1px rgba(255, 255, 255, 0.04);
+  --bssh-h: inset 0 1px 0 rgba(255, 255, 255, 0.26), inset 0 -1px 1px rgba(255, 255, 255, 0.06), 0 8px 22px rgba(0, 0, 0, 0.5), 0 0 0 4px rgba(255, 255, 255, 0.05);
+  --bd: radial-gradient(120% 90% at 50% -20%, rgba(255, 255, 255, 0.3), transparent 55%), linear-gradient(180deg, rgba(229, 72, 77, 0.88), rgba(150, 30, 34, 0.92));
+  --rim-p: linear-gradient(160deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.14) 35%, rgba(255, 255, 255, 0.02) 60%, rgba(255, 255, 255, 0.28));
+  --rim-s: linear-gradient(160deg, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.06) 40%, rgba(255, 255, 255, 0) 60%, rgba(255, 255, 255, 0.14));
+  --sheen-p: rgba(255, 255, 255, 0.34);
+  --sheen-s: rgba(255, 255, 255, 0.22);
+  --gc-p: radial-gradient(90% 70% at 25% 0%, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0) 60%), linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04)), rgba(255, 255, 255, 0.05);
+  --glass-backdrop: blur(14px) saturate(160%) brightness(0.72);
+  --gc-s: radial-gradient(90% 70% at 25% 0%, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 60%), linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+  --gcsh-p: inset 1px 1px 0 rgba(255, 255, 255, 0.4), inset -1px -1px 0 rgba(0, 0, 0, 0.45), inset 0 -10px 14px -12px rgba(255, 255, 255, 0.22), 0 0 0 0.5px rgba(255, 255, 255, 0.18), 0 8px 26px rgba(0, 0, 0, 0.55);
+  --gcsh-p-h: inset 1px 1px 0 rgba(255, 255, 255, 0.55), inset -1px -1px 0 rgba(0, 0, 0, 0.5), inset 0 -10px 14px -12px rgba(255, 255, 255, 0.3), 0 0 0 0.5px rgba(255, 255, 255, 0.26), 0 12px 32px rgba(0, 0, 0, 0.65), 0 0 0 4px rgba(255, 255, 255, 0.06);
+  --gcsh-s: inset 1px 1px 0 rgba(255, 255, 255, 0.28), inset -1px -1px 0 rgba(0, 0, 0, 0.4), inset 0 -10px 14px -12px rgba(255, 255, 255, 0.14), 0 0 0 0.5px rgba(255, 255, 255, 0.12);
+  --gcsh-s-h: inset 1px 1px 0 rgba(255, 255, 255, 0.4), inset -1px -1px 0 rgba(0, 0, 0, 0.45), inset 0 -10px 14px -12px rgba(255, 255, 255, 0.2), 0 0 0 0.5px rgba(255, 255, 255, 0.2), 0 8px 22px rgba(0, 0, 0, 0.5), 0 0 0 4px rgba(255, 255, 255, 0.05);
+  --rim-c: linear-gradient(160deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.14) 38%, rgba(255, 255, 255, 0.02) 62%, rgba(255, 255, 255, 0.3));
+  --sheen-c: rgba(255, 255, 255, 0.28);
   --lp: linear-gradient(180deg, #fff 0%, rgba(255, 255, 255, 0.66) 55%, #fff 100%);
   --ls: linear-gradient(180deg, #fff 0%, rgba(255, 255, 255, 0.62) 55%, #fff 100%);
   --seg: rgba(255, 255, 255, 0.16);
@@ -114,7 +153,64 @@
 }
 
 @layer components {
+  /*
+   * Liquid glass. The material (tinted, frosted, with a top highlight) goes on any element: buttons,
+   * toasts, search fields. Buttons add a light-catching edge, a sheen that sweeps across once on hover,
+   * a lift, and a press. Nothing tracks the pointer, and motion is dropped for reduced-motion users.
+   */
+  .glass-primary,
+  .glass-secondary,
+  .glass-danger {
+    /* Only the standard property: the build adds -webkit- for Safari. Listing both made it keep just the prefixed one. */
+    backdrop-filter: blur(20px) saturate(190%);
+  }
+  .glass-primary {
+    background: var(--bp);
+    box-shadow: var(--bpsh);
+    color: var(--bpc);
+    --rim: var(--rim-p);
+    --sheen: var(--sheen-p);
+  }
+  .glass-danger {
+    background: var(--bd);
+    box-shadow: var(--bpsh);
+    color: #fff;
+    --rim: var(--rim-p);
+    --sheen: var(--sheen-p);
+  }
+  .glass-secondary {
+    background: var(--bs);
+    box-shadow: var(--bssh);
+    color: var(--text);
+    --rim: var(--rim-s);
+    --sheen: var(--sheen-s);
+  }
+  /*
+   * Buttons are clear glass: a faint tint, so what's behind shows through, with depth from inner light
+   * (bright top-left edge, darker bottom-right edge, a glow along the bottom). Text takes the page's text
+   * colour. Primary keeps a little more body and a heavier shadow so the main action still leads.
+   * Toasts, notices and toolbars keep the tinted glass above so white text on them stays readable.
+   */
+  .glass-btn:is(.glass-primary, .glass-secondary) {
+    color: var(--text);
+    --rim: var(--rim-c);
+    --sheen: var(--sheen-c);
+    backdrop-filter: var(--glass-backdrop);
+  }
+  .glass-btn.glass-primary {
+    background: var(--gc-p);
+    box-shadow: var(--gcsh-p);
+    font-weight: 600;
+  }
+  .glass-btn.glass-secondary {
+    background: var(--gc-s);
+    box-shadow: var(--gcsh-s);
+  }
+
   .glass-btn {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
     display: inline-flex;
     flex: none;
     align-items: center;
@@ -125,17 +221,79 @@
     white-space: nowrap;
     cursor: pointer;
     user-select: none;
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
     transition:
-      transform 0.16s var(--ease),
+      transform 0.2s var(--ease),
       filter 0.2s,
-      box-shadow 0.2s,
+      box-shadow 0.25s var(--ease),
       opacity 0.2s;
+  }
+  /* The edge: a 1 px gradient ring that catches light at the top left. */
+  .glass-btn::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--rim);
+    /* Standard properties only: the build writes the -webkit- versions (xor) for Safari. */
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    opacity: 0.75;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  /* The sheen: a soft diagonal band of light, parked off to the right until hover. */
+  .glass-btn::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: linear-gradient(115deg, transparent 35%, var(--sheen) 50%, transparent 65%) no-repeat;
+    background-size: 250% 100%;
+    background-position: 130% 0;
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      background-position 0.7s var(--ease),
+      opacity 0.3s;
+  }
+
+  @media (hover: hover) {
+    .glass-btn:hover:not(:disabled, [aria-disabled="true"], :active) {
+      transform: translateY(-1px);
+    }
+    .glass-btn:hover:not(:disabled, [aria-disabled="true"])::before {
+      opacity: 1;
+      background-position: -30% 0;
+    }
+    .glass-btn:hover:not(:disabled, [aria-disabled="true"])::after {
+      opacity: 1;
+    }
+    .glass-btn:hover:not(:disabled, [aria-disabled="true"], :active) {
+      filter: brightness(1.05) saturate(1.1);
+    }
+    .glass-primary.glass-btn:hover:not(:disabled, [aria-disabled="true"], :active) {
+      box-shadow: var(--gcsh-p-h);
+    }
+    .glass-secondary.glass-btn:hover:not(:disabled, [aria-disabled="true"], :active) {
+      box-shadow: var(--gcsh-s-h);
+    }
+    .glass-danger.glass-btn:hover:not(:disabled, [aria-disabled="true"], :active) {
+      filter: brightness(1.1) saturate(1.05);
+      box-shadow: var(--bpsh-h);
+    }
   }
   .glass-btn:active:not(:disabled, [aria-disabled="true"]) {
     transform: scale(0.97);
-    filter: brightness(0.92);
+    filter: brightness(0.94);
+    transition-duration: 0.08s;
+  }
+  .glass-btn:focus-visible::after {
+    opacity: 1;
   }
   .glass-btn:disabled,
   .glass-btn[aria-disabled="true"] {
@@ -145,31 +303,14 @@
   .glass-btn[aria-busy="true"] {
     cursor: progress;
   }
-
-  .glass-primary {
-    background: var(--bp);
-    box-shadow: var(--bpsh);
-    color: var(--bpc);
-  }
-  .glass-danger {
-    background: var(--bd);
-    box-shadow: var(--bpsh);
-    color: #fff;
-  }
-  .glass-secondary {
-    background: var(--bs);
-    box-shadow: var(--bssh);
-    color: var(--text);
-  }
-  @media (hover: hover) {
-    :is(.glass-primary, .glass-danger):hover:not(:disabled, [aria-disabled="true"], :active) {
-      transform: translateY(-1px);
-      filter: brightness(1.18);
-      box-shadow: var(--bpsh-h);
+  @media (prefers-reduced-motion: reduce) {
+    .glass-btn,
+    .glass-btn::before {
+      transition: none;
     }
-    .glass-secondary:hover:not(:disabled, [aria-disabled="true"], :active) {
-      transform: translateY(-1px);
-      box-shadow: var(--bssh-h);
+    .glass-btn:hover,
+    .glass-btn:active {
+      transform: none !important;
     }
   }
 
@@ -182,7 +323,8 @@
   :is(.glass-primary, .glass-danger) .glass-label {
     background-image: var(--lp);
   }
-  .glass-secondary .glass-label {
+  .glass-secondary .glass-label,
+  .glass-btn:is(.glass-primary, .glass-secondary) .glass-label {
     background-image: var(--ls);
   }
 
