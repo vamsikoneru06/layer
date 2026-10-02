@@ -52,3 +52,11 @@ describe("NUL characters", () => {
     expect(() => readQuery(new Request("http://localhost/?name=a%00b"), Schema)).toThrow(expect.objectContaining({ status: 400 }));
   });
 });
+
+describe("unpaired surrogates", () => {
+  it("rejects a string with an unpaired UTF-16 surrogate with 400, and accepts real emoji", async () => {
+    expect(await statusOf(readJson(post('{"name":"a\\ud83d"}'), Schema))).toBe(400);
+    expect(await statusOf(readJson(post('{"name":"\\udc00b"}'), Schema))).toBe(400);
+    expect(await statusOf(readJson(post(JSON.stringify({ name: "party 🎉" })), Schema))).toBe(200);
+  });
+});
