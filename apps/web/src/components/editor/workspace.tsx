@@ -1,6 +1,6 @@
 "use client";
 
-import { createEditor, type Editor, type EditorState } from "@vash/engine";
+import { createEditor, hitTest, toWorld, topLevelOf, type Editor, type EditorState } from "@vash/engine";
 import { parseDoc, type Doc } from "@vash/schema";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
@@ -12,7 +12,8 @@ import { createAutosaver, type Autosaver, type SaveStatus } from "@/lib/autosave
 import { createImageLoader } from "@/lib/images";
 import { BottomBar } from "./bottom-bar";
 import { DesignInfoDialog } from "./design-info-dialog";
-import { buildActions, type ActionHost } from "./editor-actions";
+import { ContextMenu } from "./context-menu";
+import { buildActions, CONTEXT_LAYOUTS, toMenuItems, type ActionHost } from "./editor-actions";
 import { EditorHeader } from "./editor-header";
 import { Segmented } from "./fields";
 import { InsertRail } from "./insert-rail";
@@ -56,6 +57,7 @@ export function Workspace({ design }: { design: Design }) {
   const [infoOpen, setInfoOpen] = useState(false);
   const [moveOpen, setMoveOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [menuAt, setMenuAt] = useState<{ x: number; y: number; onLayer: boolean } | null>(null);
   const [panelsHidden, setPanelsHidden] = useState(false);
   const [savedAt, setSavedAt] = useState(design.updatedAt);
   const [folderId, setFolderId] = useState(design.folderId);
@@ -215,6 +217,28 @@ export function Workspace({ design }: { design: Design }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [panelsHidden]);
 
+  // Right-click selects the layer under the pointer (unless it is already selected) and opens the menu.
+  useEffect(() => {
+    const el = overlay.current;
+    if (!el || !editor) return;
+    const onContext = (e: MouseEvent) => {
+      e.preventDefault();
+      editor.core.endTextEdit(true);
+      const rect = el.getBoundingClientRect();
+      const s = editor.getState();
+      const hit = hitTest(s.doc, toWorld(s.viewport, { x: e.clientX - rect.left, y: e.clientY - rect.top }));
+      if (hit) {
+        const top = topLevelOf(s.doc, hit);
+        if (!s.selection.includes(hit) && !s.selection.includes(top)) editor.core.select([top]);
+      } else {
+        editor.core.select([]);
+      }
+      setMenuAt({ x: e.clientX, y: e.clientY, onLayer: hit !== null });
+    };
+    el.addEventListener("contextmenu", onContext);
+    return () => el.removeEventListener("contextmenu", onContext);
+  }, [editor]);
+
   // The canvas area changes size when panels hide or fullscreen starts: fit once the layout has settled.
   useEffect(() => {
     if (!editor) return;
@@ -326,6 +350,13 @@ export function Workspace({ design }: { design: Design }) {
         </div>
       </Dialog>
 
+      {actions && (
+        <ContextMenu
+          at={menuAt}
+          items={toMenuItems(actions, menuAt?.onLayer ? CONTEXT_LAYOUTS.node : CONTEXT_LAYOUTS.canvas, mac)}
+          onClose={() => setMenuAt(null)}
+        />
+      )}
       {actions && <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} actions={actions} mac={mac} />}
       <DesignInfoDialog open={infoOpen} onClose={() => setInfoOpen(false)} doc={state?.doc ?? design.doc} savedAt={savedAt} />
       <MoveDialog
