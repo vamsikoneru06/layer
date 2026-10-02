@@ -177,28 +177,61 @@ type UploadTicket = { asset: Photo; upload: { url: string; method: "PUT"; header
 export const UPLOAD_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 export const UPLOAD_MAX_BYTES = 15 * 1024 * 1024;
 
+/** Photos are sent at most this large; bigger ones are resized in the browser first. */
+export const UPLOAD_MAX_SIDE = 2560;
+/** Hosting platforms cap a request body at about 4.5 MB, so uploads stay under this. */
+const DIRECT_MAX_BYTES = 4 * 1024 * 1024;
+
+/**
+ * The file to send: the original when it's small enough, otherwise a resized copy (JPEG stays JPEG;
+ * PNG and WebP become WebP so transparency survives), stepping quality down until it fits.
+ */
+async function prepareUpload(file: File, bitmap: ImageBitmap): Promise<{ blob: Blob; width: number; height: number }> {
+  const long = Math.max(bitmap.width, bitmap.height);
+  if (long <= UPLOAD_MAX_SIDE && file.size <= DIRECT_MAX_BYTES) return { blob: file, width: bitmap.width, height: bitmap.height };
+  const scale = Math.min(1, UPLOAD_MAX_SIDE / long);
+  const width = Math.round(bitmap.width * scale);
+  const height = Math.round(bitmap.height * scale);
+  const canvas = new OffscreenCanvas(width, height);
+  const ctx = canvas.getContext("2d")!;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(bitmap, 0, 0, width, height);
+  const type = file.type === "image/jpeg" ? "image/jpeg" : "image/webp";
+  for (const quality of [0.88, 0.8, 0.7, 0.6]) {
+    const blob = await canvas.convertToBlob({ type, quality });
+    if (blob.size <= DIRECT_MAX_BYTES) return { blob, width, height };
+  }
+  throw new ApiError(413, `${file.name} is too detailed to upload, even resized.`);
+}
+
 /**
  * Uploads one photo: ask the API for a short-lived upload URL, send the file straight to storage,
- * then confirm it with its pixel size. Throws an ApiError with a readable message on any failure.
+ * then confirm it with its pixel size. Large photos are resized first. Throws an ApiError with a
+ * readable message on any failure.
  */
 export async function uploadPhoto(file: File): Promise<Photo> {
   if (!(UPLOAD_TYPES as readonly string[]).includes(file.type)) throw new ApiError(415, `${file.name}: use a JPEG, PNG or WebP photo.`);
   if (file.size > UPLOAD_MAX_BYTES) throw new ApiError(413, `${file.name} is larger than 15 MB.`);
-  let size: { width: number; height: number };
+  let prepared: { blob: Blob; width: number; height: number };
   try {
     const bitmap = await createImageBitmap(file);
-    size = { width: bitmap.width, height: bitmap.height };
-    bitmap.close();
-  } catch {
+    try {
+      prepared = await prepareUpload(file, bitmap);
+    } finally {
+      bitmap.close();
+    }
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
     throw new ApiError(422, `${file.name} couldn't be read as an image.`);
   }
-  const ticket = await request<UploadTicket>("/api/assets/uploads", { method: "POST", json: { kind: "photo", mime: file.type, bytes: file.size } });
+  const { blob, width, height } = prepared;
+  const ticket = await request<UploadTicket>("/api/assets/uploads", { method: "POST", json: { kind: "photo", mime: blob.type, bytes: blob.size } });
   let put: Response;
   try {
-    put = await fetch(ticket.upload.url, { method: ticket.upload.method, headers: ticket.upload.headers, body: file });
+    put = await fetch(ticket.upload.url, { method: ticket.upload.method, headers: ticket.upload.headers, body: blob });
   } catch {
     throw new ApiError(0, `${file.name} couldn't be uploaded. Check your connection and try again.`);
   }
   if (!put.ok) throw new ApiError(put.status, `${file.name} couldn't be uploaded (storage answered ${put.status}).`);
-  return request<Photo>(`/api/assets/${ticket.asset.id}/complete`, { method: "POST", json: size });
+  return request<Photo>(`/api/assets/${ticket.asset.id}/complete`, { method: "POST", json: { width, height } });
 }

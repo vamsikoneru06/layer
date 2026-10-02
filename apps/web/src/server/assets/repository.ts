@@ -29,6 +29,18 @@ export async function findUnusableAssets(db: Db, ownerId: string, refs: { id: st
 
 export type AssetRow = typeof assets.$inferSelect;
 
+/** Inserts or refreshes system-owned assets (the bundled sample photos) by id. Safe to rerun. */
+export async function upsertSystemAssets(db: Db, rows: (typeof assets.$inferInsert)[]): Promise<void> {
+  if (rows.length === 0) return;
+  await db
+    .insert(assets)
+    .values(rows.map((r) => ({ ...r, ownerId: null })))
+    .onConflictDoUpdate({
+      target: assets.id,
+      set: { storageKey: sql`excluded.storage_key`, bytes: sql`excluded.bytes`, width: sql`excluded.width`, height: sql`excluded.height` },
+    });
+}
+
 export const assetKey = (ownerId: string, assetId: string) => `u/${ownerId}/${assetId}`;
 /** Where the browser uploads. Only the server writes assetKey, by copying from here once the bytes are checked. */
 export const stagingKey = (ownerId: string, assetId: string) => `staging/${ownerId}/${assetId}`;

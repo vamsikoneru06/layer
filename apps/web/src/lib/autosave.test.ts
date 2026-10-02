@@ -80,16 +80,51 @@ describe("autosaver", () => {
     expect(statuses.at(-1)).toBe("saved");
   });
 
-  it("reports other failures as errors that a manual retry clears", async () => {
+  it("reports failures a retry won't fix by itself as errors that a manual retry clears", async () => {
     let fail = true;
     const { saver, statuses } = setup(async (_d, v) => {
-      if (fail) throw Object.assign(new Error("boom"), { status: 500 });
+      if (fail) throw Object.assign(new Error("too big"), { status: 413 });
       return v + 1;
     });
     saver.change("a");
     await vi.advanceTimersByTimeAsync(1500);
     expect(statuses.at(-1)).toBe("error");
     fail = false;
+    await saver.flush();
+    expect(statuses.at(-1)).toBe("saved");
+  });
+
+  it("retries a busy or failing server with backoff until it succeeds", async () => {
+    let failures = 2;
+    const attempts: number[] = [];
+    const { saver, statuses } = setup(async (_d, v) => {
+      attempts.push(Date.now());
+      if (failures-- > 0) throw Object.assign(new Error("busy"), { status: failures === 1 ? 429 : 503 });
+      return v + 1;
+    });
+    saver.change("a");
+    await vi.advanceTimersByTimeAsync(1500);
+    expect(statuses.at(-1)).toBe("retrying");
+    await vi.advanceTimersByTimeAsync(20_000);
+    expect(statuses.at(-1)).toBe("saved");
+    expect(attempts).toHaveLength(3);
+    // The second wait is twice the first.
+    expect(attempts[2]! - attempts[1]!).toBe(2 * (attempts[1]! - attempts[0]!));
+  });
+
+  it("waits for sign-in when the session has ended, keeping the change", async () => {
+    let signedIn = false;
+    const { saver, statuses } = setup(async (_d, v) => {
+      if (!signedIn) throw Object.assign(new Error("signed out"), { status: 401 });
+      return v + 1;
+    });
+    saver.change("a");
+    await vi.advanceTimersByTimeAsync(1500);
+    expect(statuses.at(-1)).toBe("signed-out");
+    await vi.advanceTimersByTimeAsync(120_000);
+    expect(statuses.at(-1)).toBe("signed-out");
+    expect(saver.dirty).toBe(true);
+    signedIn = true;
     await saver.flush();
     expect(statuses.at(-1)).toBe("saved");
   });

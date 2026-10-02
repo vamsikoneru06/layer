@@ -21,6 +21,8 @@ export interface EditorOptions {
   doc: Doc;
   mode?: EditMode;
   image?: (assetId: string) => ImageState;
+  /** Resolves once the given photos have loaded (or failed), so export can wait for them. */
+  imagesReady?: (assetIds: string[]) => Promise<void>;
 }
 
 export interface Editor {
@@ -199,7 +201,7 @@ export function createEditor(o: EditorOptions): Editor {
     fit,
     zoomTo: (zoom) => core.setChrome({ viewport: zoomAt(core.getState().viewport, { x: size.width / 2, y: size.height / 2 }, zoom) }),
     invalidate,
-    exportPng: (e) => exportPng(core.doc, { ...e, measure, image, filter }),
+    exportPng: (e) => exportPng(core.doc, { ...e, measure, image, imagesReady: o.imagesReady, filter }),
     textEditBox: () => {
       const s = core.getState();
       return s.editing ? textEditBox(s.doc, s.editing, s.viewport, measure) : null;

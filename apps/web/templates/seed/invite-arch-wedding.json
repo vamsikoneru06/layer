@@ -109,7 +109,12 @@
         "kind": "path",
         "d": "M0 1 L0 0.5 A0.5 0.5 0 0 1 1 0.5 L1 1 Z"
       },
-      "content": null,
+      "content": {
+        "assetId": "6f759eb1-439b-8658-9a7e-3fbf9b838436",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
       "filters": {
         "preset": null,
         "brightness": 0,
@@ -303,5 +308,13 @@
       "maxChars": 40
     }
   },
-  "assets": {}
+  "assets": {
+    "6f759eb1-439b-8658-9a7e-3fbf9b838436": {
+      "id": "6f759eb1-439b-8658-9a7e-3fbf9b838436",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 933,
+      "height": 1400
+    }
+  }
 }

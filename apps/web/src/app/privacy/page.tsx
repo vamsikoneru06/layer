@@ -59,8 +59,8 @@ export default function PrivacyPage() {
       <p>These service providers process data for us, only to provide VASH:</p>
       <ul>
         <li>Vercel hosts the website.</li>
-        <li>Neon hosts the database with your account and designs.</li>
-        <li>Supabase stores the photos you upload.</li>
+        <li>Neon hosts the database with your account and designs, and the photos you upload unless a separate photo store is set up.</li>
+        <li>Supabase stores the photos you upload, when it&apos;s set up as that photo store.</li>
         <li>Google handles &ldquo;Sign in with Google&rdquo; and sends our sign-in emails.</li>
       </ul>
       <p>

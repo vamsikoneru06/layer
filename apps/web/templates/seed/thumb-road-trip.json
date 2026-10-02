@@ -1,0 +1,179 @@
+{
+  "schemaVersion": 1,
+  "id": "thumb-road-trip",
+  "kind": "template",
+  "meta": {
+    "title": "Road Trip",
+    "category": "travel",
+    "tags": [
+      "road trip",
+      "travel",
+      "vlog",
+      "adventure"
+    ],
+    "format": "yt-thumbnail"
+  },
+  "artboard": {
+    "width": 1280,
+    "height": 720,
+    "background": {
+      "type": "solid",
+      "color": "#000000"
+    }
+  },
+  "root": [
+    "photo",
+    "shade",
+    "title",
+    "subtitle"
+  ],
+  "nodes": {
+    "photo": {
+      "id": "photo",
+      "name": "Photo",
+      "transform": {
+        "x": 640,
+        "y": 360,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1280,
+      "height": 720,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "content": {
+        "assetId": "63bcfe1b-03ba-8a04-bc05-4b73096670b6",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "shade": {
+      "id": "shade",
+      "name": "Shade",
+      "transform": {
+        "x": 640,
+        "y": 570,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1280,
+      "height": 300,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "fill": {
+        "type": "linear",
+        "angle": 180,
+        "stops": [
+          {
+            "offset": 0,
+            "color": "#00000000"
+          },
+          {
+            "offset": 1,
+            "color": "#000000CC"
+          }
+        ]
+      },
+      "stroke": null
+    },
+    "title": {
+      "id": "title",
+      "name": "Title",
+      "transform": {
+        "x": 610,
+        "y": 525,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1100,
+      "height": 170,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "ROAD TRIP",
+      "font": {
+        "family": "Archivo Black",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 150,
+      "color": "#FFFFFF",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 16
+    },
+    "subtitle": {
+      "id": "subtitle",
+      "name": "Subtitle",
+      "transform": {
+        "x": 610,
+        "y": 650,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1100,
+      "height": 60,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "5 days · 1,200 km · 1 tiny car",
+      "font": {
+        "family": "Poppins",
+        "weight": 600,
+        "style": "normal"
+      },
+      "size": 40,
+      "color": "#FFE14D",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 50
+    }
+  },
+  "assets": {
+    "63bcfe1b-03ba-8a04-bc05-4b73096670b6": {
+      "id": "63bcfe1b-03ba-8a04-bc05-4b73096670b6",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 1400,
+      "height": 933
+    }
+  }
+}

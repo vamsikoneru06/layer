@@ -1,0 +1,173 @@
+{
+  "schemaVersion": 1,
+  "id": "story-workout",
+  "kind": "template",
+  "meta": {
+    "title": "Workout Plan",
+    "category": "minimal",
+    "tags": [
+      "fitness",
+      "workout",
+      "gym",
+      "plan"
+    ],
+    "format": "ig-story"
+  },
+  "artboard": {
+    "width": 1080,
+    "height": 1920,
+    "background": {
+      "type": "solid",
+      "color": "#0B0B0B"
+    }
+  },
+  "root": [
+    "photo",
+    "eyebrow",
+    "title",
+    "plan"
+  ],
+  "nodes": {
+    "photo": {
+      "id": "photo",
+      "name": "Photo",
+      "transform": {
+        "x": 540,
+        "y": 600,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1080,
+      "height": 1200,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "content": {
+        "assetId": "17c924b8-4b59-8f41-ab61-238c0a9b72c1",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "eyebrow": {
+      "id": "eyebrow",
+      "name": "Eyebrow",
+      "transform": {
+        "x": 540,
+        "y": 1272,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 920,
+      "height": 44,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "TODAY'S WORKOUT",
+      "font": {
+        "family": "Inter",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 30,
+      "color": "#C6FF3D",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 6,
+      "fit": "shrink",
+      "maxChars": 30
+    },
+    "title": {
+      "id": "title",
+      "name": "Title",
+      "transform": {
+        "x": 540,
+        "y": 1430,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 920,
+      "height": 240,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Upper body\npush day",
+      "font": {
+        "family": "Archivo Black",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 104,
+      "color": "#FFFFFF",
+      "align": "left",
+      "lineHeight": 1.05,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 40
+    },
+    "plan": {
+      "id": "plan",
+      "name": "Plan",
+      "transform": {
+        "x": 540,
+        "y": 1685,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 920,
+      "height": 190,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Bench press 4 × 8\nShoulder press 3 × 10\nPush-ups 3 × 15",
+      "font": {
+        "family": "Inter",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 36,
+      "color": "#BDBDBD",
+      "align": "left",
+      "lineHeight": 1.5,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 140
+    }
+  },
+  "assets": {
+    "17c924b8-4b59-8f41-ab61-238c0a9b72c1": {
+      "id": "17c924b8-4b59-8f41-ab61-238c0a9b72c1",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 1120,
+      "height": 1400
+    }
+  }
+}

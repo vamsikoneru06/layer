@@ -1,0 +1,287 @@
+{
+  "schemaVersion": 1,
+  "id": "post-photo-grid",
+  "kind": "template",
+  "meta": {
+    "title": "Year in Places",
+    "category": "travel",
+    "tags": [
+      "grid",
+      "recap",
+      "travel",
+      "collage"
+    ],
+    "format": "ig-post"
+  },
+  "artboard": {
+    "width": 1080,
+    "height": 1080,
+    "background": {
+      "type": "solid",
+      "color": "#FFFFFF"
+    }
+  },
+  "root": [
+    "p1",
+    "p2",
+    "p3",
+    "p4",
+    "badge",
+    "title"
+  ],
+  "nodes": {
+    "p1": {
+      "id": "p1",
+      "name": "Photo 1",
+      "transform": {
+        "x": 280,
+        "y": 280,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 500,
+      "height": 500,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 16
+      },
+      "content": {
+        "assetId": "6ac0fc48-6a69-8a14-a559-4df811a23978",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "p2": {
+      "id": "p2",
+      "name": "Photo 2",
+      "transform": {
+        "x": 800,
+        "y": 280,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 500,
+      "height": 500,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 16
+      },
+      "content": {
+        "assetId": "eefd0050-2f81-82aa-add1-cc33d5b146ca",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "p3": {
+      "id": "p3",
+      "name": "Photo 3",
+      "transform": {
+        "x": 280,
+        "y": 800,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 500,
+      "height": 500,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 16
+      },
+      "content": {
+        "assetId": "06bfee90-4b07-89d3-865b-5313cfcb7edf",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "p4": {
+      "id": "p4",
+      "name": "Photo 4",
+      "transform": {
+        "x": 800,
+        "y": 800,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 500,
+      "height": 500,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 16
+      },
+      "content": {
+        "assetId": "bbd9b773-baa0-889e-9e27-332bc1b4bc4f",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "badge": {
+      "id": "badge",
+      "name": "Badge",
+      "transform": {
+        "x": 540,
+        "y": 540,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 280,
+      "height": 280,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#FFFFFF"
+      },
+      "stroke": null
+    },
+    "title": {
+      "id": "title",
+      "name": "Title",
+      "transform": {
+        "x": 540,
+        "y": 540,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 240,
+      "height": 120,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "2026 in places",
+      "font": {
+        "family": "Poppins",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 44,
+      "color": "#1A1A1A",
+      "align": "center",
+      "lineHeight": 1.1,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 24
+    }
+  },
+  "assets": {
+    "6ac0fc48-6a69-8a14-a559-4df811a23978": {
+      "id": "6ac0fc48-6a69-8a14-a559-4df811a23978",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 1400,
+      "height": 1400
+    },
+    "eefd0050-2f81-82aa-add1-cc33d5b146ca": {
+      "id": "eefd0050-2f81-82aa-add1-cc33d5b146ca",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 1400,
+      "height": 1400
+    },
+    "06bfee90-4b07-89d3-865b-5313cfcb7edf": {
+      "id": "06bfee90-4b07-89d3-865b-5313cfcb7edf",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 1400,
+      "height": 1400
+    },
+    "bbd9b773-baa0-889e-9e27-332bc1b4bc4f": {
+      "id": "bbd9b773-baa0-889e-9e27-332bc1b4bc4f",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 1400,
+      "height": 1400
+    }
+  }
+}

@@ -74,6 +74,19 @@ describe("POST /api/assets/resolve", () => {
     expect(res.body.assets.map((a: { id: string }) => a.id)).toEqual([pub.id]);
   });
 
+  it("resolves bundled sample photos to the site's own files, even without storage", async () => {
+    const sample = await createAsset(t.db, { ownerId: null, visibility: "public", storageKey: `bundled/samples/test-${Date.now()}.jpg` });
+    const withStorage = await resolve(null, [sample.id]);
+    expect(withStorage.body.assets).toEqual([{ id: sample.id, url: sample.storageKey.replace("bundled/", "/"), expiresAt: null }]);
+
+    const alice = await createUser(t.db);
+    const own = await createAsset(t.db, { ownerId: alice.id });
+    const noStorage = assetHandlers(testDeps(t.db, { now: tickingClock() }), null);
+    const res = await call(noStorage.resolve, { method: "POST", as: alice, body: { ids: [sample.id, own.id] } });
+    expect(res.status).toBe(200);
+    expect(res.body.assets.map((a: { id: string }) => a.id)).toEqual([sample.id]);
+  });
+
   it.each([[[]], [["not-a-uuid"]], [Array.from({ length: 201 }, () => "00000000-0000-4000-8000-000000000000")], ["one"]])("rejects ids %# with 400", async (ids) => {
     const alice = await createUser(t.db);
     expect((await resolve(alice, ids)).status).toBe(400);

@@ -96,11 +96,11 @@ export function InsertRail({ editor }: { editor: Editor | null }) {
             aria-expanded={open === key}
             onClick={() => setOpen((o) => (o === key ? null : key))}
             className={cn(
-              "flex h-[54px] flex-col items-center justify-center gap-1 rounded-xl text-muted hover:bg-field hover:text-text",
+              "group flex h-[54px] flex-col items-center justify-center gap-1 rounded-xl text-muted hover:bg-field hover:text-text",
               open === key && "bg-field text-text",
             )}
           >
-            <Icon aria-hidden className="size-5" strokeWidth={1.75} />
+            <Icon aria-hidden className="size-5 transition-[translate,scale] duration-300 ease-(--ease) group-hover:-translate-y-0.5 group-hover:scale-110 group-active:scale-90 motion-reduce:transition-none" strokeWidth={1.75} />
             <span className="text-[11px]">{label}</span>
           </button>
         ))}
