@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import { readJson } from "./body";
+import { readJson, readQuery } from "./body";
 
 const Schema = z.object({ name: z.string() }).strict();
 const post = (body: BodyInit, type = "application/json") =>
@@ -37,5 +37,26 @@ describe("readJson", () => {
     expect(await statusOf(readJson(post(new Uint8Array([0x7b, 0xff, 0x7d])), Schema))).toBe(400);
     expect(await statusOf(readJson(post("[]"), Schema))).toBe(400);
     expect(await statusOf(readJson(post('{"name":"x","role":"admin"}'), Schema))).toBe(400);
+  });
+});
+
+describe("NUL characters", () => {
+  it("rejects a NUL anywhere in a JSON body, keys included, with 400", async () => {
+    const Loose = z.object({ name: z.string(), tags: z.array(z.string()) }).strict();
+    expect(await statusOf(readJson(post('{"name":"a\\u0000b","tags":[]}'), Loose))).toBe(400);
+    expect(await statusOf(readJson(post('{"name":"a","tags":["x","y\\u0000"]}'), Loose))).toBe(400);
+    expect(await statusOf(readJson(post('{"name":"a","tags":[],"k\\u0000":1}'), z.object({}).passthrough()))).toBe(400);
+  });
+
+  it("rejects a NUL in a query string with 400", () => {
+    expect(() => readQuery(new Request("http://localhost/?name=a%00b"), Schema)).toThrow(expect.objectContaining({ status: 400 }));
+  });
+});
+
+describe("unpaired surrogates", () => {
+  it("rejects a string with an unpaired UTF-16 surrogate with 400, and accepts real emoji", async () => {
+    expect(await statusOf(readJson(post('{"name":"a\\ud83d"}'), Schema))).toBe(400);
+    expect(await statusOf(readJson(post('{"name":"\\udc00b"}'), Schema))).toBe(400);
+    expect(await statusOf(readJson(post(JSON.stringify({ name: "party 🎉" })), Schema))).toBe(200);
   });
 });

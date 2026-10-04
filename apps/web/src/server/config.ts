@@ -1,5 +1,15 @@
 import { z } from "zod";
 
+export interface StorageConfig {
+  endpoint: string;
+  region: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  privateBucket: string;
+  publicBucket: string;
+  publicBaseUrl: string;
+}
+
 export interface AppConfig {
   nodeEnv: "development" | "test" | "production";
   isProduction: boolean;
@@ -12,9 +22,14 @@ export interface AppConfig {
     | { kind: "console" }
     | { kind: "resend"; apiKey: string; from: string }
     | { kind: "gmail"; user: string; appPassword: string; from: string };
+  storage: StorageConfig | null;
+  cronSecret: string | null;
 }
 
 const optional = z.preprocess((v) => (v === "" ? undefined : v), z.string().trim().min(1).optional());
+const optionalUrl = z.preprocess((v) => (v === "" ? undefined : v), z.url().optional());
+const bucket = z.string().regex(/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/, "must be a lowercase bucket name");
+const STORAGE_CONNECTION_VARS = ["STORAGE_ENDPOINT", "STORAGE_REGION", "STORAGE_ACCESS_KEY_ID", "STORAGE_SECRET_ACCESS_KEY", "STORAGE_PUBLIC_BASE_URL"] as const;
 
 const EnvSchema = z
   .object({
@@ -30,6 +45,15 @@ const EnvSchema = z
     // Free: a Google account plus an App Password (myaccount.google.com/apppasswords).
     GMAIL_USER: optional,
     GMAIL_APP_PASSWORD: optional,
+    // Supabase Storage (S3 protocol): Project settings → Storage → S3 Connection / S3 Access Keys.
+    STORAGE_ENDPOINT: optionalUrl,
+    STORAGE_REGION: optional,
+    STORAGE_ACCESS_KEY_ID: optional,
+    STORAGE_SECRET_ACCESS_KEY: optional,
+    STORAGE_PUBLIC_BASE_URL: optionalUrl,
+    STORAGE_PRIVATE_BUCKET: bucket.default("vash-private"),
+    STORAGE_PUBLIC_BUCKET: bucket.default("vash-public"),
+    CRON_SECRET: z.preprocess((v) => (v === "" ? undefined : v), z.string().min(32, "must be at least 32 characters").optional()),
   })
   .superRefine((env, ctx) => {
     if (Boolean(env.GOOGLE_CLIENT_ID) !== Boolean(env.GOOGLE_CLIENT_SECRET)) {
@@ -41,7 +65,20 @@ const EnvSchema = z
     if (env.RESEND_API_KEY && !env.MAIL_FROM) {
       ctx.addIssue({ code: "custom", path: ["MAIL_FROM"], message: "required when RESEND_API_KEY is set" });
     }
+    const storageSet = STORAGE_CONNECTION_VARS.filter((k) => env[k]);
+    if (storageSet.length > 0 && storageSet.length < STORAGE_CONNECTION_VARS.length) {
+      for (const k of STORAGE_CONNECTION_VARS) {
+        if (!env[k]) ctx.addIssue({ code: "custom", path: [k], message: "set all STORAGE_* connection variables together, or none" });
+      }
+    }
     if (env.NODE_ENV === "production") {
+      // The database photo store is for development only: Vercel caps request bodies near 4.5 MB and the free
+      // Neon database is 0.5 GB for everything, so production needs a real bucket.
+      if (storageSet.length === 0) ctx.addIssue({ code: "custom", path: ["STORAGE_ENDPOINT"], message: "required in production (photo uploads)" });
+      for (const k of ["STORAGE_ENDPOINT", "STORAGE_PUBLIC_BASE_URL"] as const) {
+        if (env[k] && !env[k].startsWith("https://")) ctx.addIssue({ code: "custom", path: [k], message: "must use https in production" });
+      }
+      if (!env.CRON_SECRET) ctx.addIssue({ code: "custom", path: ["CRON_SECRET"], message: "required in production (scheduled cleanup)" });
       if (!env.RESEND_API_KEY && !env.GMAIL_USER) {
         ctx.addIssue({ code: "custom", path: ["RESEND_API_KEY"], message: "required in production unless GMAIL_USER is set" });
       }
@@ -81,5 +118,18 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
         : e.GMAIL_USER && e.GMAIL_APP_PASSWORD
           ? { kind: "gmail", user: e.GMAIL_USER, appPassword: e.GMAIL_APP_PASSWORD, from: e.MAIL_FROM ?? `VASH <${e.GMAIL_USER}>` }
           : { kind: "console" },
+    storage:
+      e.STORAGE_ENDPOINT && e.STORAGE_REGION && e.STORAGE_ACCESS_KEY_ID && e.STORAGE_SECRET_ACCESS_KEY && e.STORAGE_PUBLIC_BASE_URL
+        ? {
+            endpoint: e.STORAGE_ENDPOINT,
+            region: e.STORAGE_REGION,
+            accessKeyId: e.STORAGE_ACCESS_KEY_ID,
+            secretAccessKey: e.STORAGE_SECRET_ACCESS_KEY,
+            privateBucket: e.STORAGE_PRIVATE_BUCKET,
+            publicBucket: e.STORAGE_PUBLIC_BUCKET,
+            publicBaseUrl: e.STORAGE_PUBLIC_BASE_URL.replace(/\/+$/, ""),
+          }
+        : null,
+    cronSecret: e.CRON_SECRET ?? null,
   };
 }

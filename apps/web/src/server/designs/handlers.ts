@@ -22,6 +22,7 @@ const PatchBody = z
   .refine((b) => b.title !== undefined || b.folderId !== undefined, "Provide title or folderId.");
 const ListQuery = pageQuery.extend({ folderId: z.uuid().optional() });
 const createLimit = { name: "designCreate", rule: RATE_LIMITS.designCreate, by: "user" } as const;
+const writeLimit = { name: "userWrite", rule: RATE_LIMITS.userWrite, by: "user" } as const;
 
 const summary = (d: Omit<repo.DesignSummary, "format" | "width" | "height">) => ({
   id: d.id,
@@ -33,7 +34,7 @@ const summary = (d: Omit<repo.DesignSummary, "format" | "width" | "height">) => 
   updatedAt: d.updatedAt.toISOString(),
 });
 const listItem = (d: repo.DesignSummary) => ({ ...summary(d), format: d.format, width: d.width, height: d.height });
-const full = (d: repo.DesignRow) => ({ ...summary(d), doc: d.doc, sourceTemplateId: d.sourceTemplateId, sourceTemplateVersion: d.sourceTemplateVersion });
+export const toDesignJson = (d: repo.DesignRow) => ({ ...summary(d), doc: d.doc, sourceTemplateId: d.sourceTemplateId, sourceTemplateVersion: d.sourceTemplateVersion });
 
 export function designHandlers(deps: Deps) {
   const ctx = { db: deps.db, now: deps.now };
@@ -46,34 +47,34 @@ export function designHandlers(deps: Deps) {
 
     create: endpoint(deps, { auth: "user", rateLimit: createLimit }, async ({ req, user }) => {
       const body = await readJson(req, CreateBody, DOC_BODY_LIMIT);
-      return Response.json(full(await service.createDesign(ctx, user.id, body)), { status: 201 });
+      return Response.json(toDesignJson(await service.createDesign(ctx, user.id, body)), { status: 201 });
     }),
 
     get: endpoint(deps, { auth: "user" }, async ({ user, params }) => {
       const row = await repo.getDesign(deps.db, user.id, parseId(params.id));
       if (!row) throw notFound();
-      return Response.json(full(row));
+      return Response.json(toDesignJson(row));
     }),
 
     save: endpoint(deps, { auth: "user", rateLimit: { name: "designSave", rule: RATE_LIMITS.designSave, by: "user" } }, async ({ req, user, params }) => {
       const id = parseId(params.id);
       const body = await readJson(req, SaveBody, DOC_BODY_LIMIT);
-      return Response.json(full(await service.saveDesignDoc(ctx, user.id, id, body)));
+      return Response.json(toDesignJson(await service.saveDesignDoc(ctx, user.id, id, body)));
     }),
 
-    patch: endpoint(deps, { auth: "user" }, async ({ req, user, params }) => {
+    patch: endpoint(deps, { auth: "user", rateLimit: writeLimit }, async ({ req, user, params }) => {
       const id = parseId(params.id);
       const body = await readJson(req, PatchBody);
-      return Response.json(full(await service.updateDesignMeta(ctx, user.id, id, body)));
+      return Response.json(toDesignJson(await service.updateDesignMeta(ctx, user.id, id, body)));
     }),
 
-    remove: endpoint(deps, { auth: "user" }, async ({ user, params }) => {
+    remove: endpoint(deps, { auth: "user", rateLimit: writeLimit }, async ({ user, params }) => {
       if (!(await repo.deleteDesign(deps.db, user.id, parseId(params.id)))) throw notFound();
       return new Response(null, { status: 204 });
     }),
 
     duplicate: endpoint(deps, { auth: "user", rateLimit: createLimit }, async ({ user, params }) => {
-      return Response.json(full(await service.duplicateDesign(ctx, user.id, parseId(params.id))), { status: 201 });
+      return Response.json(toDesignJson(await service.duplicateDesign(ctx, user.id, parseId(params.id))), { status: 201 });
     }),
   };
 }

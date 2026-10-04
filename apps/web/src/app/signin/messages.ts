@@ -10,10 +10,10 @@ export function isEmail(value: string): boolean {
 export function requestErrorMessage(status: number, retryAfterSeconds: number | null): string {
   if (status === 429) {
     if (retryAfterSeconds === null || !Number.isFinite(retryAfterSeconds) || retryAfterSeconds <= 0) {
-      return "Too many requests — try again in a few minutes.";
+      return "Too many requests. Try again in a few minutes.";
     }
     const minutes = Math.max(1, Math.ceil(retryAfterSeconds / 60));
-    return `Too many requests — try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`;
+    return `Too many requests. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`;
   }
   if (status === 400) return "Enter an email like name@example.com";
   if (status === 0) return "Couldn’t reach VASH. Check your connection and try again.";
