@@ -1,8 +1,10 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
+import { ColorPicker } from "./color-picker";
 
 const FIELD = "flex h-8 min-w-0 items-center gap-2 rounded-lg bg-field px-2.5 focus-within:outline-2 focus-within:outline-offset-1 focus-within:outline-text";
 
@@ -98,8 +100,8 @@ export function NumberField({
 const HEX = /^#?([0-9a-f]{6})$/i;
 
 /**
- * A colour swatch (the system picker) plus its hex code. Dragging in the picker previews live and
- * applies once when the picker closes (`final`), so it's one undo step. Alpha in #RRGGBBAA is kept.
+ * A colour swatch that opens the picker, plus its hex code. Drags in the picker preview live and
+ * apply once on release (`final`), so each drag is one undo step. Alpha in #RRGGBBAA is kept.
  */
 export function ColorField({
   name,
@@ -115,21 +117,9 @@ export function ColorField({
   /** Text shown instead of the hex code (e.g. "Gradient"). */
   display?: string;
 }) {
-  const picker = useRef<HTMLInputElement>(null);
   const [draft, setDraft] = useState<string | null>(null);
   const alpha = value.length === 9 ? value.slice(7) : "";
   const rgb = value.slice(0, 7).toUpperCase();
-  const latest = useRef(onChange);
-  latest.current = onChange;
-
-  // React's onChange is the native `input` event; the native `change` fires once, when the picker closes.
-  useEffect(() => {
-    const el = picker.current;
-    if (!el) return;
-    const done = () => latest.current(`${el.value.toUpperCase()}${alpha}`, true);
-    el.addEventListener("change", done);
-    return () => el.removeEventListener("change", done);
-  }, [alpha]);
 
   const commitHex = () => {
     const m = draft && HEX.exec(draft.trim());
@@ -139,17 +129,7 @@ export function ColorField({
 
   return (
     <div className={cn(FIELD, "pl-1.5", disabled && "opacity-45")}>
-      <span className="relative size-5 flex-none overflow-hidden rounded-[5px] shadow-[inset_0_0_0_.5px_var(--line)]" style={{ background: value.slice(0, 7) }}>
-        <input
-          ref={picker}
-          type="color"
-          aria-label={`${name} colour`}
-          disabled={disabled}
-          value={rgb.toLowerCase()}
-          onChange={(e) => onChange(`${e.target.value.toUpperCase()}${alpha}`, false)}
-          className="absolute inset-0 size-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
-        />
-      </span>
+      <ColorPopover name={name} value={value} onChange={onChange} disabled={disabled} />
       <input
         aria-label={`${name} hex code`}
         disabled={disabled}
@@ -171,6 +151,88 @@ export function ColorField({
         className="min-w-0 flex-1 bg-transparent text-[13px] font-medium uppercase tabular-nums outline-none disabled:cursor-not-allowed"
       />
     </div>
+  );
+}
+
+const POPOVER_W = 256;
+const POPOVER_H = 440;
+
+/** The swatch that opens the colour picker, in a popover placed below (or above) it on screen. */
+function ColorPopover({ name, value, onChange, disabled }: { name: string; value: string; onChange: (color: string, final: boolean) => void; disabled?: boolean }) {
+  const [at, setAt] = useState<{ left: number; top: number } | null>(null);
+  const anchor = useRef<HTMLButtonElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
+  const id = useId();
+
+  const close = (refocus: boolean) => {
+    setAt(null);
+    if (refocus) anchor.current?.focus();
+  };
+
+  useEffect(() => {
+    if (!at) return;
+    const onDown = (e: PointerEvent) => {
+      const t = e.target as Node;
+      if (!panel.current?.contains(t) && !anchor.current?.contains(t)) close(false);
+    };
+    const onResize = () => close(false);
+    document.addEventListener("pointerdown", onDown);
+    window.addEventListener("resize", onResize);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [at]);
+
+  const isOpen = at !== null;
+  // Move focus into the picker when it opens, so keyboard users land on the colour square.
+  useLayoutEffect(() => {
+    if (isOpen) panel.current?.querySelector<HTMLElement>("[role=slider]")?.focus();
+  }, [isOpen]);
+
+  const toggle = () => {
+    if (at) return close(false);
+    const r = anchor.current!.getBoundingClientRect();
+    const left = Math.max(8, Math.min(r.left, window.innerWidth - POPOVER_W - 8));
+    const below = r.bottom + 6;
+    setAt({ left, top: below + POPOVER_H <= window.innerHeight - 8 ? below : Math.max(8, r.top - POPOVER_H - 6) });
+  };
+
+  return (
+    <>
+      <button
+        ref={anchor}
+        type="button"
+        aria-label={`${name} colour`}
+        aria-haspopup="dialog"
+        aria-expanded={at !== null}
+        aria-controls={at ? id : undefined}
+        disabled={disabled}
+        onClick={toggle}
+        className="relative size-5 flex-none cursor-pointer overflow-hidden rounded-[5px] shadow-[inset_0_0_0_.5px_var(--line)] transition active:scale-90 disabled:cursor-not-allowed"
+        style={{ background: value.length === 9 ? `linear-gradient(${value}, ${value}), repeating-conic-gradient(#c8c8c8 0 25%, #fff 0 50%) 0 0 / 6px 6px` : value }}
+      />
+      {at &&
+        createPortal(
+          <div
+            ref={panel}
+            id={id}
+            role="dialog"
+            aria-label={`${name} colour`}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                e.stopPropagation();
+                close(true);
+              }
+            }}
+            className="fixed z-50 rounded-2xl bg-bg p-3 shadow-[0_0_0_.5px_var(--line),0_12px_32px_rgba(0,0,0,.16)] motion-safe:animate-[toast-in_.18s_var(--ease)]"
+            style={{ left: at.left, top: at.top, width: POPOVER_W }}
+          >
+            <ColorPicker name={name} value={value} onChange={onChange} />
+          </div>,
+          document.body,
+        )}
+    </>
   );
 }
 
