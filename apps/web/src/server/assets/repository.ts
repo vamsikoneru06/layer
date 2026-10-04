@@ -117,8 +117,14 @@ export function listReadyAssets(db: Db, ownerId: string, q: { kind?: AssetRow["k
     .limit(q.limit + 1);
 }
 
-/** Ready assets the viewer may see: their own, system-owned, or public. Guests (null) see only the latter two. */
-export function findResolvableAssets(db: Db, viewerId: string | null, ids: string[]): Promise<AssetRow[]> {
+/**
+ * Ready assets the viewer may see: their own, system-owned, or public. Guests (null) see only the latter two.
+ * A hidden template's copies are left out for everyone but its author and admins, so hiding stops handing out links.
+ */
+export function findResolvableAssets(db: Db, viewerId: string | null, ids: string[], opts: { admin?: boolean } = {}): Promise<AssetRow[]> {
+  const templateVisible = sql`exists (select 1 from ${templates} where ${templates.id} = ${assets.templateId} and (${templates.status} = 'published'${
+    viewerId ? sql` or ${templates.authorId} = ${viewerId}` : sql``
+  }))`;
   return db
     .select()
     .from(assets)
@@ -127,6 +133,7 @@ export function findResolvableAssets(db: Db, viewerId: string | null, ids: strin
         inArray(assets.id, ids),
         eq(assets.status, "ready"),
         or(isNull(assets.ownerId), eq(assets.visibility, "public"), viewerId ? eq(assets.ownerId, viewerId) : undefined),
+        opts.admin ? undefined : or(isNull(assets.templateId), templateVisible),
       ),
     );
 }

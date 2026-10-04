@@ -1,4 +1,5 @@
 import { createEmptyDoc } from "@vash/schema";
+import { hasLoneSurrogate } from "../text";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestDb, type TestDb } from "../../../tests/support/db";
 import { testDeps, tickingClock } from "../../../tests/support/deps";
@@ -208,6 +209,14 @@ describe("metadata, delete, duplicate", () => {
 });
 
 describe("quota and create rate limit", () => {
+  it("duplicates a design whose long title ends in an emoji", async () => {
+    const alice = await createUser(t.db);
+    const created = await call(h.create, { method: "POST", as: alice, body: { doc: emptyDoc("a".repeat(111) + "😀") } });
+    const copy = await call(h.duplicate, { method: "POST", as: alice, params: { id: created.body.id } });
+    expect(copy.status).toBe(201);
+    expect(copy.body.title).not.toSatisfy(hasLoneSurrogate);
+  });
+
   it("caps each user at QUOTAS.designs, counting duplicates, with 422", async () => {
     const dave = await createUser(t.db);
     const erin = await createUser(t.db);

@@ -6,6 +6,7 @@ import type { Db } from "../db/types";
 import { folderExists } from "../folders/repository";
 import { conflict, notFound, unprocessable } from "../http/problem";
 import { insertWithinQuota } from "../quotas";
+import { truncate } from "../text";
 import * as repo from "./repository";
 
 export interface ServiceContext {
@@ -82,7 +83,7 @@ export async function duplicateDesign(ctx: ServiceContext, ownerId: string, id: 
   const source = await repo.getDesign(ctx.db, ownerId, id);
   if (!source) throw notFound();
   const copyId = randomUUID();
-  const title = `Copy of ${source.title}`.slice(0, LIMITS.titleChars);
+  const title = truncate(`Copy of ${source.title}`, LIMITS.titleChars);
   const now = ctx.now();
   return insertWithinQuota(ctx.db, ownerId, "designs", (tx) =>
     repo.insertDesign(tx, {

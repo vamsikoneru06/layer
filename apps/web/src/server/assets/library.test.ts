@@ -3,10 +3,10 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestDb, type TestDb } from "../../../tests/support/db";
 import { testDeps, tickingClock } from "../../../tests/support/deps";
 import { emptyDoc } from "../../../tests/support/docs";
-import { createAsset, createUser } from "../../../tests/support/factories";
+import { createAsset, createTemplate, createUser } from "../../../tests/support/factories";
 import { call } from "../../../tests/support/invoke";
 import { memoryStorage } from "../../../tests/support/storage";
-import { assets, designs, storageDeletions } from "../db/schema";
+import { assets, designs, storageDeletions, templates } from "../db/schema";
 import { RATE_LIMITS } from "../rate-limit/rules";
 import { assetHandlers } from "./handlers";
 
@@ -42,6 +42,22 @@ describe("GET /api/assets", () => {
 });
 
 describe("POST /api/assets/resolve", () => {
+  it("stops resolving a hidden template's photos, except for its author and admins", async () => {
+    const author = await createUser(t.db);
+    const bob = await createUser(t.db);
+    const admin = await createUser(t.db, { role: "admin" });
+    const tpl = await createTemplate(t.db, { authorId: author.id });
+    const copy = await createAsset(t.db, { ownerId: null, visibility: "public", templateId: tpl.id });
+    const ids = (res: { body: { assets: { id: string }[] } }) => res.body.assets.map((a) => a.id);
+    expect(ids(await resolve(null, [copy.id]))).toEqual([copy.id]);
+
+    await t.db.update(templates).set({ status: "hidden" }).where(eq(templates.id, tpl.id));
+    expect(ids(await resolve(null, [copy.id]))).toEqual([]);
+    expect(ids(await resolve(bob, [copy.id]))).toEqual([]);
+    expect(ids(await resolve(author, [copy.id]))).toEqual([copy.id]);
+    expect(ids(await resolve(admin, [copy.id]))).toEqual([copy.id]);
+  });
+
   it("signs the caller's private assets for an hour and links public and system assets", async () => {
     const alice = await createUser(t.db);
     const own = await createAsset(t.db, { ownerId: alice.id });

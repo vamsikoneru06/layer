@@ -157,8 +157,13 @@ export async function completeUpload(ctx: AssetContext, ownerId: string, id: str
  * Short-lived URLs for the assets the viewer may see. Bundled assets (sample photos) resolve to the
  * site's own files and need no storage; without storage, other assets are left out.
  */
-export async function resolveAssets(ctx: Omit<AssetContext, "storage"> & { storage: ObjectStorage | null }, viewerId: string | null, ids: string[]) {
-  const rows = await findResolvableAssets(ctx.db, viewerId, [...new Set(ids)]);
+export async function resolveAssets(
+  ctx: Omit<AssetContext, "storage"> & { storage: ObjectStorage | null },
+  viewerId: string | null,
+  ids: string[],
+  opts: { admin?: boolean } = {},
+) {
+  const rows = await findResolvableAssets(ctx.db, viewerId, [...new Set(ids)], opts);
   const expiresAt = new Date(ctx.now().getTime() + UPLOAD_LIMITS.downloadUrlSeconds * 1000).toISOString();
   const { storage } = ctx;
   const resolved = await Promise.all(
