@@ -55,8 +55,14 @@ export interface KeyTarget {
   isContentEditable?: boolean;
   tagName?: string;
   closest?: (selector: string) => unknown;
-  matches?: (selector: string) => boolean;
 }
+
+/** The element a mouse press last focused; anything inside it still counts as mouse-focused. */
+export interface PointerFocus {
+  contains(other: unknown): boolean;
+}
+
+const CONTROL = "button, a[href], [role=button], summary";
 
 /** Keys typed into a field, or pressed inside an open menu or dialog, belong to that field, menu or dialog. */
 export const isTyping = (t: KeyTarget | null) => {
@@ -67,17 +73,21 @@ export const isTyping = (t: KeyTarget | null) => {
 /**
  * Enter and Space on a button, link or summary that has keyboard focus activate it, so the canvas must
  * not take them (Enter to edit text, Space to pan). Only for keyboard focus: after a mouse click focus
- * stays on the clicked button, and the canvas shortcuts must keep working then.
+ * stays on the clicked button, and the canvas shortcuts must keep working then. The editor tracks the
+ * mouse press itself (`pointerFocused`) because `:focus-visible` already reads true inside the first
+ * keydown after a click in Chromium.
  */
-export function activatesFocusedControl(t: KeyTarget | null, key: string): boolean {
-  if ((key !== "Enter" && key !== " ") || !t || typeof t.closest !== "function" || typeof t.matches !== "function") return false;
-  if (t.closest("button, a[href], [role=button], summary") === null) return false;
-  try {
-    return t.matches(":focus-visible");
-  } catch {
-    return false; // an engine without :focus-visible
-  }
+export function activatesFocusedControl(t: KeyTarget | null, key: string, pointerFocused: PointerFocus | null = null): boolean {
+  if ((key !== "Enter" && key !== " ") || !t || typeof t.closest !== "function") return false;
+  if (t.closest(CONTROL) === null) return false;
+  return !(pointerFocused && pointerFocused.contains(t));
 }
+
+/** Tab hands focus to the keyboard, so the mouse press no longer explains where focus is. */
+export const pointerFocusAfterKey = (p: PointerFocus | null, key: string): PointerFocus | null => (key === "Tab" ? null : p);
+
+/** Focus moving outside the pressed element is not the mouse press's doing either. */
+export const pointerFocusAfterFocusIn = (p: PointerFocus | null, target: unknown): PointerFocus | null => (p && p.contains(target) ? p : null);
 
 /**
  * Binds the engine to two stacked canvases: the design below, selection chrome above (which also
@@ -182,9 +192,19 @@ export function createEditor(o: EditorOptions): Editor {
     const r = o.overlay.getBoundingClientRect();
     ui.wheel({ x: e.clientX - r.left, y: e.clientY - r.top, deltaX: e.deltaX, deltaY: e.deltaY, zoom: e.ctrlKey || e.metaKey });
   };
+  // A press on a button focuses it without keyboard focus; remember it so Space and Enter still reach the canvas.
+  let pointerFocused: PointerFocus | null = null;
+  const onPointerDownCapture = (e: PointerEvent) => {
+    const t = e.target as (KeyTarget & Partial<PointerFocus>) | null;
+    pointerFocused = t && typeof t.contains === "function" ? (((t.closest?.(CONTROL) as PointerFocus | null | undefined) ?? t) as PointerFocus) : null;
+  };
+  const onFocusIn = (e: FocusEvent) => {
+    pointerFocused = pointerFocusAfterFocusIn(pointerFocused, e.target);
+  };
   const onKeyDown = (e: KeyboardEvent) => {
+    pointerFocused = pointerFocusAfterKey(pointerFocused, e.key);
     const target = e.target as KeyTarget | null;
-    if (isTyping(target) || activatesFocusedControl(target, e.key)) return;
+    if (isTyping(target) || activatesFocusedControl(target, e.key, pointerFocused)) return;
     if (e.key === " ") {
       ui.setSpace(true);
       invalidate();
@@ -212,6 +232,8 @@ export function createEditor(o: EditorOptions): Editor {
   o.overlay.addEventListener("pointercancel", onCancel);
   o.overlay.addEventListener("dblclick", onDoubleClick);
   o.overlay.addEventListener("wheel", onWheel, { passive: false });
+  window.addEventListener("pointerdown", onPointerDownCapture, true);
+  window.addEventListener("focusin", onFocusIn);
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", onKeyUp);
   document.fonts?.addEventListener("loadingdone", onFonts);
@@ -244,6 +266,8 @@ export function createEditor(o: EditorOptions): Editor {
       o.overlay.removeEventListener("pointercancel", onCancel);
       o.overlay.removeEventListener("dblclick", onDoubleClick);
       o.overlay.removeEventListener("wheel", onWheel);
+      window.removeEventListener("pointerdown", onPointerDownCapture, true);
+      window.removeEventListener("focusin", onFocusIn);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       document.fonts?.removeEventListener("loadingdone", onFonts);

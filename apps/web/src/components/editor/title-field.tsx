@@ -58,7 +58,7 @@ function TitleInput({ title, onEditingChange, onCommit }: { title: string; onEdi
         }}
         onBlur={() => finish(false)}
         onKeyDown={(e) => {
-          if (e.nativeEvent.isComposing) return;
+          if (e.nativeEvent.isComposing || e.keyCode === 229) return;
           if (e.key === "Enter") finish(true);
           if (e.key === "Escape") {
             e.stopPropagation();

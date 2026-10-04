@@ -1,17 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { activatesFocusedControl, isTyping, type KeyTarget } from "./editor";
+import { activatesFocusedControl, isTyping, pointerFocusAfterFocusIn, pointerFocusAfterKey, type KeyTarget, type PointerFocus } from "./editor";
 
-/** A fake element: `ancestors` are the selectors `closest` finds, `focusVisible` answers `:focus-visible`. */
-const el = (o: { tag?: string; editable?: boolean; ancestors?: string[]; focusVisible?: boolean | "throws" } = {}): KeyTarget => ({
+/** A fake element: `ancestors` are the selectors `closest` finds. */
+const el = (o: { tag?: string; editable?: boolean; ancestors?: string[] } = {}): KeyTarget => ({
   tagName: o.tag ?? "DIV",
   isContentEditable: o.editable ?? false,
   closest: (selector) => (selector.split(",").some((s) => (o.ancestors ?? []).includes(s.trim())) ? {} : null),
-  matches: (selector) => {
-    if (selector !== ":focus-visible") return false;
-    if (o.focusVisible === "throws") throw new SyntaxError("unsupported selector");
-    return o.focusVisible ?? false;
-  },
 });
+
+/** A fake pressed element that contains exactly the given nodes (and itself). */
+const pressed = (...inside: unknown[]): PointerFocus => {
+  const self: PointerFocus = { contains: (other) => other === self || inside.includes(other) };
+  return self;
+};
 
 describe("isTyping", () => {
   it("is true in fields, editable content, dialogs and open menus", () => {
@@ -32,33 +33,66 @@ describe("isTyping", () => {
 });
 
 describe("activatesFocusedControl", () => {
-  const button = (focusVisible: boolean | "throws") => el({ tag: "BUTTON", ancestors: ["button"], focusVisible });
+  const button = el({ tag: "BUTTON", ancestors: ["button"] });
 
   it("lets Enter and Space activate a keyboard-focused button, link, role=button or summary", () => {
     for (const ancestor of ["button", "a[href]", "[role=button]", "summary"]) {
-      const target = el({ ancestors: [ancestor], focusVisible: true });
-      expect(activatesFocusedControl(target, "Enter"), ancestor).toBe(true);
-      expect(activatesFocusedControl(target, " "), ancestor).toBe(true);
+      const target = el({ ancestors: [ancestor] });
+      expect(activatesFocusedControl(target, "Enter", null), ancestor).toBe(true);
+      expect(activatesFocusedControl(target, " ", null), ancestor).toBe(true);
     }
   });
 
-  it("leaves Enter and Space to the canvas after a mouse click (no visible focus)", () => {
-    expect(activatesFocusedControl(button(false), "Enter")).toBe(false);
-    expect(activatesFocusedControl(button(false), " ")).toBe(false);
+  it("treats a missing pointer record as keyboard focus", () => {
+    expect(activatesFocusedControl(button, "Enter")).toBe(true);
+  });
+
+  it("leaves Enter and Space to the canvas after a mouse click on that button", () => {
+    expect(activatesFocusedControl(button, "Enter", pressed(button))).toBe(false);
+    expect(activatesFocusedControl(button, " ", pressed(button))).toBe(false);
+  });
+
+  it("still lets a different button take them when the mouse press was elsewhere", () => {
+    expect(activatesFocusedControl(button, " ", pressed())).toBe(true);
+    expect(activatesFocusedControl(button, "Enter", pressed())).toBe(true);
   });
 
   it("only guards Enter and Space", () => {
-    expect(activatesFocusedControl(button(true), "Delete")).toBe(false);
-    expect(activatesFocusedControl(button(true), "ArrowLeft")).toBe(false);
+    expect(activatesFocusedControl(button, "Delete")).toBe(false);
+    expect(activatesFocusedControl(button, "ArrowLeft")).toBe(false);
+    expect(activatesFocusedControl(button, "Tab")).toBe(false);
   });
 
   it("ignores focus on anything that is not a control", () => {
-    expect(activatesFocusedControl(el({ focusVisible: true }), "Enter")).toBe(false);
+    expect(activatesFocusedControl(el(), "Enter")).toBe(false);
     expect(activatesFocusedControl(null, "Enter")).toBe(false);
     expect(activatesFocusedControl({}, "Enter")).toBe(false);
   });
+});
 
-  it("does not throw where :focus-visible is unsupported, and leaves the key to the canvas", () => {
-    expect(activatesFocusedControl(button("throws"), "Enter")).toBe(false);
+describe("mouse-focus record", () => {
+  const button = el({ tag: "BUTTON", ancestors: ["button"] });
+  const other = el({ tag: "BUTTON", ancestors: ["button"] });
+
+  it("clears on Tab and keeps on other keys", () => {
+    const p = pressed(button);
+    expect(pointerFocusAfterKey(p, "Tab")).toBeNull();
+    expect(pointerFocusAfterKey(p, " ")).toBe(p);
+    expect(pointerFocusAfterKey(p, "Enter")).toBe(p);
+    expect(pointerFocusAfterKey(null, "Tab")).toBeNull();
+  });
+
+  it("clears when focus moves outside the pressed element and keeps when it stays inside", () => {
+    const p = pressed(button);
+    expect(pointerFocusAfterFocusIn(p, button)).toBe(p);
+    expect(pointerFocusAfterFocusIn(p, other)).toBeNull();
+    expect(pointerFocusAfterFocusIn(null, button)).toBeNull();
+  });
+
+  it("makes a keyboard-focused button take Space again after Tab or a focus move", () => {
+    const p = pressed(button);
+    expect(activatesFocusedControl(button, " ", p)).toBe(false);
+    expect(activatesFocusedControl(button, " ", pointerFocusAfterKey(p, "Tab"))).toBe(true);
+    expect(activatesFocusedControl(other, " ", pointerFocusAfterFocusIn(p, other))).toBe(true);
   });
 });
