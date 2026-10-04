@@ -12,6 +12,7 @@ import type { ObjectStorage } from "../storage/types";
 import { analyzeDraft, PUBLISH_LIMITS } from "./draft";
 import { galleryPage } from "./gallery";
 import { publishTemplate, type PublishContext } from "./publish";
+import { reportTemplate } from "./reports";
 import * as repo from "./repository";
 import { useTemplate } from "./use";
 import { canSee, toTemplateJson } from "./view";
@@ -37,6 +38,10 @@ const PublishBody = z
     ownsKeptPhotos: z.boolean().default(false),
     thumbnailAssetId: Uuid,
   })
+  .strict();
+
+const ReportBody = z
+  .object({ reason: z.enum(["spam", "inappropriate", "copyright", "privacy", "other"]), note: z.string().trim().max(1000).default("") })
   .strict();
 
 const GalleryParams = pageQuery.extend({
@@ -91,6 +96,12 @@ export function templateHandlers(deps: Deps, storage: ObjectStorage | null = nul
       const id = parseId(params.id);
       const r = await publishTemplate(ctx, user, await readJson(req, PublishBody), id);
       return Response.json({ template: toTemplateJson(r.template), warnings: { pii: r.pii } }, { status: 201 });
+    }),
+
+    report: endpoint(deps, { auth: "user", rateLimit: { name: "report", rule: RATE_LIMITS.report, by: "user" } }, async ({ req, user, params }) => {
+      const id = parseId(params.id);
+      const row = await reportTemplate(deps.db, user, id, await readJson(req, ReportBody), deps.now());
+      return Response.json({ id: row.id, reason: row.reason, status: row.status, createdAt: row.createdAt.toISOString() }, { status: 201 });
     }),
   };
 }
