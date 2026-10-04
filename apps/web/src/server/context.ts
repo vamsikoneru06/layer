@@ -14,6 +14,7 @@ import { healthHandlers } from "./health/handlers";
 import type { Handler } from "./http/types";
 import { createLogger } from "./logging";
 import { meHandlers } from "./me/handlers";
+import { reportError } from "./monitoring/sentry";
 import { seoHandlers } from "./seo/handlers";
 import { shareHandlers } from "./shares/handlers";
 import { databaseStorage } from "./storage/database";
@@ -24,7 +25,8 @@ import { userHandlers } from "./users/handlers";
 
 function build() {
   const config = loadConfig(process.env);
-  const logger = createLogger();
+  // With a DSN, every logged error also goes to Sentry (instrumentation.ts initialises it).
+  const logger = createLogger(undefined, undefined, config.sentryDsn ? reportError : undefined);
   const { db } = createDb(config.databaseUrl, (err) => logger.error("db.idle_client_error", { err }));
   const now = () => new Date();
   const mailer =
