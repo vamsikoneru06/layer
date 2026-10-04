@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { ExportPopover } from "./export-popover";
 import { Segmented } from "./fields";
 import { InsertRail } from "./insert-rail";
+import { usePhotoDrop } from "./use-photo-drop";
 import { LayersPanel } from "./layers-panel";
 import { PropertiesPanel } from "./properties-panel";
 import { TextEditor } from "./text-editor";
@@ -133,6 +134,8 @@ export function Workspace({ design }: { design: Design }) {
     };
   }, [design]);
 
+  const photoDrop = usePhotoDrop(editor);
+
   // Refusals ("Layout locked by template…") show briefly, then clear.
   const notice = state?.notice ?? null;
   useEffect(() => {
@@ -219,7 +222,7 @@ export function Workspace({ design }: { design: Design }) {
       <div className="flex min-h-0 flex-1">
         <InsertRail editor={editor} />
         <div className="relative flex min-w-0 flex-1 flex-col">
-          <div ref={container} className="relative min-h-0 flex-1 overflow-hidden bg-bg2">
+          <div ref={container} {...photoDrop} className="relative min-h-0 flex-1 overflow-hidden bg-bg2">
             <canvas ref={scene} className="absolute inset-0" aria-hidden />
             <canvas ref={overlay} className="absolute inset-0 touch-none" aria-label="Design canvas. Use the Layers panel to select layers with the keyboard." />
             {state && editor && <TextEditor editor={editor} state={state} />}
