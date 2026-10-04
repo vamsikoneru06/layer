@@ -52,8 +52,7 @@ export function Workspace({ design }: { design: Design }) {
   const state = useEditorState(editor);
   const toast = useToast();
   const clipboard = useClipboard(editor);
-  const root = useRef<HTMLElement>(null);
-  const fullscreen = useFullscreen(root);
+  const fullscreen = useFullscreen();
   const [infoOpen, setInfoOpen] = useState(false);
   const [moveOpen, setMoveOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
@@ -273,7 +272,7 @@ export function Workspace({ design }: { design: Design }) {
   const artboard = state?.doc.artboard ?? design.doc.artboard;
 
   return (
-    <main ref={root} className="flex h-svh flex-col overflow-hidden bg-bg text-text">
+    <main className="flex h-svh flex-col overflow-hidden bg-bg text-text">
       <EditorHeader
         editor={editor}
         doc={state?.doc ?? design.doc}

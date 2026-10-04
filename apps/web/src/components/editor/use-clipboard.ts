@@ -7,6 +7,12 @@ import { useCallback, useEffect, useRef } from "react";
 const inField = (t: EventTarget | null) =>
   t instanceof HTMLElement && (t.isContentEditable || t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.closest("dialog") !== null);
 
+/** Highlighted page text (a panel label, say) keeps the browser's own copy and cut. */
+const hasPageSelection = () => {
+  const s = window.getSelection();
+  return s !== null && !s.isCollapsed && s.toString().trim() !== "";
+};
+
 /**
  * Copy, cut and paste for the canvas. The keyboard and the browser's own menu go through the clipboard
  * events; the Edit and right-click menus call the returned functions, which use the async clipboard API.
@@ -48,7 +54,7 @@ export function useClipboard(editor: Editor | null) {
   useEffect(() => {
     if (!editor) return;
     const onCopy = (e: ClipboardEvent) => {
-      if (inField(e.target)) return;
+      if (inField(e.target) || hasPageSelection()) return;
       const text = copySelection(editor.core);
       if (!text) return;
       e.clipboardData?.setData("text/plain", text);
@@ -56,7 +62,7 @@ export function useClipboard(editor: Editor | null) {
       e.preventDefault();
     };
     const onCut = (e: ClipboardEvent) => {
-      if (inField(e.target)) return;
+      if (inField(e.target) || hasPageSelection()) return;
       const text = cutSelection(editor.core);
       if (!text) return;
       e.clipboardData?.setData("text/plain", text);

@@ -7,20 +7,6 @@ import { cn } from "@/lib/utils";
 
 /** The design's name in the header. Click to rename; Enter or clicking away keeps it, Escape cancels. */
 export function TitleField({ title, editing, onEditingChange, onCommit }: { title: string; editing: boolean; onEditingChange: (editing: boolean) => void; onCommit: (title: string) => void }) {
-  const [draft, setDraft] = useState(title);
-  const [error, setError] = useState<string | null>(null);
-  const input = useRef<HTMLInputElement>(null);
-
-  // Starting to rename always begins from the current name.
-  useEffect(() => {
-    if (!editing) return;
-    setDraft(title);
-    setError(null);
-    input.current?.focus();
-    input.current?.select();
-    // Only when editing starts: typing must not be reset by a title that changes underneath.
-  }, [editing]);
-
   if (!editing) {
     return (
       <h1 className="min-w-0">
@@ -30,6 +16,19 @@ export function TitleField({ title, editing, onEditingChange, onCommit }: { titl
       </h1>
     );
   }
+  return <TitleInput title={title} onEditingChange={onEditingChange} onCommit={onCommit} />;
+}
+
+/** Mounted fresh each time renaming starts, so it always begins from the current name with all of it selected. */
+function TitleInput({ title, onEditingChange, onCommit }: { title: string; onEditingChange: (editing: boolean) => void; onCommit: (title: string) => void }) {
+  const [draft, setDraft] = useState(title);
+  const [error, setError] = useState<string | null>(null);
+  const input = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    input.current?.focus();
+    input.current?.select();
+  }, []);
 
   const finish = (keepOpenOnError: boolean) => {
     const result = normalizeTitle(draft);

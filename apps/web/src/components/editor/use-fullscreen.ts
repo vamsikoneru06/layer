@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState, type RefObject } from "react";
+import { useCallback, useEffect, useState } from "react";
 
-/** Fullscreen for one element, with whether the browser allows it and whether it is on now. */
-export function useFullscreen(ref: RefObject<HTMLElement | null>) {
+/** Fullscreen for the whole page (so toasts and dialogs stay visible), with whether the browser allows it and whether it is on now. */
+export function useFullscreen() {
   const [active, setActive] = useState(false);
   const supported = typeof document !== "undefined" && document.fullscreenEnabled;
 
@@ -15,8 +15,8 @@ export function useFullscreen(ref: RefObject<HTMLElement | null>) {
 
   const toggle = useCallback(async () => {
     if (document.fullscreenElement) await document.exitFullscreen();
-    else await ref.current?.requestFullscreen();
-  }, [ref]);
+    else await document.documentElement.requestFullscreen();
+  }, []);
 
   return { supported, active, toggle };
 }
