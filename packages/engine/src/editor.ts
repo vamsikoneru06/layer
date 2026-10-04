@@ -50,9 +50,34 @@ function canvasMeasure(): Measure {
   };
 }
 
+/** The few element members the key guards read, so they run on plain objects in tests. */
+export interface KeyTarget {
+  isContentEditable?: boolean;
+  tagName?: string;
+  closest?: (selector: string) => unknown;
+  matches?: (selector: string) => boolean;
+}
+
 /** Keys typed into a field, or pressed inside an open menu or dialog, belong to that field, menu or dialog. */
-const isTyping = (t: EventTarget | null) =>
-  t instanceof HTMLElement && (t.isContentEditable || t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.closest("dialog") !== null || t.closest("[role=menu]") !== null);
+export const isTyping = (t: KeyTarget | null) => {
+  if (!t || typeof t.closest !== "function") return false;
+  return !!t.isContentEditable || t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.closest("dialog") !== null || t.closest("[role=menu]") !== null;
+};
+
+/**
+ * Enter and Space on a button, link or summary that has keyboard focus activate it, so the canvas must
+ * not take them (Enter to edit text, Space to pan). Only for keyboard focus: after a mouse click focus
+ * stays on the clicked button, and the canvas shortcuts must keep working then.
+ */
+export function activatesFocusedControl(t: KeyTarget | null, key: string): boolean {
+  if ((key !== "Enter" && key !== " ") || !t || typeof t.closest !== "function" || typeof t.matches !== "function") return false;
+  if (t.closest("button, a[href], [role=button], summary") === null) return false;
+  try {
+    return t.matches(":focus-visible");
+  } catch {
+    return false; // an engine without :focus-visible
+  }
+}
 
 /**
  * Binds the engine to two stacked canvases: the design below, selection chrome above (which also
@@ -158,7 +183,8 @@ export function createEditor(o: EditorOptions): Editor {
     ui.wheel({ x: e.clientX - r.left, y: e.clientY - r.top, deltaX: e.deltaX, deltaY: e.deltaY, zoom: e.ctrlKey || e.metaKey });
   };
   const onKeyDown = (e: KeyboardEvent) => {
-    if (isTyping(e.target)) return;
+    const target = e.target as KeyTarget | null;
+    if (isTyping(target) || activatesFocusedControl(target, e.key)) return;
     if (e.key === " ") {
       ui.setSpace(true);
       invalidate();
