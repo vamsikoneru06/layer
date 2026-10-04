@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { editedLabel, firstName, fitBox, formatLabel, greeting, sortDesigns } from "./designs";
+import { editedLabel, firstName, fitBox, formatLabel, greeting, parseDraggedIds, sortDesigns } from "./designs";
 
 const now = new Date("2026-09-25T18:30:00");
 const ago = (ms: number) => new Date(now.getTime() - ms).toISOString();
@@ -57,5 +57,15 @@ describe("helpers", () => {
     expect(sortDesigns(items, "name").map((d) => d.title)).toEqual(["A", "b"]);
     expect(sortDesigns(items, "created").map((d) => d.title)).toEqual(["A", "b"]);
     expect(sortDesigns(items, "edited").map((d) => d.title)).toEqual(["b", "A"]);
+  });
+});
+
+describe("parseDraggedIds", () => {
+  const id = "4f1c2a3b-1111-4222-8333-944455556666";
+  it("accepts a list of design ids", () => {
+    expect(parseDraggedIds(JSON.stringify([id]))).toEqual([id]);
+  });
+  it.each(["", "not json", "{}", JSON.stringify([id, "../../etc"]), JSON.stringify([1]), JSON.stringify(Array(501).fill(id))])("ignores %j", (raw) => {
+    expect(parseDraggedIds(raw)).toEqual([]);
   });
 });

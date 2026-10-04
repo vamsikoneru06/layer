@@ -22,11 +22,11 @@
       "stops": [
         {
           "offset": 0,
-          "color": "#2D5BFF"
+          "color": "#FF5A36"
         },
         {
           "offset": 1,
-          "color": "#8A2BE2"
+          "color": "#FFB020"
         }
       ]
     }
@@ -122,7 +122,12 @@
         "kind": "rect",
         "cornerRadius": 48
       },
-      "content": null,
+      "content": {
+        "assetId": "df02f526-6d93-81c5-8e3b-8bfb798ffab9",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
       "filters": {
         "preset": null,
         "brightness": 0,
@@ -244,7 +249,7 @@
         "style": "normal"
       },
       "size": 44,
-      "color": "#2D5BFF",
+      "color": "#E0431F",
       "align": "center",
       "lineHeight": 1.2,
       "letterSpacing": 0,
@@ -274,7 +279,7 @@
         "style": "normal"
       },
       "size": 28,
-      "color": "#E6E0FF",
+      "color": "#FFF1E0",
       "align": "center",
       "lineHeight": 1.2,
       "letterSpacing": 0,
@@ -282,5 +287,13 @@
       "maxChars": 24
     }
   },
-  "assets": {}
+  "assets": {
+    "df02f526-6d93-81c5-8e3b-8bfb798ffab9": {
+      "id": "df02f526-6d93-81c5-8e3b-8bfb798ffab9",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 933,
+      "height": 1400
+    }
+  }
 }

@@ -9,4 +9,6 @@ export const testConfig: AppConfig = {
   trustProxy: true,
   google: null,
   mail: { kind: "console" },
+  storage: null,
+  cronSecret: null,
 };

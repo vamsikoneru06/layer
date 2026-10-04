@@ -10,6 +10,12 @@ describe("buildCsp", () => {
     expect(csp).toContain("upgrade-insecure-requests");
     expect(csp).not.toContain("unsafe-eval");
   });
+  it("allows images from and uploads to the storage origins only", () => {
+    const csp = buildCsp({ nonce: "n", isDevelopment: false, storageOrigins: ["https://proj.supabase.co", "https://proj.storage.supabase.co"] });
+    expect(csp).toContain("img-src 'self' blob: data: https://proj.supabase.co https://proj.storage.supabase.co");
+    expect(csp).toContain("connect-src 'self' https://proj.supabase.co https://proj.storage.supabase.co");
+  });
+
   it("allows eval only in development (React refresh)", () => {
     expect(buildCsp({ nonce: "n", isDevelopment: true })).toContain("'unsafe-eval'");
   });
@@ -22,9 +28,14 @@ describe("securityHeaders", () => {
       "x-frame-options": "DENY",
       "x-content-type-options": "nosniff",
       "referrer-policy": "strict-origin-when-cross-origin",
-      "permissions-policy": "camera=(), microphone=(), geolocation=()",
       "cross-origin-opener-policy": "same-origin",
+      "cross-origin-resource-policy": "same-origin",
+      "x-permitted-cross-domain-policies": "none",
+      "origin-agent-cluster": "?1",
     });
+    for (const feature of ["camera", "microphone", "geolocation", "payment", "usb", "serial", "hid", "bluetooth", "browsing-topics"]) {
+      expect(dev["permissions-policy"]).toContain(`${feature}=()`);
+    }
     expect(dev["strict-transport-security"]).toBeUndefined();
     expect(securityHeaders({ csp: "x", isProduction: true })["strict-transport-security"]).toMatch(/max-age=63072000/);
   });

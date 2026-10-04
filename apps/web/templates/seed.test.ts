@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { CATEGORIES, FORMATS, lintTemplate, parseDoc, scanForPii, type Doc } from "@vash/schema";
 import { describe, expect, it } from "vitest";
+import { SAMPLE_PHOTOS, sampleAssetId } from "./samples";
 import { seedTemplates } from "./seed-templates";
 
 const dir = new URL("./seed/", import.meta.url);
@@ -14,14 +15,15 @@ function parsed(file: string): Doc {
 }
 
 describe("seed templates", () => {
-  it("ships 20 templates, 4 per format", () => {
-    expect(files).toHaveLength(20);
+  it("ships 36 templates, at least 6 per format", () => {
+    expect(files).toHaveLength(36);
     const perFormat = new Map<string, number>();
     for (const file of files) {
       const format = parsed(file).meta.format;
       perFormat.set(format, (perFormat.get(format) ?? 0) + 1);
     }
-    expect(Object.fromEntries(perFormat)).toEqual(Object.fromEntries(Object.keys(FORMATS).map((f) => [f, 4])));
+    expect([...perFormat.keys()].sort()).toEqual(Object.keys(FORMATS).sort());
+    for (const [format, n] of perFormat) expect(n, format).toBeGreaterThanOrEqual(6);
   });
 
   it("covers every gallery category", () => {
@@ -33,7 +35,11 @@ describe("seed templates", () => {
     expect(`${doc.id}.json`).toBe(file);
     expect(lintTemplate(doc)).toEqual([]);
     expect(scanForPii(doc)).toEqual([]);
-    expect(Object.keys(doc.assets)).toEqual([]);
+    // Every photo frame starts with a bundled sample photo, and the document lists exactly those.
+    const samples = new Set([...SAMPLE_PHOTOS.keys()].map(sampleAssetId));
+    const used = Object.values(doc.nodes).flatMap((n) => (n.type === "frame" ? [n.content?.assetId] : []));
+    expect(used.every((id) => id !== undefined && samples.has(id)), "frames use sample photos").toBe(true);
+    expect(Object.keys(doc.assets).sort()).toEqual([...new Set(used)].sort());
     const size = FORMATS[doc.meta.format as keyof typeof FORMATS];
     expect({ width: doc.artboard.width, height: doc.artboard.height }).toEqual({ width: size.width, height: size.height });
   });

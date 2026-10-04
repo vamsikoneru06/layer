@@ -1,0 +1,254 @@
+{
+  "schemaVersion": 1,
+  "id": "poster-farmers-market",
+  "kind": "template",
+  "meta": {
+    "title": "Farmers' Market",
+    "category": "food",
+    "tags": [
+      "market",
+      "local",
+      "fresh",
+      "weekend"
+    ],
+    "format": "poster"
+  },
+  "artboard": {
+    "width": 1240,
+    "height": 1754,
+    "background": {
+      "type": "solid",
+      "color": "#FFF8E7"
+    }
+  },
+  "root": [
+    "title",
+    "tagline",
+    "left",
+    "right",
+    "when",
+    "where"
+  ],
+  "nodes": {
+    "title": {
+      "id": "title",
+      "name": "Title",
+      "transform": {
+        "x": 620,
+        "y": 190,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1060,
+      "height": 180,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Farmers' Market",
+      "font": {
+        "family": "DM Serif Display",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 140,
+      "color": "#2F5D31",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 24
+    },
+    "tagline": {
+      "id": "tagline",
+      "name": "Tagline",
+      "transform": {
+        "x": 620,
+        "y": 325,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1060,
+      "height": 50,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "FRESH · LOCAL · SEASONAL",
+      "font": {
+        "family": "Inter",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 34,
+      "color": "#D0782A",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 8,
+      "fit": "shrink",
+      "maxChars": 40
+    },
+    "left": {
+      "id": "left",
+      "name": "Left photo",
+      "transform": {
+        "x": 350,
+        "y": 780,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 520,
+      "height": 760,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 24
+      },
+      "content": {
+        "assetId": "2fcc2778-23e0-8737-9538-43ebd27551a8",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "right": {
+      "id": "right",
+      "name": "Right photo",
+      "transform": {
+        "x": 890,
+        "y": 780,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 520,
+      "height": 760,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 24
+      },
+      "content": {
+        "assetId": "445cbb8b-9c2c-8b42-ba22-720d7d61fb34",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "when": {
+      "id": "when",
+      "name": "When",
+      "transform": {
+        "x": 620,
+        "y": 1275,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1060,
+      "height": 70,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Every Saturday · 8 AM to 1 PM",
+      "font": {
+        "family": "Poppins",
+        "weight": 600,
+        "style": "normal"
+      },
+      "size": 48,
+      "color": "#2F5D31",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 50
+    },
+    "where": {
+      "id": "where",
+      "name": "Where",
+      "transform": {
+        "x": 620,
+        "y": 1355,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1060,
+      "height": 50,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Town Square Park",
+      "font": {
+        "family": "Inter",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 36,
+      "color": "#5A6B4E",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 40
+    }
+  },
+  "assets": {
+    "2fcc2778-23e0-8737-9538-43ebd27551a8": {
+      "id": "2fcc2778-23e0-8737-9538-43ebd27551a8",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 1400,
+      "height": 1400
+    },
+    "445cbb8b-9c2c-8b42-ba22-720d7d61fb34": {
+      "id": "445cbb8b-9c2c-8b42-ba22-720d7d61fb34",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 1400,
+      "height": 1400
+    }
+  }
+}
