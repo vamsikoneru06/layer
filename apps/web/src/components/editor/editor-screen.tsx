@@ -54,22 +54,32 @@ export function EditorScreen({ id }: { id: string }) {
     };
   }, [id]);
 
-  if (!wide) {
-    return (
-      <Centered>
-        <EmptyState
-          icon={<Monitor />}
-          title="VASH’s editor needs a bigger screen."
-          body={
-            load.status === "ready" && load.local
-              ? "Your design is saved in this browser. Sign in to move it to your account, then open it on a laptop or desktop."
-              : "Your design is saved. Open it on a laptop or desktop to keep editing."
-          }
-          action={<ButtonLink href="/designs" variant="secondary">Back to designs</ButtonLink>}
-        />
-      </Centered>
-    );
-  }
+  // Below the breakpoint Workspace stays mounted but hidden, so the document, history and autosaver
+  // survive a resize; remounting it would reopen the design as first loaded.
+  return (
+    <>
+      {!wide && (
+        <Centered>
+          <EmptyState
+            icon={<Monitor />}
+            title="VASH’s editor needs a bigger screen."
+            body={
+              load.status === "ready" && load.local
+                ? "Your design is saved in this browser. Sign in to move it to your account, then open it on a laptop or desktop."
+                : "Your design is saved. Open it on a laptop or desktop to keep editing."
+            }
+            action={<ButtonLink href="/designs" variant="secondary">Back to designs</ButtonLink>}
+          />
+        </Centered>
+      )}
+      <div className={wide ? "contents" : "hidden"}>
+        <Screen load={load} />
+      </div>
+    </>
+  );
+}
+
+function Screen({ load }: { load: Load }) {
   switch (load.status) {
     case "loading":
       return (
