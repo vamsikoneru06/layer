@@ -24,11 +24,23 @@ export interface AppConfig {
     | { kind: "gmail"; user: string; appPassword: string; from: string };
   storage: StorageConfig | null;
   cronSecret: string | null;
+  sentryDsn: string | null;
 }
 
 const optional = z.preprocess((v) => (v === "" ? undefined : v), z.string().trim().min(1).optional());
 const optionalUrl = z.preprocess((v) => (v === "" ? undefined : v), z.url().optional());
 const bucket = z.string().regex(/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/, "must be a lowercase bucket name");
+/** Sentry's public DSN, `https://<key>@<host>/<project id>`. Public by design (it ships to the browser), but not a secret either way. */
+const sentryDsn = z.preprocess(
+  (v) => (v === "" ? undefined : v),
+  z
+    .url()
+    .refine((v) => {
+      const u = new URL(v);
+      return u.protocol === "https:" && u.username !== "" && /^\/\d+$/.test(u.pathname);
+    }, "must be a Sentry DSN such as https://<key>@<host>/<project id>")
+    .optional(),
+);
 const STORAGE_CONNECTION_VARS = ["STORAGE_ENDPOINT", "STORAGE_REGION", "STORAGE_ACCESS_KEY_ID", "STORAGE_SECRET_ACCESS_KEY", "STORAGE_PUBLIC_BASE_URL"] as const;
 
 const EnvSchema = z
@@ -54,6 +66,8 @@ const EnvSchema = z
     STORAGE_PRIVATE_BUCKET: bucket.default("vash-private"),
     STORAGE_PUBLIC_BUCKET: bucket.default("vash-public"),
     CRON_SECRET: z.preprocess((v) => (v === "" ? undefined : v), z.string().min(32, "must be at least 32 characters").optional()),
+    // Optional error reporting; one variable for the browser (inlined at build) and the server.
+    NEXT_PUBLIC_SENTRY_DSN: sentryDsn,
   })
   .superRefine((env, ctx) => {
     if (Boolean(env.GOOGLE_CLIENT_ID) !== Boolean(env.GOOGLE_CLIENT_SECRET)) {
@@ -78,6 +92,10 @@ const EnvSchema = z
       for (const k of ["STORAGE_ENDPOINT", "STORAGE_PUBLIC_BASE_URL"] as const) {
         if (env[k] && !env[k].startsWith("https://")) ctx.addIssue({ code: "custom", path: [k], message: "must use https in production" });
       }
+      // Every serverless instance opens its own pool; Neon's direct endpoint runs out of connections under load.
+      if (isDirectNeonHost(env.DATABASE_URL)) {
+        ctx.addIssue({ code: "custom", path: ["DATABASE_URL"], message: "use Neon's pooled connection string (host contains -pooler) in production" });
+      }
       if (!env.CRON_SECRET) ctx.addIssue({ code: "custom", path: ["CRON_SECRET"], message: "required in production (scheduled cleanup)" });
       if (!env.RESEND_API_KEY && !env.GMAIL_USER) {
         ctx.addIssue({ code: "custom", path: ["RESEND_API_KEY"], message: "required in production unless GMAIL_USER is set" });
@@ -88,6 +106,15 @@ const EnvSchema = z
       }
     }
   });
+
+function isDirectNeonHost(databaseUrl: string): boolean {
+  try {
+    const host = new URL(databaseUrl).hostname;
+    return host.endsWith(".neon.tech") && !host.split(".")[0]!.endsWith("-pooler");
+  } catch {
+    return false;
+  }
+}
 
 export class ConfigError extends Error {
   override name = "ConfigError";
@@ -131,5 +158,6 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
           }
         : null,
     cronSecret: e.CRON_SECRET ?? null,
+    sentryDsn: e.NEXT_PUBLIC_SENTRY_DSN ?? null,
   };
 }
