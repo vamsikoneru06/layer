@@ -1,7 +1,8 @@
 import { LIMITS, type Doc, type GroupNode } from "@vash/schema";
 import { describe, expect, it } from "vitest";
 import { applyCommand } from "./commands";
-import { CLIPBOARD_PREFIX, DUPLICATE_OFFSET, planPaste, serializeSelection } from "./clipboard";
+import { CLIPBOARD_PREFIX, DUPLICATE_OFFSET, planCopy, planPaste, serializeSelection } from "./clipboard";
+import { worldMatrix } from "./scene";
 import type { Plan } from "./selection-utils";
 import { docWith, frame, group, rect } from "./test-docs";
 
@@ -32,6 +33,65 @@ describe("serializeSelection", () => {
     const parsed = JSON.parse(text.slice(CLIPBOARD_PREFIX.length));
     expect(parsed.roots).toEqual(["g"]);
     expect(parsed.nodes.map((n: { id: string }) => n.id)).toEqual(["g", "c"]);
+  });
+});
+
+describe("copying a layer out of a group", () => {
+  // The pasted copy lands at the root, so it must keep the artboard position it had inside the group (plus the offset).
+  const pasteChild = (source: Doc) => {
+    const target = docWith([]);
+    const next = applyCommand(target, ok(planPaste(target, serializeSelection(source, ["c"])!, "design")).command).doc;
+    return { next, id: next.root[0]! };
+  };
+
+  it("pastes a child of a translated group at its artboard position plus the offset", () => {
+    const source = docWith([group("g", { x: 500, y: 500 }, ["c"])], [rect("c", { x: -50 })]);
+    const { next, id } = pasteChild(source);
+    const world = worldMatrix(next, id);
+    expect([world[4], world[5]]).toEqual([450 + DUPLICATE_OFFSET, 500 + DUPLICATE_OFFSET]);
+  });
+
+  it("pastes a child of a rotated group where it sat, with the group's rotation", () => {
+    const source = docWith([group("g", { x: 500, y: 500, rotation: 90 }, ["c"])], [rect("c", { x: -50 })]);
+    const before = worldMatrix(source, "c");
+    const { next, id } = pasteChild(source);
+    const world = worldMatrix(next, id);
+    expect(world[4]).toBeCloseTo(before[4] + DUPLICATE_OFFSET);
+    expect(world[5]).toBeCloseTo(before[5] + DUPLICATE_OFFSET);
+    expect([world[0], world[1], world[2], world[3]].map((v, i) => v - before[i]!).every((d) => Math.abs(d) < 1e-9)).toBe(true);
+    expect(next.nodes[id]!.transform.rotation).toBeCloseTo(90);
+  });
+
+  it("pastes a child of a scaled group with the scale baked in", () => {
+    const source = docWith([group("g", { x: 500, y: 500, scaleX: 2, scaleY: 2 }, ["c"])], [rect("c", { x: -50 })]);
+    const { next, id } = pasteChild(source);
+    const world = worldMatrix(next, id);
+    expect([world[4], world[5]]).toEqual([400 + DUPLICATE_OFFSET, 500 + DUPLICATE_OFFSET]);
+    expect(next.nodes[id]!.transform).toMatchObject({ scaleX: 2, scaleY: 2 });
+  });
+
+  it("carries the group's opacity and visibility with the child", () => {
+    const hiddenGroup = { ...group("g", { x: 500, y: 500 }, ["c"]), opacity: 0.5, visible: false };
+    const { next, id } = pasteChild(docWith([hiddenGroup], [{ ...rect("c", {}), opacity: 0.5 }]));
+    expect(next.nodes[id]).toMatchObject({ opacity: 0.25, visible: false });
+  });
+
+  it("refuses, with a reason, when a stretched group makes the child's position inexpressible", () => {
+    const source = docWith([group("g", { x: 500, y: 500, scaleX: 2 }, ["c"])], [rect("c", { rotation: 45 })]);
+    expect(planCopy(source, ["c"])).toEqual({ ok: false, reason: expect.stringMatching(/stretched too far/) });
+    expect(serializeSelection(source, ["c"])).toBeNull();
+  });
+
+  it("keeps a copied group's own children relative to it", () => {
+    const source = docWith([group("g", { x: 500, y: 500, rotation: 30 }, ["c"])], [rect("c", { x: -50 })]);
+    const parsed = JSON.parse(serializeSelection(source, ["g"])!.slice(CLIPBOARD_PREFIX.length));
+    expect(parsed.nodes).toEqual([source.nodes.g, source.nodes.c]);
+  });
+
+  it("leaves a top-level layer's transform untouched", () => {
+    const source = docWith([rect("c", { x: 12, y: 34, rotation: 10 })]);
+    const parsed = JSON.parse(serializeSelection(source, ["c"])!.slice(CLIPBOARD_PREFIX.length));
+    expect(parsed.nodes).toEqual([source.nodes.c]);
   });
 });
 
@@ -95,7 +155,7 @@ describe("planPaste", () => {
     const text = payload([rect("r", {}), photoFrame("f", "p1")], ["r", "f"]);
     const without = ok(planPaste(docWith([]), text, "design"));
     expect(without.select).toHaveLength(1);
-    expect(without.notice).toMatch(/photos/i);
+    expect(without.notice).toMatch(/photos or stickers/i);
     const withIt = ok(planPaste(withPhoto(), text, "design"));
     expect(withIt.select).toHaveLength(2);
     expect(withIt.notice).toBeUndefined();
@@ -103,7 +163,7 @@ describe("planPaste", () => {
 
   it("says why when only photos were pasted, and drops groups that end up empty", () => {
     const onlyPhoto = payload([photoFrame("f", "p1")], ["f"]);
-    expect(reason(planPaste(docWith([]), onlyPhoto, "design"))).toMatch(/already uses/);
+    expect(reason(planPaste(docWith([]), onlyPhoto, "design"))).toMatch(/photos or stickers.*already uses/i);
     const grouped = payload([group("g", {}, ["f"]), photoFrame("f", "p1")], ["g"]);
     expect(planPaste(docWith([]), grouped, "design").ok).toBe(false);
     const mixed = payload([group("g", {}, ["f", "r"]), photoFrame("f", "p1"), rect("r", {})], ["g"]);

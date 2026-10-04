@@ -1,6 +1,6 @@
-import { validateDoc } from "@vash/schema";
+import { validateDoc, type NodeId } from "@vash/schema";
 import { applyCommand, type Command } from "./commands";
-import { planDuplicate, planPaste, serializeSelection } from "./clipboard";
+import { planCopy, planDuplicate, planPaste } from "./clipboard";
 import type { EditorCore } from "./editor-core";
 import { topLevelSelection, type Plan } from "./selection-utils";
 import { planGroup, planUngroup } from "./structure";
@@ -32,13 +32,21 @@ export const groupSelection = (core: EditorCore): boolean => runPlan(core, planG
 export const ungroupSelection = (core: EditorCore): boolean => runPlan(core, planUngroup(core.doc, core.getState().selection, core.mode));
 export const pasteText = (core: EditorCore, text: string): boolean => runPlan(core, planPaste(core.doc, text, core.mode));
 
-/** Clipboard text for the selection, or null when nothing is selected. */
-export const copySelection = (core: EditorCore): string | null => serializeSelection(core.doc, core.getState().selection);
+/** Clipboard text for a plan, or null (with a notice when the layers cannot be copied). */
+function copyText(core: EditorCore, selection: readonly NodeId[]): string | null {
+  const plan = planCopy(core.doc, selection);
+  if (!plan) return null;
+  if (!plan.ok) core.setChrome({ notice: plan.reason });
+  return plan.ok ? plan.text : null;
+}
+
+/** Clipboard text for the selection, or null when nothing is selected or the layers cannot be copied. */
+export const copySelection = (core: EditorCore): string | null => copyText(core, core.getState().selection);
 
 /** Copies, then deletes. Returns null (and copies nothing) when there is no selection or a lock refuses the delete. */
 export function cutSelection(core: EditorCore): string | null {
   const { selection } = core.getState();
-  const text = serializeSelection(core.doc, selection);
+  const text = copyText(core, selection);
   if (!text) return null;
   const deletes = topLevelSelection(core.doc, selection).map((id): Command => ({ type: "delete", id }));
   return core.dispatch({ type: "batch", commands: deletes }) ? text : null;

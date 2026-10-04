@@ -1,8 +1,9 @@
 import { LIMITS, type Doc, type Node, type NodeId } from "@vash/schema";
 import type { Command } from "./commands";
 import { newNodeId } from "./insert";
+import { decompose, fromTransform, matricesClose } from "./math";
 import type { EditMode } from "./policy";
-import { parentOf } from "./scene";
+import { parentOf, worldMatrix } from "./scene";
 import { layerLimit, nodeCap, refuse, siblingsOf, subtreeOf, topLevelSelection, type Plan } from "./selection-utils";
 
 /** How far a duplicate or a pasted layer lands from the original, in artboard units. */
@@ -54,12 +55,53 @@ const NOTHING_TO_PASTE = "Nothing to paste.";
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
-/** The selected layers (top-level ones, with their descendants) as clipboard text, or null for an empty selection. */
-export function serializeSelection(doc: Doc, ids: readonly NodeId[]): string | null {
+/**
+ * A layer copied out of a group is pasted at the root, so it travels with its artboard-level
+ * transform (the same bake `planUngroup` does), opacity and visibility. Null when the groups around
+ * it are stretched too far for a transform to describe where it sits.
+ */
+function atArtboardLevel(doc: Doc, id: NodeId): Node[] | null {
+  const [self, ...rest] = subtreeOf((n) => doc.nodes[n], id);
+  if (!self) return [];
+  if (parentOf(doc, id) === null) return [self, ...rest];
+  const world = worldMatrix(doc, id);
+  const transform = decompose(world);
+  const scales = [transform.scaleX, transform.scaleY].map(Math.abs);
+  const outOfRange =
+    scales.some((s) => s < LIMITS.scaleMin || s > LIMITS.scaleMax) || Math.abs(transform.x) > LIMITS.coordinate || Math.abs(transform.y) > LIMITS.coordinate;
+  if (!matricesClose(fromTransform(transform), world) || outOfRange) return null;
+  let opacity = self.opacity;
+  let visible = self.visible;
+  for (let p = parentOf(doc, id); p; p = parentOf(doc, p)) {
+    const ancestor = doc.nodes[p]!;
+    opacity *= ancestor.opacity;
+    visible = visible && ancestor.visible;
+  }
+  return [{ ...self, transform, opacity, visible }, ...rest];
+}
+
+export type CopyPlan = { ok: true; text: string } | { ok: false; reason: string };
+
+/**
+ * The selected layers (top-level ones, with their descendants) as clipboard text, or why they cannot be
+ * copied. Null for an empty selection.
+ */
+export function planCopy(doc: Doc, ids: readonly NodeId[]): CopyPlan | null {
   const roots = topLevelSelection(doc, ids);
   if (roots.length === 0) return null;
-  const nodes = roots.flatMap((id) => subtreeOf((n) => doc.nodes[n], id));
-  return CLIPBOARD_PREFIX + JSON.stringify({ v: 1, roots, nodes });
+  const nodes: Node[] = [];
+  for (const id of roots) {
+    const lifted = atArtboardLevel(doc, id);
+    if (!lifted) return { ok: false, reason: "The groups around this layer are stretched too far to copy it." };
+    nodes.push(...lifted);
+  }
+  return { ok: true, text: CLIPBOARD_PREFIX + JSON.stringify({ v: 1, roots, nodes }) };
+}
+
+/** The selected layers as clipboard text, or null for an empty selection or one that cannot be copied. */
+export function serializeSelection(doc: Doc, ids: readonly NodeId[]): string | null {
+  const plan = planCopy(doc, ids);
+  return plan?.ok ? plan.text : null;
 }
 
 function parsePayload(text: string): { roots: NodeId[]; nodes: Node[] } | null {
@@ -120,7 +162,7 @@ export function planPaste(doc: Doc, text: string, mode: EditMode): Plan {
   };
 
   const kept = payload.roots.map((id) => prune(id, new Set())).filter((k): k is Node[] => k !== null);
-  if (kept.length === 0) return refuse(dropped > 0 ? "Photos can only be pasted into a design that already uses them." : NOTHING_TO_PASTE);
+  if (kept.length === 0) return refuse(dropped > 0 ? "Photos or stickers can only be pasted into a design that already uses them." : NOTHING_TO_PASTE);
 
   const local = new Map(kept.flat().map((n) => [n.id, n] as const));
   let copies: Node[][];
@@ -135,6 +177,6 @@ export function planPaste(doc: Doc, text: string, mode: EditMode): Plan {
     type: "batch",
     commands: copies.map((nodes, i): Command => ({ type: "insert", nodes, parent: null, index: doc.root.length + i })),
   };
-  const notice = dropped > 0 ? "Some photos weren't pasted because this design doesn't use them." : undefined;
+  const notice = dropped > 0 ? "Some photos or stickers weren't pasted because this design doesn't use them." : undefined;
   return { ok: true, command, select: copies.map((c) => c[0]!.id), ...(notice ? { notice } : {}) };
 }

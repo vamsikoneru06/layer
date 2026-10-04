@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { serializeSelection } from "./clipboard";
 import { EditorCore } from "./editor-core";
 import { copySelection, cutSelection, duplicateSelection, groupSelection, pasteText, ungroupSelection } from "./edit-ops";
-import { docWith, rect } from "./test-docs";
+import { docWith, group, rect } from "./test-docs";
 
 const setup = () => new EditorCore(docWith([rect("a", { x: 100, y: 100 }), rect("b", { x: 300, y: 300 }), { ...rect("locked", { x: 500 }), lock: "locked" }]));
 const tamper = (text: string, edit: (node: Record<string, unknown>) => void) => {
@@ -80,6 +80,16 @@ describe("copy, cut and paste", () => {
     expect(cutSelection(core)).toBeNull();
     expect(core.doc.nodes.locked).toBeDefined();
     expect(core.getState().notice).toMatch(/locked/i);
+  });
+
+  it("says why a stretched group's child cannot be copied or cut, and changes nothing", () => {
+    const doc = docWith([group("g", { x: 500, y: 500, scaleX: 2 }, ["c"])], [rect("c", { rotation: 45 })]);
+    const core = new EditorCore(doc);
+    core.select(["c"]);
+    expect(copySelection(core)).toBeNull();
+    expect(core.getState().notice).toMatch(/stretched too far/);
+    expect(cutSelection(core)).toBeNull();
+    expect(core.doc).toBe(doc);
   });
 
   it("refuses text that is not a payload, with a message (Review Focus 1)", () => {
