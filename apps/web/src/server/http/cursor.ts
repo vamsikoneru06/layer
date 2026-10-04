@@ -16,6 +16,13 @@ export function encodeCursor(c: Cursor): string {
   return Buffer.from(JSON.stringify([c.at, c.id])).toString("base64url");
 }
 
+/** Years 1–9999 only: JavaScript accepts dates Postgres timestamptz can't parse back (year 0, ±275760). */
+function inTimestampRange(ms: number): boolean {
+  if (Number.isNaN(ms)) return false;
+  const year = new Date(ms).getUTCFullYear();
+  return year >= 1 && year <= 9999;
+}
+
 export function decodeCursor(value: string): Cursor {
   try {
     const parsed: unknown = JSON.parse(Buffer.from(value, "base64url").toString("utf8"));
@@ -23,7 +30,7 @@ export function decodeCursor(value: string): Cursor {
       Array.isArray(parsed) &&
       parsed.length === 2 &&
       typeof parsed[0] === "string" &&
-      !Number.isNaN(Date.parse(parsed[0])) &&
+      inTimestampRange(Date.parse(parsed[0])) &&
       typeof parsed[1] === "string" &&
       isUuid(parsed[1])
     ) {

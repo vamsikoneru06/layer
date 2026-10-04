@@ -1,9 +1,11 @@
 /**
- * The 20 seed templates, authored in code until Author Mode exists (spec §8.3).
+ * The seed templates, authored in code until Author Mode exists (spec §8.3). Photo frames start
+ * with bundled sample photos (templates/samples.ts) that users replace with their own.
  * Original designs; style cues only from current editorial / social trends — no copied artwork.
  * `pnpm --filter @vash/web templates:build` writes them to templates/seed/*.json.
  */
-import { defaultFilters, FORMATS, type Doc, type Fill, type FormatKey, type FrameNode, type Lock, type Node, type ShapeNode, type TextNode } from "@vash/schema";
+import { defaultFilters, FORMATS, type AssetRef, type Doc, type Fill, type FormatKey, type FrameNode, type Lock, type Node, type ShapeNode, type TextNode } from "@vash/schema";
+import { sampleAssetRef } from "./samples";
 
 interface Box {
   x: number;
@@ -124,19 +126,31 @@ interface Definition {
   tags: string[];
   background: Fill;
   nodes: Node[];
+  /** Sample photo keys (templates/samples.json), one per photo frame in the order they appear. */
+  photos?: string[];
 }
 
 function template(d: Definition): Doc {
   const size = FORMATS[d.format];
+  const frames = d.nodes.filter((n): n is FrameNode => n.type === "frame");
+  const photos = d.photos ?? [];
+  if (photos.length !== frames.length) throw new Error(`${d.id}: ${frames.length} photo frames but ${photos.length} sample photos`);
+  const assets: Record<string, AssetRef> = {};
+  const nodes = d.nodes.map((n) => {
+    if (n.type !== "frame") return n;
+    const ref = sampleAssetRef(photos[frames.indexOf(n)]!);
+    assets[ref.id] = ref;
+    return { ...n, content: { assetId: ref.id, offsetX: 0, offsetY: 0, scale: 1 } };
+  });
   return {
     schemaVersion: 1,
     id: d.id,
     kind: "template",
     meta: { title: d.title, category: d.category, tags: d.tags, format: d.format },
     artboard: { width: size.width, height: size.height, background: d.background },
-    root: d.nodes.map((n) => n.id),
-    nodes: Object.fromEntries(d.nodes.map((n) => [n.id, n])),
-    assets: {},
+    root: nodes.map((n) => n.id),
+    nodes: Object.fromEntries(nodes.map((n) => [n.id, n])),
+    assets,
   };
 }
 
@@ -147,6 +161,7 @@ export function seedTemplates(): Doc[] {
     // ── Instagram post (1080 × 1080) ─────────────────────────────────────────
     template({
       id: "post-editorial-bloom",
+      photos: ["arch-window"],
       title: "Editorial Bloom",
       format: "ig-post",
       category: "minimal",
@@ -155,7 +170,7 @@ export function seedTemplates(): Doc[] {
       nodes: [
         photo("photo", "Arch photo", { x: 90, y: 150, w: 440, h: 700 }, "arch"),
         rect("accent", "Accent line", { x: 590, y: 240, w: 80, h: 6 }, solid(RUST)),
-        text("eyebrow", "Eyebrow", "VOL. 04 — SPRING EDIT", { x: 590, y: 270, w: 400, h: 40 }, { family: "Inter", weight: 600, size: 22, letterSpacing: 4, color: "#6B6259", maxChars: 40 }),
+        text("eyebrow", "Eyebrow", "VOL. 04 · SPRING EDIT", { x: 590, y: 270, w: 400, h: 40 }, { family: "Inter", weight: 600, size: 22, letterSpacing: 4, color: "#6B6259", maxChars: 40 }),
         text("headline", "Headline", "Slow mornings, soft light", { x: 590, y: 330, w: 420, h: 330 }, { family: "DM Serif Display", size: 76, lineHeight: 1.05, color: "#1E1B18", maxChars: 60 }),
         text("body", "Body", "A small collection of quiet places and the people who make them feel like home.", { x: 590, y: 690, w: 390, h: 120 }, { family: "Inter", size: 24, lineHeight: 1.4, color: "#4A433C", maxChars: 160 }),
         text("handle", "Handle", "@yourstudio", { x: 590, y: 890, w: 300, h: 36 }, { family: "Inter", weight: 500, size: 20, color: RUST }),
@@ -163,6 +178,7 @@ export function seedTemplates(): Doc[] {
     }),
     template({
       id: "post-confetti-birthday",
+      photos: ["birthday-child"],
       title: "Confetti Birthday",
       format: "ig-post",
       category: "birthday",
@@ -184,6 +200,7 @@ export function seedTemplates(): Doc[] {
     }),
     template({
       id: "post-chefs-special",
+      photos: ["plated-dish"],
       title: "Chef's Special",
       format: "ig-post",
       category: "food",
@@ -210,7 +227,7 @@ export function seedTemplates(): Doc[] {
         text("mark", "Quote mark", "“", { x: 80, y: 40, w: 200, h: 260 }, { family: "DM Serif Display", size: 260, color: "#F2C94C", maxChars: 2 }),
         text("quote", "Quote", "DONE IS BETTER THAN PERFECT", { x: 80, y: 290, w: 920, h: 450 }, { family: "Bebas Neue", size: 150, lineHeight: 0.95, color: "#F2C94C", maxChars: 60 }),
         rect("line", "Line", { x: 80, y: 800, w: 120, h: 6 }, solid("#F2C94C")),
-        text("attribution", "Attribution", "— Notes to self", { x: 80, y: 830, w: 700, h: 44 }, { family: "Inter", weight: 500, size: 30, color: "#BDBDBD", maxChars: 40 }),
+        text("attribution", "Attribution", "Notes to self", { x: 80, y: 830, w: 700, h: 44 }, { family: "Inter", weight: 500, size: 30, color: "#BDBDBD", maxChars: 40 }),
         text("handle", "Handle", "@yourhandle", { x: 680, y: 960, w: 320, h: 36 }, { family: "Inter", weight: 500, size: 24, color: "#7A7A7A", align: "right" }),
       ],
     }),
@@ -218,6 +235,7 @@ export function seedTemplates(): Doc[] {
     // ── Instagram story (1080 × 1920) ────────────────────────────────────────
     template({
       id: "story-weekend-dump",
+      photos: ["beach-day", "golden-hour", "sea-swim"],
       title: "Weekend Photo Dump",
       format: "ig-story",
       category: "travel",
@@ -233,11 +251,12 @@ export function seedTemplates(): Doc[] {
     }),
     template({
       id: "story-flash-sale",
+      photos: ["sneakers"],
       title: "Flash Sale Drop",
       format: "ig-story",
       category: "sale",
       tags: ["sale", "discount", "gradient", "shop"],
-      background: linear(160, "#2D5BFF", "#8A2BE2"),
+      background: linear(160, "#FF5A36", "#FFB020"),
       nodes: [
         text("eyebrow", "Eyebrow", "NEW DROP · 48 HOURS ONLY", { x: 90, y: 160, w: 900, h: 44 }, { family: "Inter", weight: 700, size: 30, letterSpacing: 5, color: "#FFFFFF", align: "center", maxChars: 40 }),
         text("offer", "Offer", "50% OFF", { x: 60, y: 240, w: 960, h: 220 }, { family: "Archivo Black", size: 190, lineHeight: 0.95, color: "#FFFFFF", align: "center", maxChars: 12 }),
@@ -245,12 +264,13 @@ export function seedTemplates(): Doc[] {
         polygon("burst", "Burst", { x: 760, y: 470, w: 240, h: 240, rotation: 12 }, 12, solid("#FFE14D")),
         text("burst-label", "Burst label", "EVERYTHING", { x: 760, y: 565, w: 240, h: 50, rotation: 12 }, { family: "Archivo Black", size: 26, color: "#1A1A1A", align: "center", maxChars: 12 }),
         rect("cta-pill", "Button", { x: 290, y: 1560, w: 500, h: 120 }, solid("#FFFFFF"), { radius: 60 }),
-        text("cta", "Button label", "Shop the sale", { x: 290, y: 1590, w: 500, h: 60 }, { family: "Poppins", weight: 700, size: 44, color: "#2D5BFF", align: "center", maxChars: 20 }),
-        text("hint", "Hint", "Link in bio", { x: 290, y: 1730, w: 500, h: 40 }, { family: "Inter", weight: 500, size: 28, color: "#E6E0FF", align: "center" }),
+        text("cta", "Button label", "Shop the sale", { x: 290, y: 1590, w: 500, h: 60 }, { family: "Poppins", weight: 700, size: 44, color: "#E0431F", align: "center", maxChars: 20 }),
+        text("hint", "Hint", "Link in bio", { x: 290, y: 1730, w: 500, h: 40 }, { family: "Inter", weight: 500, size: 28, color: "#FFF1E0", align: "center" }),
       ],
     }),
     template({
       id: "story-countdown",
+      photos: ["speaker"],
       title: "Event Countdown",
       format: "ig-story",
       category: "events",
@@ -286,6 +306,7 @@ export function seedTemplates(): Doc[] {
     // ── YouTube thumbnail (1280 × 720) ───────────────────────────────────────
     template({
       id: "thumb-three-tips",
+      photos: ["presenter"],
       title: "Three Tips",
       format: "yt-thumbnail",
       category: "business",
@@ -302,6 +323,7 @@ export function seedTemplates(): Doc[] {
     }),
     template({
       id: "thumb-48-hours",
+      photos: ["city-street"],
       title: "48 Hours In",
       format: "yt-thumbnail",
       category: "travel",
@@ -317,6 +339,7 @@ export function seedTemplates(): Doc[] {
     }),
     template({
       id: "thumb-quick-recipe",
+      photos: ["pasta-bowl"],
       title: "Quick Recipe",
       format: "yt-thumbnail",
       category: "food",
@@ -332,6 +355,7 @@ export function seedTemplates(): Doc[] {
     }),
     template({
       id: "thumb-versus",
+      photos: ["coffee-cup", "tea-cup"],
       title: "Head to Head",
       format: "yt-thumbnail",
       category: "business",
@@ -352,6 +376,7 @@ export function seedTemplates(): Doc[] {
     // ── Poster (1240 × 1754) ─────────────────────────────────────────────────
     template({
       id: "poster-design-week",
+      photos: ["modern-building"],
       title: "Design Week",
       format: "poster",
       category: "events",
@@ -362,7 +387,7 @@ export function seedTemplates(): Doc[] {
         photo("photo", "Photo", { x: 90, y: 700, w: 620, h: 620 }),
         text("title-1", "Title", "DESIGN", { x: 90, y: 110, w: 800, h: 190 }, { family: "Space Grotesk", weight: 700, size: 200, lineHeight: 0.9, letterSpacing: -6, color: "#111111", maxChars: 12 }),
         text("title-2", "Title", "WEEK", { x: 90, y: 300, w: 800, h: 190 }, { family: "Space Grotesk", weight: 700, size: 200, lineHeight: 0.9, letterSpacing: -6, color: "#111111", maxChars: 12 }),
-        text("dates", "Dates", "OCT 14—18", { x: 760, y: 1120, w: 400, h: 80 }, { family: "Space Grotesk", weight: 700, size: 64, color: "#111111", maxChars: 16 }),
+        text("dates", "Dates", "OCT 14–18", { x: 760, y: 1120, w: 400, h: 80 }, { family: "Space Grotesk", weight: 700, size: 64, color: "#111111", maxChars: 16 }),
         text("blurb", "Blurb", "Talks, workshops and open studios across the city.", { x: 760, y: 1220, w: 400, h: 170 }, { family: "Inter", weight: 500, size: 30, lineHeight: 1.4, color: "#333333", maxChars: 120 }),
         rect("band", "Band", { x: 0, y: 1604, w: 1240, h: 150 }, solid("#111111")),
         text("footer", "Footer", "Free entry · Register online", { x: 90, y: 1655, w: 1060, h: 50 }, { family: "Space Grotesk", weight: 600, size: 40, color: "#F2F0EA", maxChars: 60 }),
@@ -370,6 +395,7 @@ export function seedTemplates(): Doc[] {
     }),
     template({
       id: "poster-now-open",
+      photos: ["cafe-interior"],
       title: "Now Open",
       format: "poster",
       category: "business",
@@ -386,6 +412,7 @@ export function seedTemplates(): Doc[] {
     }),
     template({
       id: "poster-midnight-gig",
+      photos: ["concert"],
       title: "Midnight Gig",
       format: "poster",
       category: "events",
@@ -402,6 +429,7 @@ export function seedTemplates(): Doc[] {
     }),
     template({
       id: "poster-still-life",
+      photos: ["flowers-vase"],
       title: "Still Life",
       format: "poster",
       category: "minimal",
@@ -412,7 +440,7 @@ export function seedTemplates(): Doc[] {
         photo("photo", "Photo", { x: 220, y: 200, w: 800, h: 1100 }),
         text("title", "Title", "Still Life", { x: 220, y: 1350, w: 740, h: 130 }, { family: "Playfair Display", italic: true, size: 110, color: "#1A1A1A", maxChars: 30 }),
         ellipse("dot", "Dot", { x: 980, y: 1392, w: 40, h: 40 }, solid(RUST)),
-        text("subtitle", "Subtitle", "Photographs 2019—2025", { x: 220, y: 1490, w: 800, h: 44 }, { family: "Inter", weight: 500, size: 30, letterSpacing: 2, color: "#6B6B6B", maxChars: 40 }),
+        text("subtitle", "Subtitle", "Photographs 2019–2025", { x: 220, y: 1490, w: 800, h: 44 }, { family: "Inter", weight: 500, size: 30, letterSpacing: 2, color: "#6B6B6B", maxChars: 40 }),
         text("venue", "Venue", "Gallery 3 · Opens 4 Nov", { x: 620, y: 1640, w: 400, h: 40 }, { family: "Inter", weight: 500, size: 26, color: "#1A1A1A", align: "right", maxChars: 40 }),
       ],
     }),
@@ -420,6 +448,7 @@ export function seedTemplates(): Doc[] {
     // ── Invitation (1500 × 2100) ─────────────────────────────────────────────
     template({
       id: "invite-arch-wedding",
+      photos: ["wedding-couple"],
       title: "Arch Wedding",
       format: "invitation",
       category: "events",
@@ -439,6 +468,7 @@ export function seedTemplates(): Doc[] {
     }),
     template({
       id: "invite-balloon-party",
+      photos: ["kid-balloons"],
       title: "Balloon Party",
       format: "invitation",
       category: "birthday",
@@ -462,6 +492,7 @@ export function seedTemplates(): Doc[] {
     }),
     template({
       id: "invite-supper-club",
+      photos: ["dinner-table"],
       title: "Supper Club",
       format: "invitation",
       category: "food",
@@ -479,6 +510,7 @@ export function seedTemplates(): Doc[] {
     }),
     template({
       id: "invite-festive-greetings",
+      photos: ["family-lights"],
       title: "Festive Greetings",
       format: "invitation",
       category: "events",
@@ -493,6 +525,274 @@ export function seedTemplates(): Doc[] {
         text("wishes", "Wishes", "Warm wishes to you and your family", { x: 150, y: 1480, w: 1200, h: 90 }, { family: "Playfair Display", italic: true, size: 60, color: "#FCEBD0", align: "center", maxChars: 50 }),
         text("invite", "Invite", "Join us for dinner · Saturday, 7 PM", { x: 150, y: 1640, w: 1200, h: 60 }, { family: "Inter", weight: 600, size: 40, color: "#F2D9A8", align: "center", maxChars: 50 }),
         text("from", "From", "With love, the Reddy family", { x: 150, y: 1780, w: 1200, h: 90 }, { family: "Caveat", weight: 700, size: 64, color: "#F7D774", align: "center", maxChars: 50 }),
+      ],
+    }),
+    // ── More Instagram posts ────────────────────────────────────────────────
+    template({
+      id: "post-travel-postcard",
+      photos: ["mountain-lake"],
+      title: "Travel Postcard",
+      format: "ig-post",
+      category: "travel",
+      tags: ["travel", "postcard", "mountains", "holiday"],
+      background: solid("#F7F2E8"),
+      nodes: [
+        photo("photo", "Photo", { x: 60, y: 60, w: 960, h: 720 }, "rect", 24),
+        text("greeting", "Greeting", "greetings from", { x: 60, y: 800, w: 960, h: 80 }, { family: "Caveat", weight: 700, size: 64, color: "#2B2B2B", align: "center", maxChars: 30 }),
+        text("place", "Place", "THE MOUNTAINS", { x: 60, y: 870, w: 960, h: 130 }, { family: "Bebas Neue", size: 124, color: "#1F3A2E", align: "center", maxChars: 20 }),
+        text("handle", "Handle", "@yourhandle", { x: 60, y: 1005, w: 960, h: 36 }, { family: "Inter", weight: 500, size: 22, color: "#6B6259", align: "center" }),
+      ],
+    }),
+    template({
+      id: "post-new-arrivals",
+      photos: ["fashion-model", "clothes-rack"],
+      title: "New Arrivals",
+      format: "ig-post",
+      category: "sale",
+      tags: ["fashion", "new in", "shop", "dark"],
+      background: solid("#111111"),
+      nodes: [
+        photo("left", "Left photo", { x: 40, y: 40, w: 490, h: 760 }, "rect", 20),
+        photo("right", "Right photo", { x: 550, y: 40, w: 490, h: 760 }, "rect", 20),
+        text("title", "Title", "NEW ARRIVALS", { x: 40, y: 830, w: 1000, h: 110 }, { family: "Archivo Black", size: 96, color: "#FFFFFF", maxChars: 20 }),
+        text("subtitle", "Subtitle", "The autumn edit, in store and online now", { x: 40, y: 950, w: 800, h: 44 }, { family: "Inter", size: 28, color: "#BDBDBD", maxChars: 60 }),
+        text("cta", "Call to action", "SHOP", { x: 880, y: 955, w: 160, h: 40 }, { family: "Inter", weight: 700, size: 26, letterSpacing: 6, color: "#FFE14D", align: "right", maxChars: 10 }),
+      ],
+    }),
+    template({
+      id: "post-hiring",
+      photos: ["team-office"],
+      title: "We're Hiring",
+      format: "ig-post",
+      category: "business",
+      tags: ["hiring", "jobs", "team", "careers"],
+      background: solid("#0F2A4A"),
+      nodes: [
+        photo("photo", "Team photo", { x: 0, y: 0, w: 1080, h: 560 }),
+        text("title", "Title", "WE'RE HIRING", { x: 70, y: 620, w: 940, h: 100 }, { family: "Archivo Black", size: 88, color: "#FFFFFF", maxChars: 24 }),
+        text("role", "Role", "Product designer · Full time · Bengaluru or remote", { x: 70, y: 735, w: 940, h: 90 }, { family: "Inter", size: 30, lineHeight: 1.4, color: "#C9D6E8", maxChars: 90 }),
+        rect("button", "Button", { x: 70, y: 880, w: 380, h: 90 }, solid("#4FD1C5"), { radius: 16 }),
+        text("button-label", "Button label", "Apply via link in bio", { x: 70, y: 905, w: 380, h: 40 }, { family: "Poppins", weight: 600, size: 28, color: "#0F2A4A", align: "center", maxChars: 26 }),
+        text("handle", "Handle", "@yourcompany", { x: 640, y: 990, w: 370, h: 36 }, { family: "Inter", size: 22, color: "#7F95B2", align: "right" }),
+      ],
+    }),
+    template({
+      id: "post-anniversary",
+      photos: ["couple-sunset"],
+      title: "Anniversary",
+      format: "ig-post",
+      category: "events",
+      tags: ["anniversary", "love", "couple", "warm"],
+      background: linear(180, "#FFE8D6", "#FFD1BA"),
+      nodes: [
+        ellipse("ring", "Photo ring", { x: 300, y: 100, w: 480, h: 480 }, solid("#FFFFFF")),
+        photo("photo", "Couple photo", { x: 320, y: 120, w: 440, h: 440 }, "ellipse"),
+        text("title", "Title", "5 years", { x: 90, y: 620, w: 900, h: 150 }, { family: "Pacifico", size: 110, color: "#C8553D", align: "center", maxChars: 20 }),
+        text("subtitle", "Subtitle", "and counting, with you", { x: 90, y: 780, w: 900, h: 64 }, { family: "Playfair Display", italic: true, size: 44, color: "#7A3E2E", align: "center", maxChars: 40 }),
+        text("since", "Since", "SINCE JUNE 2021", { x: 90, y: 880, w: 900, h: 40 }, { family: "Inter", weight: 600, size: 26, letterSpacing: 6, color: "#7A3E2E", align: "center", maxChars: 30 }),
+      ],
+    }),
+    template({
+      id: "post-minimal-portrait",
+      photos: ["portrait-bw"],
+      title: "Minimal Portrait",
+      format: "ig-post",
+      category: "minimal",
+      tags: ["portrait", "black and white", "photography", "series"],
+      background: solid("#EDEDED"),
+      nodes: [
+        photo("photo", "Portrait", { x: 80, y: 80, w: 560, h: 920 }),
+        text("title", "Title", "Portraits", { x: 680, y: 120, w: 340, h: 130 }, { family: "DM Serif Display", italic: true, size: 96, color: "#1A1A1A", maxChars: 16 }),
+        text("body", "Body", "A series on light, stillness and faces.", { x: 680, y: 280, w: 340, h: 150 }, { family: "Inter", size: 26, lineHeight: 1.45, color: "#555555", maxChars: 90 }),
+        rect("line", "Line", { x: 680, y: 900, w: 60, h: 3 }, solid("#1A1A1A")),
+        text("handle", "Handle", "@yourname", { x: 680, y: 925, w: 340, h: 36 }, { family: "Inter", weight: 500, size: 22, color: "#1A1A1A" }),
+      ],
+    }),
+    template({
+      id: "post-morning-quote",
+      photos: ["sunrise-mountains"],
+      title: "Morning Quote",
+      format: "ig-post",
+      category: "quotes",
+      tags: ["quote", "morning", "sunrise", "calm"],
+      background: solid("#000000"),
+      nodes: [
+        photo("photo", "Background photo", { x: 0, y: 0, w: 1080, h: 1080 }),
+        rect("card", "Text backing", { x: 120, y: 330, w: 840, h: 440 }, solid("#00000073"), { radius: 24 }),
+        text("quote", "Quote", "Start where you are.", { x: 160, y: 380, w: 760, h: 260 }, { family: "DM Serif Display", size: 104, lineHeight: 1.05, color: "#FFFFFF", align: "center", maxChars: 60 }),
+        text("greeting", "Greeting", "good morning", { x: 160, y: 660, w: 760, h: 80 }, { family: "Caveat", weight: 700, size: 60, color: "#FFE4B5", align: "center", maxChars: 30 }),
+        text("handle", "Handle", "@yourhandle", { x: 90, y: 1000, w: 900, h: 36 }, { family: "Inter", weight: 500, size: 24, color: "#FFFFFF", align: "center" }),
+      ],
+    }),
+    template({
+      id: "post-photo-grid",
+      photos: ["forest-trail", "ocean-waves", "desert-dunes", "snowy-peaks"],
+      title: "Year in Places",
+      format: "ig-post",
+      category: "travel",
+      tags: ["grid", "recap", "travel", "collage"],
+      background: solid("#FFFFFF"),
+      nodes: [
+        photo("p1", "Photo 1", { x: 30, y: 30, w: 500, h: 500 }, "rect", 16),
+        photo("p2", "Photo 2", { x: 550, y: 30, w: 500, h: 500 }, "rect", 16),
+        photo("p3", "Photo 3", { x: 30, y: 550, w: 500, h: 500 }, "rect", 16),
+        photo("p4", "Photo 4", { x: 550, y: 550, w: 500, h: 500 }, "rect", 16),
+        ellipse("badge", "Badge", { x: 400, y: 400, w: 280, h: 280 }, solid("#FFFFFF")),
+        text("title", "Title", "2026 in places", { x: 420, y: 480, w: 240, h: 120 }, { family: "Poppins", weight: 700, size: 44, lineHeight: 1.1, color: "#1A1A1A", align: "center", maxChars: 24 }),
+      ],
+    }),
+
+    // ── More stories ────────────────────────────────────────────────────────
+    template({
+      id: "story-coffee-morning",
+      photos: ["latte-art"],
+      title: "Coffee Morning",
+      format: "ig-story",
+      category: "food",
+      tags: ["coffee", "cafe", "morning", "warm"],
+      background: linear(180, "#F3E9DC", "#E6D3BD"),
+      nodes: [
+        text("title", "Title", "slow mornings", { x: 90, y: 90, w: 900, h: 140 }, { family: "Caveat", weight: 700, size: 110, color: "#5B3A29", align: "center", maxChars: 30 }),
+        photo("photo", "Coffee photo", { x: 120, y: 260, w: 840, h: 1100 }, "arch"),
+        text("body", "Body", "Oat latte, fresh bread and nowhere to be.", { x: 140, y: 1420, w: 800, h: 110 }, { family: "Inter", size: 34, lineHeight: 1.35, color: "#6F4E37", align: "center", maxChars: 80 }),
+        rect("divider", "Divider", { x: 490, y: 1570, w: 100, h: 4 }, solid("#6F4E37")),
+        text("details", "Details", "OPEN 7 AM · 12 BAKER STREET", { x: 90, y: 1610, w: 900, h: 40 }, { family: "Inter", weight: 600, size: 26, letterSpacing: 4, color: "#5B3A29", align: "center", maxChars: 50 }),
+      ],
+    }),
+    template({
+      id: "story-workout",
+      photos: ["workout"],
+      title: "Workout Plan",
+      format: "ig-story",
+      category: "minimal",
+      tags: ["fitness", "workout", "gym", "plan"],
+      background: solid("#0B0B0B"),
+      nodes: [
+        photo("photo", "Photo", { x: 0, y: 0, w: 1080, h: 1200 }),
+        text("eyebrow", "Eyebrow", "TODAY'S WORKOUT", { x: 80, y: 1250, w: 920, h: 44 }, { family: "Inter", weight: 700, size: 30, letterSpacing: 6, color: "#C6FF3D", maxChars: 30 }),
+        text("title", "Title", "Upper body\npush day", { x: 80, y: 1310, w: 920, h: 240 }, { family: "Archivo Black", size: 104, lineHeight: 1.05, color: "#FFFFFF", maxChars: 40 }),
+        text("plan", "Plan", "Bench press 4 × 8\nShoulder press 3 × 10\nPush-ups 3 × 15", { x: 80, y: 1590, w: 920, h: 190 }, { family: "Inter", size: 36, lineHeight: 1.5, color: "#BDBDBD", maxChars: 140 }),
+      ],
+    }),
+    template({
+      id: "story-plant-sale",
+      photos: ["plants"],
+      title: "Plant Sale",
+      format: "ig-story",
+      category: "sale",
+      tags: ["plants", "sale", "green", "shop"],
+      background: solid("#E7F0E4"),
+      nodes: [
+        text("title", "Title", "PLANT SALE", { x: 60, y: 160, w: 960, h: 160 }, { family: "Archivo Black", size: 140, color: "#1F4D2B", align: "center", maxChars: 16 }),
+        text("offer", "Offer", "Up to 30% off indoor plants", { x: 90, y: 340, w: 900, h: 64 }, { family: "Poppins", weight: 600, size: 44, color: "#2F6B3D", align: "center", maxChars: 40 }),
+        photo("photo", "Plant photo", { x: 140, y: 470, w: 800, h: 1060 }, "arch"),
+        text("details", "Details", "This weekend only · Green Corner Nursery", { x: 90, y: 1600, w: 900, h: 50 }, { family: "Inter", size: 32, color: "#1F4D2B", align: "center", maxChars: 60 }),
+        rect("button", "Button", { x: 290, y: 1700, w: 500, h: 110 }, solid("#1F4D2B"), { radius: 24 }),
+        text("button-label", "Button label", "Visit the shop", { x: 290, y: 1727, w: 500, h: 56 }, { family: "Poppins", weight: 700, size: 40, color: "#FFFFFF", align: "center", maxChars: 20 }),
+      ],
+    }),
+
+    // ── More thumbnails ─────────────────────────────────────────────────────
+    template({
+      id: "thumb-podcast",
+      photos: ["podcast-mic"],
+      title: "Podcast Episode",
+      format: "yt-thumbnail",
+      category: "business",
+      tags: ["podcast", "episode", "dark", "interview"],
+      background: solid("#16161A"),
+      nodes: [
+        photo("photo", "Photo", { x: 760, y: 0, w: 520, h: 720 }),
+        text("episode", "Episode", "EP. 12", { x: 70, y: 90, w: 500, h: 40 }, { family: "Inter", weight: 700, size: 30, letterSpacing: 6, color: "#FF5A36", maxChars: 12 }),
+        text("title", "Title", "Why small brands win", { x: 70, y: 150, w: 640, h: 320 }, { family: "Archivo Black", size: 88, lineHeight: 1.0, color: "#FFFFFF", maxChars: 40 }),
+        rect("line", "Line", { x: 70, y: 510, w: 120, h: 8 }, solid("#FF5A36")),
+        text("guest", "Guest", "with Priya Nair", { x: 70, y: 545, w: 640, h: 50 }, { family: "Poppins", weight: 500, size: 36, color: "#CFCFD6", maxChars: 40 }),
+      ],
+    }),
+    template({
+      id: "thumb-road-trip",
+      photos: ["road-trip"],
+      title: "Road Trip",
+      format: "yt-thumbnail",
+      category: "travel",
+      tags: ["road trip", "travel", "vlog", "adventure"],
+      background: solid("#000000"),
+      nodes: [
+        photo("photo", "Photo", { x: 0, y: 0, w: 1280, h: 720 }),
+        rect("shade", "Shade", { x: 0, y: 420, w: 1280, h: 300 }, linear(180, "#00000000", "#000000CC")),
+        text("title", "Title", "ROAD TRIP", { x: 60, y: 440, w: 1100, h: 170 }, { family: "Archivo Black", size: 150, color: "#FFFFFF", maxChars: 16 }),
+        text("subtitle", "Subtitle", "5 days · 1,200 km · 1 tiny car", { x: 60, y: 620, w: 1100, h: 60 }, { family: "Poppins", weight: 600, size: 40, color: "#FFE14D", maxChars: 50 }),
+      ],
+    }),
+
+    // ── More posters ────────────────────────────────────────────────────────
+    template({
+      id: "poster-book-club",
+      photos: ["books"],
+      title: "Book Club",
+      format: "poster",
+      category: "events",
+      tags: ["books", "reading", "club", "community"],
+      background: solid("#F4EDE1"),
+      nodes: [
+        text("title", "Title", "BOOK CLUB", { x: 90, y: 90, w: 1060, h: 230 }, { family: "Bebas Neue", size: 220, color: "#3A2E25", align: "center", maxChars: 16 }),
+        photo("photo", "Photo", { x: 220, y: 360, w: 800, h: 900 }, "rect", 12),
+        text("book", "This month", "This month: The Remains of the Day", { x: 120, y: 1320, w: 1000, h: 150 }, { family: "Playfair Display", weight: 700, size: 56, lineHeight: 1.15, color: "#3A2E25", align: "center", maxChars: 70 }),
+        text("when", "When", "Last Thursday of the month · 7 PM · Corner Café", { x: 120, y: 1500, w: 1000, h: 50 }, { family: "Inter", size: 30, color: "#6B5B4E", align: "center", maxChars: 70 }),
+        text("welcome", "Welcome", "Everyone welcome. Bring a friend.", { x: 120, y: 1580, w: 1000, h: 50 }, { family: "Inter", weight: 600, size: 30, color: "#A0522D", align: "center", maxChars: 50 }),
+      ],
+    }),
+    template({
+      id: "poster-farmers-market",
+      photos: ["vegetables", "fruit"],
+      title: "Farmers' Market",
+      format: "poster",
+      category: "food",
+      tags: ["market", "local", "fresh", "weekend"],
+      background: solid("#FFF8E7"),
+      nodes: [
+        text("title", "Title", "Farmers' Market", { x: 90, y: 100, w: 1060, h: 180 }, { family: "DM Serif Display", size: 140, color: "#2F5D31", align: "center", maxChars: 24 }),
+        text("tagline", "Tagline", "FRESH · LOCAL · SEASONAL", { x: 90, y: 300, w: 1060, h: 50 }, { family: "Inter", weight: 700, size: 34, letterSpacing: 8, color: "#D0782A", align: "center", maxChars: 40 }),
+        photo("left", "Left photo", { x: 90, y: 400, w: 520, h: 760 }, "rect", 24),
+        photo("right", "Right photo", { x: 630, y: 400, w: 520, h: 760 }, "rect", 24),
+        text("when", "When", "Every Saturday · 8 AM to 1 PM", { x: 90, y: 1240, w: 1060, h: 70 }, { family: "Poppins", weight: 600, size: 48, color: "#2F5D31", align: "center", maxChars: 50 }),
+        text("where", "Where", "Town Square Park", { x: 90, y: 1330, w: 1060, h: 50 }, { family: "Inter", size: 36, color: "#5A6B4E", align: "center", maxChars: 40 }),
+      ],
+    }),
+
+    // ── More invitations ────────────────────────────────────────────────────
+    template({
+      id: "invite-graduation",
+      photos: ["graduate"],
+      title: "Graduation Party",
+      format: "invitation",
+      category: "events",
+      tags: ["graduation", "party", "celebration", "navy"],
+      background: solid("#0E1B2E"),
+      nodes: [
+        text("eyebrow", "Eyebrow", "CLASS OF 2026", { x: 150, y: 180, w: 1200, h: 60 }, { family: "Inter", weight: 700, size: 40, letterSpacing: 10, color: "#E9C46A", align: "center", maxChars: 24 }),
+        photo("photo", "Graduate photo", { x: 400, y: 320, w: 700, h: 900 }, "arch"),
+        text("title", "Title", "Graduation party", { x: 150, y: 1290, w: 1200, h: 150 }, { family: "DM Serif Display", size: 120, color: "#FFFFFF", align: "center", maxChars: 30 }),
+        text("name", "Name", "Join us to celebrate Aarav", { x: 150, y: 1460, w: 1200, h: 70 }, { family: "Poppins", weight: 500, size: 48, color: "#D8DEE9", align: "center", maxChars: 40 }),
+        rect("divider", "Divider", { x: 700, y: 1580, w: 100, h: 4 }, solid("#E9C46A")),
+        text("details", "Details", "Sunday, 14 June · 6 PM\nThe Garden Hall", { x: 150, y: 1630, w: 1200, h: 150 }, { family: "Inter", size: 40, lineHeight: 1.5, color: "#D8DEE9", align: "center", maxChars: 70 }),
+      ],
+    }),
+    template({
+      id: "invite-baby-shower",
+      photos: ["baby-toys"],
+      title: "Baby Shower",
+      format: "invitation",
+      category: "birthday",
+      tags: ["baby shower", "soft", "pastel", "celebration"],
+      background: linear(180, "#EAF4F4", "#FDF1E7"),
+      nodes: [
+        text("title", "Title", "Oh baby!", { x: 150, y: 170, w: 1200, h: 220 }, { family: "Pacifico", size: 150, color: "#5C8D89", align: "center", maxChars: 20 }),
+        ellipse("ring", "Photo ring", { x: 430, y: 450, w: 640, h: 640 }, solid("#FFFFFF")),
+        photo("photo", "Photo", { x: 450, y: 470, w: 600, h: 600 }, "ellipse"),
+        text("name", "Name", "Baby shower for Meera", { x: 150, y: 1170, w: 1200, h: 110 }, { family: "Playfair Display", weight: 700, size: 80, color: "#3D5A58", align: "center", maxChars: 40 }),
+        text("details", "Details", "Saturday, 20 July · 4 PM\n24 Lake View Road", { x: 150, y: 1320, w: 1200, h: 150 }, { family: "Inter", size: 44, lineHeight: 1.5, color: "#5C6B6A", align: "center", maxChars: 70 }),
+        text("rsvp", "RSVP", "RSVP by 10 July", { x: 150, y: 1540, w: 1200, h: 56 }, { family: "Inter", weight: 600, size: 36, color: "#C98A5A", align: "center", maxChars: 30 }),
       ],
     }),
   ];

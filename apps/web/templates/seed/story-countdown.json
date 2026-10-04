@@ -75,7 +75,12 @@
       "shape": {
         "kind": "ellipse"
       },
-      "content": null,
+      "content": {
+        "assetId": "4de62209-ae9f-8c33-a66c-3aaea4ed1f6f",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
       "filters": {
         "preset": null,
         "brightness": 0,
@@ -239,5 +244,13 @@
       "maxChars": 44
     }
   },
-  "assets": {}
+  "assets": {
+    "4de62209-ae9f-8c33-a66c-3aaea4ed1f6f": {
+      "id": "4de62209-ae9f-8c33-a66c-3aaea4ed1f6f",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 1400,
+      "height": 1400
+    }
+  }
 }

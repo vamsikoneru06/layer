@@ -1,12 +1,14 @@
 "use client";
 
 import { CircleAlert, Mail, RotateCw } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { formatCountdown, isEmail, requestErrorMessage, RESEND_COOLDOWN_SECONDS } from "./messages";
 
 // Where Better Auth sends people after they click the emailed link (or return from Google).
-const REDIRECTS = { callbackURL: "/home", newUserCallbackURL: "/onboarding", errorCallbackURL: "/signin" };
+// New accounts land on /home too until /onboarding exists; pointing them at it today is a 404.
+const REDIRECTS = { callbackURL: "/home", newUserCallbackURL: "/home", errorCallbackURL: "/signin" };
 
 type Phase = "form" | "sending" | "sent";
 
@@ -190,7 +192,17 @@ export function SignInForm({ googleEnabled, initialError }: { googleEnabled: boo
           {phase === "sending" ? "Sending…" : "Email me a sign-in link"}
         </Button>
       </form>
-      <p className="text-[13px] leading-normal text-muted">No password needed. The link expires in 10 minutes.</p>
+      <p className="text-[13px] leading-normal text-muted">
+        No password needed. The link expires in 10 minutes. By continuing you agree to the{" "}
+        <Link href="/terms" className="text-text underline underline-offset-4 transition-opacity hover:opacity-65">
+          Terms
+        </Link>{" "}
+        and confirm you&apos;ve read the{" "}
+        <Link href="/privacy" className="text-text underline underline-offset-4 transition-opacity hover:opacity-65">
+          Privacy Policy
+        </Link>
+        . You must be 18 or older.
+      </p>
     </div>
   );
 }
