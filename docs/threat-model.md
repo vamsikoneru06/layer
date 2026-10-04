@@ -1,7 +1,7 @@
 # VASH threat model
 
 What VASH protects, who might attack it, and which control stops each attack. Update this file when data
-handling, auth or storage changes. Last reviewed 2026-10-03 against `main` at 678ba4f plus PR #25.
+handling, auth or storage changes. Last reviewed 2026-10-03 against `main` at db80467.
 
 ## What we protect
 
@@ -37,9 +37,9 @@ before they are stored or rendered.
 | Tampering | Two tabs overwrite each other | Compare-and-swap on `designs.version`; the editor shows a conflict dialog | `server/designs/repository.ts` |
 | Tampering | Upload a script or HTML file named `.jpg` | Uploads land on a staging key; `complete` checks size and file signature (magic bytes) on a server-side copy; the type is signed into the upload URL | `server/assets/service.ts`, `sniff.ts` |
 | Tampering | Path data that smuggles markup | Path strings accept only the SVG path grammar | `packages/schema/src/path.ts` |
-| Repudiation | An admin hides a template and denies it | Each moderation action writes an audit row in the same transaction (PR #25) | `server/admin/service.ts` |
+| Repudiation | An admin hides a template and denies it | Each moderation action writes an audit row in the same transaction (#25) | `server/admin/service.ts` |
 | Information disclosure | Hot-linking, tracking pixels, SSRF through documents | Documents hold asset ids only, never URLs; ids resolve to short-lived signed URLs | spec §5, `server/assets` |
-| Information disclosure | Share token or email in logs | Share tokens are stripped from logged paths; with PR #25 they are stored only as a SHA-256 hash, and profiles show name and handle only | `server/http/endpoint.ts`, `server/shares` |
+| Information disclosure | Share token or email in logs | Share tokens are stored only as a SHA-256 hash and stripped from logged paths; profiles show name and handle only | `server/http/endpoint.ts`, `server/shares` |
 | Information disclosure | A hidden template's photos stay reachable | Resolve refuses for hidden templates (#23); moving public copies out of the public bucket is still open (decision row 40) | `server/assets/service.ts` |
 | Information disclosure | XSS reads the session | Strict CSP with a per-request nonce, no third-party script/font/image hosts; React escaping | `proxy.ts`, `security/headers.ts` |
 | Information disclosure | Clickjacking | `frame-ancestors 'none'` | `security/headers.ts` |
