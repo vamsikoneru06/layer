@@ -53,3 +53,16 @@ export function sortDesigns<T extends { title: string; createdAt: string; update
   const field = key === "created" ? "createdAt" : "updatedAt";
   return copy.sort((a, b) => b[field].localeCompare(a[field]));
 }
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Drag data can come from any page; accept only a bounded list of design ids and ignore anything else. */
+export function parseDraggedIds(raw: string, max = 500): string[] {
+  try {
+    const value: unknown = JSON.parse(raw);
+    if (Array.isArray(value) && value.length <= max && value.every((v) => typeof v === "string" && UUID.test(v))) return value as string[];
+  } catch {
+    // not ours
+  }
+  return [];
+}

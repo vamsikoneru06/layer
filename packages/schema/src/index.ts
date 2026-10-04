@@ -4,7 +4,7 @@ export { validatePathData } from "./path";
 export { validateDoc, type ValidateOptions } from "./validate";
 export { migrateDoc, MIGRATIONS, type Migration, type MigrateResult } from "./migrate";
 export { createEmptyDoc, defaultFilters, type EmptyDocOptions } from "./factory";
-export { lintTemplate, referencedAssetIds, scanForPii, scrubForPublish, type PiiFinding } from "./template";
+export { lintTemplate, referencedAssetIds, replaceAssetIds, scanForPii, scrubForPublish, type PiiFinding } from "./template";
 
 import { migrateDoc } from "./migrate";
 import { validateDoc, type ValidateOptions } from "./validate";

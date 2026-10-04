@@ -1,0 +1,204 @@
+{
+  "schemaVersion": 1,
+  "id": "poster-book-club",
+  "kind": "template",
+  "meta": {
+    "title": "Book Club",
+    "category": "events",
+    "tags": [
+      "books",
+      "reading",
+      "club",
+      "community"
+    ],
+    "format": "poster"
+  },
+  "artboard": {
+    "width": 1240,
+    "height": 1754,
+    "background": {
+      "type": "solid",
+      "color": "#F4EDE1"
+    }
+  },
+  "root": [
+    "title",
+    "photo",
+    "book",
+    "when",
+    "welcome"
+  ],
+  "nodes": {
+    "title": {
+      "id": "title",
+      "name": "Title",
+      "transform": {
+        "x": 620,
+        "y": 205,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1060,
+      "height": 230,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "BOOK CLUB",
+      "font": {
+        "family": "Bebas Neue",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 220,
+      "color": "#3A2E25",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 16
+    },
+    "photo": {
+      "id": "photo",
+      "name": "Photo",
+      "transform": {
+        "x": 620,
+        "y": 810,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 800,
+      "height": 900,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 12
+      },
+      "content": {
+        "assetId": "00df529b-0571-8ec7-9b04-39259028cded",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "book": {
+      "id": "book",
+      "name": "This month",
+      "transform": {
+        "x": 620,
+        "y": 1395,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1000,
+      "height": 150,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "This month: The Remains of the Day",
+      "font": {
+        "family": "Playfair Display",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 56,
+      "color": "#3A2E25",
+      "align": "center",
+      "lineHeight": 1.15,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 70
+    },
+    "when": {
+      "id": "when",
+      "name": "When",
+      "transform": {
+        "x": 620,
+        "y": 1525,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1000,
+      "height": 50,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Last Thursday of the month · 7 PM · Corner Café",
+      "font": {
+        "family": "Inter",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 30,
+      "color": "#6B5B4E",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 70
+    },
+    "welcome": {
+      "id": "welcome",
+      "name": "Welcome",
+      "transform": {
+        "x": 620,
+        "y": 1605,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1000,
+      "height": 50,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Everyone welcome. Bring a friend.",
+      "font": {
+        "family": "Inter",
+        "weight": 600,
+        "style": "normal"
+      },
+      "size": 30,
+      "color": "#A0522D",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 50
+    }
+  },
+  "assets": {
+    "00df529b-0571-8ec7-9b04-39259028cded": {
+      "id": "00df529b-0571-8ec7-9b04-39259028cded",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 1095,
+      "height": 1400
+    }
+  }
+}

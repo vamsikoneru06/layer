@@ -108,6 +108,55 @@ describe("magic-link sign-in", () => {
   });
 });
 
+describe("redirect targets (open redirect)", () => {
+  // The encoded ones matter: Better Auth decodes the redirect again when the link is clicked.
+  const offsite = [
+    "https://evil.example/phish",
+    "//evil.example/phish",
+    "https://vash.test.evil.example/",
+    "/\\evil.example",
+    "%2F%2Fevil.example%2Fphish",
+    "/%2F%2Fevil.example",
+    "javascript:alert(1)",
+  ];
+
+  it.each(["callbackURL", "newUserCallbackURL", "errorCallbackURL"])("refuses to email a link whose %s leaves the app", async (field) => {
+    for (const [i, target] of offsite.entries()) {
+      const email = `redirect-${field}-${i}@example.test`;
+      const before = mailer.sent.length;
+      const res = await requestLink({ email, [field]: target }, `198.51.100.${120 + i}`);
+      expect(res.status, `${field}=${target}`).toBe(403);
+      expect(mailer.sent.length).toBe(before);
+    }
+  });
+
+  it.each(["https://evil.example/phish", "%2F%2Fevil.example"])("refuses a link whose callbackURL was changed to %s", async (target) => {
+    const email = `tamper-${target.length}@example.test`;
+    expect((await requestLink({ email }, "198.51.100.140")).status).toBe(200);
+    const link = linkSentTo(email);
+    link.searchParams.set("callbackURL", target);
+    const res = await verify(link);
+    expect(res.status).toBe(403);
+    expect(res.headers.get("location")).toBeNull();
+  });
+
+  it("still accepts same-site targets", async () => {
+    const res = await requestLink({ email: "same-site@example.test", newUserCallbackURL: `${origin}/onboarding`, errorCallbackURL: "/signin?x=1" }, "198.51.100.160");
+    expect(res.status).toBe(200);
+  });
+
+  it("refuses an off-site callbackURL for Google sign-in", async () => {
+    const res = await route.POST(
+      new Request(`${origin}/api/auth/sign-in/social`, {
+        method: "POST",
+        headers: { "content-type": "application/json", origin, "x-forwarded-for": "198.51.100.150" },
+        body: JSON.stringify({ provider: "google", callbackURL: "https://evil.example/phish" }),
+      }),
+    );
+    expect([400, 403, 404]).toContain(res.status);
+  });
+});
+
 describe("magic-link abuse controls", () => {
   const countVerifications = async () => (await t.db.select().from(verification)).length;
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lintTemplate, migrateDoc, scanForPii, scrubForPublish, validateDoc, validatePathData } from "./index";
+import { lintTemplate, migrateDoc, replaceAssetIds, scanForPii, scrubForPublish, validateDoc, validatePathData } from "./index";
 import { sampleTemplate } from "./fixtures";
 
 describe("validatePathData", () => {
@@ -113,5 +113,16 @@ describe("scrubForPublish", () => {
     const scrubbed = scrubForPublish(sampleTemplate(), new Set(["asset1"]));
     expect(scrubbed.nodes.photo1).toMatchObject({ content: { assetId: "asset1" } });
     expect(Object.keys(scrubbed.assets)).toEqual(["asset1"]);
+  });
+});
+
+describe("replaceAssetIds", () => {
+  it("renames asset ids in frames and the assets map, leaving the input untouched", () => {
+    const doc = sampleTemplate();
+    const next = replaceAssetIds(doc, new Map([["asset1", "copy1"]]));
+    expect(next.nodes.photo1).toMatchObject({ content: { assetId: "copy1" } });
+    expect(next.assets).toEqual({ copy1: { ...doc.assets.asset1, id: "copy1" } });
+    expect(doc.assets.asset1).toBeDefined();
+    expect(replaceAssetIds(doc, new Map())).toEqual(doc);
   });
 });

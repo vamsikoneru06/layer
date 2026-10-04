@@ -26,6 +26,37 @@ export interface AuthDeps {
 const DAY_SECONDS = 60 * 60 * 24;
 const AUTH_BODY_LIMIT = 8 * 1024;
 
+/** Where each route takes the caller's post-sign-in redirects from. Better Auth doesn't check them on magic links. */
+const REDIRECT_SOURCES: Record<string, "body" | "query"> = {
+  "/sign-in/magic-link": "body",
+  "/magic-link/verify": "query",
+  "/sign-in/social": "body",
+};
+const REDIRECT_FIELDS = ["callbackURL", "newUserCallbackURL", "errorCallbackURL"] as const;
+
+/**
+ * True when `value` (if given) resolves to this app's origin. Better Auth URL-decodes the value again
+ * before redirecting, so every decoding of it must stay on-site too ("%2F%2Fevil.example" -> "//evil.example").
+ */
+export function isSameOriginRedirect(value: unknown, appOrigin: string): boolean {
+  if (value === undefined) return true;
+  if (typeof value !== "string" || value.length > 2048) return false;
+  let current = value;
+  for (let i = 0; i < 4; i++) {
+    // Browsers treat "\" like "/" and drop tabs and newlines, which can turn a path into another host.
+    if ([...current].some((ch) => ch === "\\" || ch.charCodeAt(0) < 0x20 || ch.charCodeAt(0) === 0x7f)) return false;
+    try {
+      if (new URL(current, appOrigin).origin !== appOrigin) return false;
+      const decoded = decodeURIComponent(current);
+      if (decoded === current) return true;
+      current = decoded;
+    } catch {
+      return false;
+    }
+  }
+  return false;
+}
+
 /**
  * Better Auth routes that would bypass VASH's own rules: profile writes skip `PATCH /api/me`
  * validation, account deletion skips the audit log and storage-deletion queue, and the rest
@@ -87,6 +118,15 @@ export function createAuth({ db, config, mailer, now }: AuthDeps) {
     hooks: {
       // Runs before Better Auth stores a verification row, so rejected requests leave nothing behind.
       before: createAuthMiddleware(async (ctx) => {
+        const source = REDIRECT_SOURCES[ctx.path];
+        if (source) {
+          const values = ((source === "query" ? ctx.query : ctx.body) ?? {}) as Record<string, unknown>;
+          for (const field of REDIRECT_FIELDS) {
+            if (!isSameOriginRedirect(values[field], config.appOrigin)) {
+              throw new APIError("FORBIDDEN", { message: `${field} must point to this site.` });
+            }
+          }
+        }
         if (ctx.path !== "/sign-in/magic-link") return;
         const body = (ctx.body ?? {}) as { email?: unknown; name?: unknown };
         if (body.name !== undefined && (typeof body.name !== "string" || body.name.length > LIMITS.nameChars)) {

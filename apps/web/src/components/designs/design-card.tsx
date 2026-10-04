@@ -182,7 +182,7 @@ export function DesignRow({ design: d, selected, selecting, renaming, setRenamin
       </div>
       <span className="hidden w-24 text-[13px] text-muted sm:block">{formatLabel(d.format)}</span>
       <span className="hidden w-36 text-[13px] text-muted md:block">{editedLabel(d.updatedAt)}</span>
-      <span className="hidden w-32 truncate text-[13px] text-muted lg:block">{folderName ?? "—"}</span>
+      <span className="hidden w-32 truncate text-[13px] text-muted lg:block">{folderName ?? "No folder"}</span>
       <MoreButton design={d} actions={actions} onRename={() => setRenaming(true)} />
     </div>
   );
