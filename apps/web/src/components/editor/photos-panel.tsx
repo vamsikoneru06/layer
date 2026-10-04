@@ -4,7 +4,7 @@ import type { Editor } from "@vash/engine";
 import { Upload } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ApiError, listPhotos, resolveAssets, UPLOAD_TYPES, type Photo } from "@/lib/api";
-import { PHOTO_DRAG_TYPE, placePhotos, toAssetRef, uploadAll } from "./photo-actions";
+import { PHOTO_DRAG_TYPE, PHOTOS_UPLOADED, placePhotos, toAssetRef, uploadAll } from "./photo-actions";
 
 /**
  * The Photos panel: upload photos, then click one to put it in the selected frame (or the next empty
@@ -41,7 +41,10 @@ export function PhotosPanel({ editor, frameTiles }: { editor: Editor | null; fra
   }
 
   useEffect(() => {
-    void load(null);
+    const reload = () => void load(null);
+    reload();
+    window.addEventListener(PHOTOS_UPLOADED, reload);
+    return () => window.removeEventListener(PHOTOS_UPLOADED, reload);
   }, []);
 
   async function upload(files: File[]) {
@@ -50,7 +53,6 @@ export function PhotosPanel({ editor, frameTiles }: { editor: Editor | null; fra
     const result = await uploadAll(files, (done, total) => setProgress(done < total ? `Uploading ${done + 1} of ${total}…` : null));
     setErrors(result.errors);
     placePhotos(editor, result.photos);
-    void load(null);
   }
 
   const ready = (photos ?? []).filter((p) => toAssetRef(p));

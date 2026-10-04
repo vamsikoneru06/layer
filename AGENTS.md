@@ -114,9 +114,9 @@ Known gap: `db:seed` points at `apps/web/scripts/seed.ts`, which doesn't exist y
 ## What's next
 
 1. **Photos in the editor**: uploading, the Photos panel, dropping onto frames and filling empty frames in
-   reading order work (`packages/engine/src/photos.ts`, `components/editor/photos-panel.tsx`). Still to do (spec
-   §8.2): double-click a frame to pan and zoom its photo on the canvas, drag a photo between frames to swap, and
-   Pexels search (`PEXELS_API_KEY`, credit the photographer). The storage backend exists (`apps/web/src/server/storage`, `server/assets`,
+   reading order, double-click to move and zoom a photo, and swapping by dragging onto another frame all work
+   (`packages/engine/src/photos.ts`, `interaction.ts`, `components/editor/photos-panel.tsx`). Still to do: Pexels
+   search (`PEXELS_API_KEY`, credit the photographer). The storage backend exists (`apps/web/src/server/storage`, `server/assets`,
    `docs/superpowers/plans/2026-09-26-storage-and-uploads.md`). In development uploads work without setup: with no `STORAGE_*` keys, photos are
    stored in the database (`src/server/storage/database.ts`, 50 MB per user). Production requires the Supabase keys
    (Vercel caps request bodies near 4.5 MB and the free database is 0.5 GB in total).
