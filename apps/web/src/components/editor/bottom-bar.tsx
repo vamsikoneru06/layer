@@ -15,6 +15,7 @@ export function BottomBar({ editor, zoom, size, actions }: { editor: Editor | nu
       <input
         type="range"
         aria-label="Zoom"
+        aria-valuetext={`${Math.round(zoom * 100)}%`}
         min={0}
         max={SLIDER_STEPS}
         value={zoomToSlider(zoom)}

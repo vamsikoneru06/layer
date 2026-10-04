@@ -34,8 +34,20 @@ export function ExportPopover({ editor, doc, open, onOpenChange }: { editor: Edi
     const onDown = (e: PointerEvent) => {
       if (!root.current?.contains(e.target as Node)) onOpenChange(false);
     };
+    // Escape works wherever focus is (opening from the File menu leaves it on the page), and in the
+    // capture phase so the editor's own key handler never sees it and deselects the layer.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.stopPropagation();
+      onOpenChange(false);
+      root.current?.querySelector<HTMLElement>("[aria-haspopup]")?.focus();
+    };
     document.addEventListener("pointerdown", onDown);
-    return () => document.removeEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey, true);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey, true);
+    };
   }, [open, onOpenChange]);
 
   useEffect(() => {
@@ -61,15 +73,7 @@ export function ExportPopover({ editor, doc, open, onOpenChange }: { editor: Edi
   }
 
   return (
-    <div
-      ref={root}
-      className="relative"
-      onKeyDown={(e) => {
-        if (e.key !== "Escape") return;
-        onOpenChange(false);
-        root.current?.querySelector<HTMLElement>("[aria-haspopup]")?.focus();
-      }}
-    >
+    <div ref={root} className="relative">
       <button type="button" className={buttonClass("primary", "sm")} aria-haspopup="dialog" aria-expanded={open} aria-controls={id} onClick={() => onOpenChange(!open)}>
         <span className="glass-label">Export</span>
         <ChevronDown aria-hidden className="size-3.5" />
