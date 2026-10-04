@@ -78,7 +78,7 @@ New files, each small and single-purpose:
 | `design-info-dialog.tsx` | Size, format, layer count, last saved. Real data only |
 | `use-clipboard.ts` | `copy`, `cut`, `paste` event handling and the fallback buffer |
 
-`workspace.tsx` is left as the composer and does not grow.
+`workspace.tsx` composes the shell logic (autosave, the save and copy actions, fullscreen, the dialogs). It grew from 293 to about 373 lines while building the shell. Follow-up: extract the save actions (`saveNow`, save a copy, the saving status) into a `use-save-actions` hook so the workspace goes back to composing.
 
 Behaviour:
 - **Clipboard:** the payload is written to the system clipboard as text with a `vash:` prefix, so it works across
