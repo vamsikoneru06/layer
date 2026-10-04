@@ -7,7 +7,7 @@ import { assets, templates, user } from "../db/schema";
 import type { Db } from "../db/types";
 import type { CurrentUser } from "../deps";
 import { conflict, notFound, unprocessable } from "../http/problem";
-import { copyAll, queueObjects, type Copy } from "../storage/copies";
+import { copyAll, dropCopies, releaseCopies, type Copy } from "../storage/copies";
 import type { ObjectStorage } from "../storage/types";
 import { analyzeDraft } from "./draft";
 import { getTemplateCard, insertTemplate, insertTemplateVersion, searchTextFor, type TemplateCard } from "./repository";
@@ -84,13 +84,20 @@ export async function publishTemplate(
   if (!parsed.ok) throw unprocessable("Fix the template's problems before publishing.", { issues: parsed.issues.slice(0, 50) });
   const doc = parsed.doc;
 
-  const objects: Copy[] = fresh.map((c) => ({ from: { bucket: "private", key: c.source.storageKey }, to: { bucket: "public", key: keyOf(c.id) } }));
-  await copyAll(ctx.db, ctx.storage, objects, now);
+  const objects: Copy[] = fresh.map((c) => ({
+    from: { bucket: "private", key: c.source.storageKey },
+    to: { bucket: "public", key: keyOf(c.id) },
+    assetId: c.id,
+    bytes: c.source.bytes,
+  }));
+  const reserved = await copyAll(ctx.db, ctx.storage, objects, author.id, now);
   try {
     await ctx.db.transaction(async (tx) => {
       // Same lock as uploads and account deletion: the quota check and these inserts can't interleave with either.
       const [me] = await tx.select({ id: user.id }).from(user).where(eq(user.id, author.id)).for("no key update");
       if (!me) throw notFound();
+      // The copies were charged while in flight; release that first so they aren't counted twice.
+      await releaseCopies(tx, reserved);
       const usedNow = await storageUsedBytes(tx, author.id);
       if (usedNow + bytes > quota) throw overQuota(quota, usedNow);
       const fields = {
@@ -139,7 +146,7 @@ export async function publishTemplate(
       await insertTemplateVersion(tx, { templateId: id, version, doc, thumbnailAssetId: copies.at(-1)!.id, createdAt: now });
     });
   } catch (err) {
-    await queueObjects(ctx.db, objects.map((o) => o.to), now);
+    await dropCopies(ctx.db, reserved, now);
     throw err;
   }
   return { template: (await getTemplateCard(ctx.db, id))!, pii: draft.pii };
