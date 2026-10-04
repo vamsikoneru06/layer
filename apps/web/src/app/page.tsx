@@ -30,7 +30,7 @@ export default function Landing() {
           Your photos. Any template. Done in a minute.
         </h1>
         <p className="max-w-[440px] text-[19px] leading-normal text-muted">
-          Pick a template, drop in your photos, export. Free to use. All you need to sign in is an email address.
+          Pick a template, make it yours, export a PNG. Free, and you can start without an account. Sign in with an email address to keep your designs.
         </p>
         <div className="flex flex-wrap justify-center gap-3">
           <ButtonLink href="/home" size="lg" className="px-[26px]">

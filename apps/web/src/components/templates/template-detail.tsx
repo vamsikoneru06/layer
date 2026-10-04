@@ -5,8 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSession } from "@/components/app/session";
-import { Button, ButtonLink } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { copyTemplate, getTemplate, type TemplateDetail as Template } from "@/lib/api";
+import { docFromTemplate, localDesigns, newLocalDesign } from "@/lib/local-designs";
 import { DocPreview } from "./doc-preview";
 import { categoryLabel, formatLabel } from "./templates-view";
 
@@ -31,8 +32,15 @@ export function TemplateDetail({ id }: { id: string }) {
     setUsing(true);
     setError(null);
     try {
-      const design = await copyTemplate(id);
-      router.push(`/edit/${design.id}`);
+      if (session.status === "user") {
+        const design = await copyTemplate(id);
+        return router.push(`/edit/${design.id}`);
+      }
+      // Guests: the same copy, kept on this device until they sign in.
+      const doc = template && docFromTemplate(template.doc);
+      if (!doc) throw new Error("Couldn't open this template. Try again.");
+      await localDesigns.put(newLocalDesign(doc));
+      router.push(`/edit/${doc.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't open this template. Try again.");
       setUsing(false);
@@ -96,16 +104,20 @@ export function TemplateDetail({ id }: { id: string }) {
               ))}
             </ul>
           )}
-          {session.status === "user" ? (
-            <Button onClick={() => void use()} loading={using} className="w-full sm:w-fit">
-              {using ? "Opening…" : "Use this template"}
-            </Button>
-          ) : session.status === "loading" ? null : (
+          {session.status === "loading" ? null : (
             <div className="flex flex-col gap-2">
-              <ButtonLink href="/signin" className="w-full sm:w-fit">
-                Sign in to use this template
-              </ButtonLink>
-              <p className="text-[13px] text-muted">It&apos;s free. You only need an email address.</p>
+              <Button onClick={() => void use()} loading={using} className="w-full sm:w-fit">
+                {using ? "Opening…" : "Use this template"}
+              </Button>
+              {session.status !== "user" && (
+                <p className="text-[13px] text-muted">
+                  No account needed. Your design is saved in this browser until you{" "}
+                  <Link href="/signin" className="font-medium text-text underline-offset-4 hover:underline">
+                    sign in
+                  </Link>
+                  .
+                </p>
+              )}
             </div>
           )}
           {error && (

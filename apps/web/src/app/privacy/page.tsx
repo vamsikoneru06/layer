@@ -5,7 +5,7 @@ export const metadata = { title: "Privacy · VASH" };
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Privacy Policy" updated="28 September 2026">
+    <LegalPage title="Privacy Policy" updated="4 October 2026">
       <p>
         VASH is a free photo design editor run by an individual based in India, who is responsible for your personal data here (the
         &ldquo;Data Fiduciary&rdquo; under India&apos;s Digital Personal Data Protection Act, 2023). This page explains what we collect,
@@ -21,6 +21,11 @@ export default function PrivacyPage() {
         </li>
         <li>
           <strong>Your work:</strong> the designs, folders and photos you create or upload, to save them and show them only to you.
+        </li>
+        <li>
+          <strong>Designs made without signing in:</strong> kept only in your browser&apos;s storage on your device. We don&apos;t
+          receive them. When you sign in, VASH moves them to your account and deletes them from the browser. Until then, clearing
+          your browser&apos;s site data deletes them, and you can delete each one on the Designs page.
         </li>
         <li>
           <strong>Sign-in sessions:</strong> a record for each device you sign in on, which can include its IP address and browser name,
@@ -53,7 +58,11 @@ export default function PrivacyPage() {
         <li>A session cookie that keeps you signed in. It&apos;s required for the app to work.</li>
         <li>An appearance cookie, only if you choose Light or Dark in Settings, so the app opens in your chosen theme.</li>
       </ul>
-      <p>There are no advertising or analytics cookies, so there&apos;s no cookie banner.</p>
+      <p>
+        If you make designs without signing in, they&apos;re kept in this site&apos;s storage in your browser (IndexedDB). That
+        storage isn&apos;t a cookie and isn&apos;t sent to us. There are no advertising or analytics cookies, so there&apos;s no cookie
+        banner.
+      </p>
 
       <h2>Who helps us run VASH</h2>
       <p>These service providers process data for us, only to provide VASH:</p>
