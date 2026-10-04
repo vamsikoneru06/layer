@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "id": "post-minimal-portrait",
+  "kind": "template",
+  "meta": {
+    "title": "Minimal Portrait",
+    "category": "minimal",
+    "tags": [
+      "portrait",
+      "black and white",
+      "photography",
+      "series"
+    ],
+    "format": "ig-post"
+  },
+  "artboard": {
+    "width": 1080,
+    "height": 1080,
+    "background": {
+      "type": "solid",
+      "color": "#EDEDED"
+    }
+  },
+  "root": [
+    "photo",
+    "title",
+    "body",
+    "line",
+    "handle"
+  ],
+  "nodes": {
+    "photo": {
+      "id": "photo",
+      "name": "Portrait",
+      "transform": {
+        "x": 360,
+        "y": 540,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 560,
+      "height": 920,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "content": {
+        "assetId": "efd42f98-3e89-8ca9-aa2b-6ba23e4978ae",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "title": {
+      "id": "title",
+      "name": "Title",
+      "transform": {
+        "x": 850,
+        "y": 185,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 340,
+      "height": 130,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Portraits",
+      "font": {
+        "family": "DM Serif Display",
+        "weight": 400,
+        "style": "italic"
+      },
+      "size": 96,
+      "color": "#1A1A1A",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 16
+    },
+    "body": {
+      "id": "body",
+      "name": "Body",
+      "transform": {
+        "x": 850,
+        "y": 355,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 340,
+      "height": 150,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "A series on light, stillness and faces.",
+      "font": {
+        "family": "Inter",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 26,
+      "color": "#555555",
+      "align": "left",
+      "lineHeight": 1.45,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 90
+    },
+    "line": {
+      "id": "line",
+      "name": "Line",
+      "transform": {
+        "x": 710,
+        "y": 901.5,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 60,
+      "height": 3,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#1A1A1A"
+      },
+      "stroke": null
+    },
+    "handle": {
+      "id": "handle",
+      "name": "Handle",
+      "transform": {
+        "x": 850,
+        "y": 943,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 340,
+      "height": 36,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "@yourname",
+      "font": {
+        "family": "Inter",
+        "weight": 500,
+        "style": "normal"
+      },
+      "size": 22,
+      "color": "#1A1A1A",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 24
+    }
+  },
+  "assets": {
+    "efd42f98-3e89-8ca9-aa2b-6ba23e4978ae": {
+      "id": "efd42f98-3e89-8ca9-aa2b-6ba23e4978ae",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 937,
+      "height": 1400
+    }
+  }
+}

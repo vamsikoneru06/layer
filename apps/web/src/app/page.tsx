@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import { ButtonLink } from "@/components/ui/button";
 import { CrowdCanvas } from "@/components/ui/crowd-canvas";
@@ -29,7 +30,7 @@ export default function Landing() {
           Your photos. Any template. Done in a minute.
         </h1>
         <p className="max-w-[440px] text-[19px] leading-normal text-muted">
-          Pick a template, drop in your pictures, export. No sign-up needed.
+          Pick a template, drop in your photos, export. Free to use. All you need to sign in is an email address.
         </p>
         <div className="flex flex-wrap justify-center gap-3">
           <ButtonLink href="/home" size="lg" className="px-[26px]">
@@ -40,6 +41,15 @@ export default function Landing() {
           </ButtonLink>
         </div>
       </section>
+
+      <footer className="absolute inset-x-0 bottom-0 z-10 flex justify-center gap-4 pb-4 text-xs text-muted">
+        <Link href="/terms" className="hover:text-text">
+          Terms
+        </Link>
+        <Link href="/privacy" className="hover:text-text">
+          Privacy
+        </Link>
+      </footer>
     </main>
   );
 }
