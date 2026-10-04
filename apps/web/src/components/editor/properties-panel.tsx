@@ -445,6 +445,7 @@ function PhotoSection({ node, disabled, doc, change }: { node: FrameNode; disabl
   return (
     <Section title="Photo">
       <Slider label="Zoom" value={node.content.scale} min={1} max={4} disabled={disabled} onChange={(scale, final) => zoom({ scale }, final)} />
+      <p className="text-[12px] text-muted">Double-click the photo on the canvas to move it, or drag it onto another frame to swap.</p>
       <div className="flex gap-2">
         <Button variant="secondary" size="sm" disabled={disabled} onClick={() => zoom({ offsetX: 0, offsetY: 0 })}>
           Centre photo
