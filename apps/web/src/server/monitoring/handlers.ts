@@ -1,7 +1,9 @@
 import type { Deps } from "../deps";
 import { readText } from "../http/body";
+import { clientIp, rateLimitSubject } from "../http/client-ip";
 import { endpoint } from "../http/endpoint";
 import { badRequest, HttpError, notFound } from "../http/problem";
+import { consume } from "../rate-limit/limiter";
 import { RATE_LIMITS } from "../rate-limit/rules";
 
 /** Error envelopes are a few KB; anything bigger is not a report from our SDK. */
@@ -28,7 +30,7 @@ function dsnParts(dsn: string): { key: string; host: string; project: string } |
 export function monitoringHandlers(deps: Deps, forward: typeof fetch = fetch) {
   const ours = deps.config.sentryDsn ? dsnParts(deps.config.sentryDsn) : null;
   return {
-    tunnel: endpoint(deps, { auth: "none", rateLimit: { name: "errorReport", rule: RATE_LIMITS.errorReport, by: "ip" } }, async ({ req }) => {
+    tunnel: endpoint(deps, { auth: "none" }, async ({ req }) => {
       if (!ours) throw notFound();
       const declared = Number(req.headers.get("content-length"));
       if (Number.isFinite(declared) && declared > TUNNEL_BODY_LIMIT) {
@@ -46,6 +48,7 @@ export function monitoringHandlers(deps: Deps, forward: typeof fetch = fetch) {
       if (!theirs || theirs.key !== ours.key || theirs.host !== ours.host || theirs.project !== ours.project) {
         throw badRequest("This envelope is not for this site's error tracker.");
       }
+      await enforceLimit(deps, req);
 
       let upstream: Response;
       try {
@@ -69,4 +72,24 @@ export function monitoringHandlers(deps: Deps, forward: typeof fetch = fetch) {
       return new Response(null, { status: upstream.status, headers });
     }),
   };
+}
+
+/**
+ * Per-IP limit, checked after the cheap checks. It fails open: if the limiter's database is down, that outage is what the
+ * reports are about, and Sentry's own spike protection still caps the volume.
+ */
+async function enforceLimit(deps: Deps, req: Request): Promise<void> {
+  const key = `errorReport:ip:${rateLimitSubject(clientIp(req, deps.config.trustProxy))}`;
+  let verdict;
+  try {
+    verdict = await consume(deps.db, key, RATE_LIMITS.errorReport, deps.now());
+  } catch (err) {
+    deps.logger.warn("monitoring.rate_limit_unavailable", { err });
+    return;
+  }
+  if (!verdict.allowed) {
+    throw new HttpError(429, "Too Many Requests", "Rate limit exceeded. Try again later.", { retryAfter: verdict.retryAfterSeconds }, {
+      "retry-after": String(verdict.retryAfterSeconds),
+    });
+  }
 }

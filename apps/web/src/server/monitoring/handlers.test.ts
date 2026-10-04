@@ -45,7 +45,10 @@ describe("POST /api/monitoring", () => {
     expect(forwarded[0]!.headers.get("content-type")).toBe("application/x-sentry-envelope");
   });
 
-  it("is not there when Sentry isn't configured", async () => {
+  it("is not there when Sentry isn't configured, and doesn't touch the database to say so", async () => {
+    const untouchable = new Proxy({}, { get: () => () => Promise.reject(new Error("database used")) }) as typeof t.db;
+    const off = monitoringHandlers(testDeps(untouchable, { config: { ...testConfig, sentryDsn: null } })).tunnel;
+    expect((await call(off, post(envelope(DSN)))).status).toBe(404);
     const { tunnel, forwarded } = setup({ dsn: null });
     expect((await call(tunnel, post(envelope(DSN)))).status).toBe(404);
     expect(forwarded).toHaveLength(0);
@@ -73,6 +76,15 @@ describe("POST /api/monitoring", () => {
     const ip = "192.0.2.77";
     for (let i = 0; i < RATE_LIMITS.errorReport.max; i++) expect((await call(tunnel, post(envelope(DSN), { ip }))).status).toBe(200);
     expect((await call(tunnel, post(envelope(DSN), { ip }))).status).toBe(429);
+  });
+
+  it("still relays when the rate-limit store is down, since that's when reports matter most", async () => {
+    const forwarded: string[] = [];
+    const forward = (async (url: string | URL | Request) => (forwarded.push(String(url)), new Response("{}"))) as typeof fetch;
+    const down = new Proxy({}, { get: () => () => Promise.reject(new Error("database down")) }) as typeof t.db;
+    const tunnel = monitoringHandlers(testDeps(down, { config: { ...testConfig, sentryDsn: DSN } }), forward).tunnel;
+    expect((await call(tunnel, post(envelope(DSN)))).status).toBe(200);
+    expect(forwarded).toHaveLength(1);
   });
 
   it("passes Sentry's own rate limiting back to the browser SDK", async () => {

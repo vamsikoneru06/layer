@@ -6,6 +6,7 @@ import { createAuthenticator } from "./auth/current-user";
 import { consoleMailer, gmailMailer, resendMailer } from "./auth/mailer";
 import { loadConfig } from "./config";
 import { createDb } from "./db/client";
+import { CLEANUP_SCHEDULE } from "./cron/cleanup";
 import { cronHandlers } from "./cron/handlers";
 import { designHandlers } from "./designs/handlers";
 import { folderHandlers } from "./folders/handlers";
@@ -15,7 +16,7 @@ import type { Handler } from "./http/types";
 import { createLogger } from "./logging";
 import { meHandlers } from "./me/handlers";
 import { monitoringHandlers } from "./monitoring/handlers";
-import { reportError } from "./monitoring/sentry";
+import { cronMonitor, reportError } from "./monitoring/sentry";
 import { seoHandlers } from "./seo/handlers";
 import { shareHandlers } from "./shares/handlers";
 import { databaseStorage } from "./storage/database";
@@ -47,7 +48,7 @@ function build() {
     users: userHandlers(deps),
     admin: adminHandlers(deps),
     assets: assetHandlers(deps, storage),
-    cron: cronHandlers(deps, storage, config.cronSecret),
+    cron: cronHandlers(deps, storage, config.cronSecret, config.sentryDsn ? cronMonitor("cleanup", CLEANUP_SCHEDULE) : undefined),
     seo: seoHandlers(deps),
     storageFiles: storageFileHandlers(deps, !config.storage),
     monitoring: monitoringHandlers(deps),
