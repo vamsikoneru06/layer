@@ -7,3 +7,6 @@ allowBuilds:
 
 overrides:
   "@esbuild-kit/core-utils>esbuild": "^0.25.12"
+  # GHSA-wq5f-xc86-pv6w (librsvg in sharp) and GHSA-68fv-2mgg-jv7q (source-map-js), both pulled in by next and vite.
+  sharp: "^0.35.5"
+  source-map-js: "^1.2.2"
