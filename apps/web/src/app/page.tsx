@@ -49,6 +49,9 @@ export default function Landing() {
         <Link href="/privacy" className="hover:text-text">
           Privacy
         </Link>
+        <Link href="/cookies" className="hover:text-text">
+          Cookies
+        </Link>
       </footer>
     </main>
   );

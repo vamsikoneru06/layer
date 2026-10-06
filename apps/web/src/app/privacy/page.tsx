@@ -5,7 +5,7 @@ export const metadata = { title: "Privacy · VASH" };
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Privacy Policy" updated="28 September 2026">
+    <LegalPage title="Privacy Policy" updated="7 October 2026">
       <p>
         VASH is a free photo design editor run by an individual based in India, who is responsible for your personal data here (the
         &ldquo;Data Fiduciary&rdquo; under India&apos;s Digital Personal Data Protection Act, 2023). This page explains what we collect,
@@ -51,9 +51,13 @@ export default function PrivacyPage() {
       <h2>Cookies</h2>
       <ul>
         <li>A session cookie that keeps you signed in. It&apos;s required for the app to work.</li>
+        <li>A short-lived cookie, only while you sign in with Google, that protects the sign-in from forged requests.</li>
         <li>An appearance cookie, only if you choose Light or Dark in Settings, so the app opens in your chosen theme.</li>
       </ul>
-      <p>There are no advertising or analytics cookies, so there&apos;s no cookie banner.</p>
+      <p>
+        There are no advertising or analytics cookies, so there&apos;s no cookie banner. Each cookie&apos;s name and how long it lasts
+        are in our <Link href="/cookies">Cookie Policy</Link>.
+      </p>
 
       <h2>Who helps us run VASH</h2>
       <p>These service providers process data for us, only to provide VASH:</p>
