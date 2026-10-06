@@ -7,7 +7,7 @@ import "./globals.css";
 
 export const metadata = {
   title: "VASH",
-  description: "Pick a template, drop in your photos, export. Free to use.",
+  description: "Pick a template, edit the text, colours and shapes, export a PNG. Free, and you can start without an account.",
 };
 
 // Fallback for the SF Pro system stack on non-Apple devices. Self-hosted (font-src 'self'); OFL in fonts/.

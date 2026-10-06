@@ -78,6 +78,9 @@ export function createDesign(format: FormatKey, size?: { width: number; height: 
   return request("/api/designs", { method: "POST", json: { doc } });
 }
 
+/** Saves a document made on this device to the account. With `id`, a repeat returns the design already saved. */
+export const createDesignFromDoc = (doc: Doc, id?: string) => request<{ id: string }>("/api/designs", { method: "POST", json: id ? { id, doc } : { doc } });
+
 export type Design = { id: string; title: string; version: number; folderId: string | null; doc: Doc; updatedAt: string };
 
 export const getDesign = (id: string) => request<Design>(`/api/designs/${id}`);

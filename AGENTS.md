@@ -35,7 +35,7 @@ Do NOT use:
 Do use: the site favicon (`apps/web/src/app/icon.png`), and keep the Terms (`/terms`) and Privacy (`/privacy`)
 pages accurate when data handling changes.
 
-Copy must be true. Example: the app needs sign-in to create a design, so never claim "no sign-up needed".
+Copy must be true. Example: guests can create, edit and export designs (kept in the browser, `lib/local-designs.ts`), but uploading photos and keeping designs across devices need an account, so never claim "everything works without an account".
 
 The look is "Liquid Glass" and monochrome: colour tokens in `apps/web/src/app/globals.css` (`--bg`, `--text`,
 `--muted`, `--line`, `--field`, `--seg`...), light and dark mode, glass classes (`glass-btn`, `glass-primary`,
