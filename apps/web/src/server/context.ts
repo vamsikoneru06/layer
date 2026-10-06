@@ -18,6 +18,8 @@ import { shareHandlers } from "./shares/handlers";
 import { databaseStorage } from "./storage/database";
 import { storageFileHandlers } from "./storage/handlers";
 import { s3Storage } from "./storage/s3";
+import { stockHandlers } from "./stock/handlers";
+import { pexelsClient } from "./stock/pexels";
 import { templateHandlers } from "./templates/handlers";
 import { userHandlers } from "./users/handlers";
 
@@ -45,6 +47,7 @@ function build() {
     assets: assetHandlers(deps, storage),
     cron: cronHandlers(deps, storage, config.cronSecret),
     storageFiles: storageFileHandlers(deps, !config.storage),
+    stock: stockHandlers(deps, config.pexelsApiKey ? pexelsClient(config.pexelsApiKey) : null),
   };
 }
 

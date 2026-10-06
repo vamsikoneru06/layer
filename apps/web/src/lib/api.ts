@@ -235,3 +235,37 @@ export async function uploadPhoto(file: File): Promise<Photo> {
   if (!put.ok) throw new ApiError(put.status, `${file.name} couldn't be uploaded (storage answered ${put.status}).`);
   return request<Photo>(`/api/assets/${ticket.asset.id}/complete`, { method: "POST", json: { width, height } });
 }
+
+/** A stock photo from Pexels (see server/stock/pexels.ts). */
+export type StockPhoto = {
+  id: number;
+  width: number;
+  height: number;
+  alt: string;
+  photographer: string;
+  photographerUrl: string;
+  pageUrl: string;
+  color: string;
+  thumb: string;
+  full: string;
+};
+
+export function searchStock(q: string, page = 1): Promise<{ photos: StockPhoto[]; nextPage: number | null }> {
+  return request(`/api/stock/search?${new URLSearchParams({ q, page: String(page) })}`);
+}
+
+/** Pexels files load through this site, so the page only ever shows its own images. */
+export const stockImageUrl = (src: string) => `/api/stock/image?${new URLSearchParams({ src })}`;
+
+/** Copies a Pexels photo into the user's photos (an ordinary upload), so designs can use it like their own. */
+export async function importStockPhoto(photo: StockPhoto): Promise<Photo> {
+  let res: Response;
+  try {
+    res = await fetch(stockImageUrl(photo.full));
+  } catch {
+    throw new ApiError(0, "The photo couldn't be loaded. Check your connection and try again.");
+  }
+  if (!res.ok) throw new ApiError(res.status, "The photo couldn't be loaded from Pexels. Try another one.");
+  const blob = await res.blob();
+  return uploadPhoto(new File([blob], `pexels-${photo.id}.${blob.type === "image/png" ? "png" : "jpg"}`, { type: blob.type }));
+}

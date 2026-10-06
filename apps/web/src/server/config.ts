@@ -24,6 +24,8 @@ export interface AppConfig {
     | { kind: "gmail"; user: string; appPassword: string; from: string };
   storage: StorageConfig | null;
   cronSecret: string | null;
+  /** Pexels API key for stock photo search; search is off without it. */
+  pexelsApiKey: string | null;
 }
 
 const optional = z.preprocess((v) => (v === "" ? undefined : v), z.string().trim().min(1).optional());
@@ -53,6 +55,7 @@ const EnvSchema = z
     STORAGE_PUBLIC_BASE_URL: optionalUrl,
     STORAGE_PRIVATE_BUCKET: bucket.default("vash-private"),
     STORAGE_PUBLIC_BUCKET: bucket.default("vash-public"),
+    PEXELS_API_KEY: optional,
     CRON_SECRET: z.preprocess((v) => (v === "" ? undefined : v), z.string().min(32, "must be at least 32 characters").optional()),
   })
   .superRefine((env, ctx) => {
@@ -131,5 +134,6 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
           }
         : null,
     cronSecret: e.CRON_SECRET ?? null,
+    pexelsApiKey: e.PEXELS_API_KEY ?? null,
   };
 }

@@ -11,4 +11,5 @@ export const testConfig: AppConfig = {
   mail: { kind: "console" },
   storage: null,
   cronSecret: null,
+  pexelsApiKey: null,
 };
