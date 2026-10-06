@@ -22,4 +22,7 @@ export const RATE_LIMITS = {
   twoFactorVerify: { windowSeconds: 900, max: 5 },
   // Browser error reports relayed to Sentry; keeps one visitor from spending the free monthly quota.
   errorReport: { windowSeconds: 60, max: 30 },
+  // Pexels allows the whole app 200 searches an hour, so one person can't use them all (results are cached too).
+  stockSearch: { windowSeconds: 3_600, max: 60 },
+  stockImage: { windowSeconds: 3_600, max: 600 },
 } as const satisfies Record<string, RateLimitRule>;

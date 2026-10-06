@@ -82,6 +82,10 @@ export default function PrivacyPage() {
         <li>Google handles &ldquo;Sign in with Google&rdquo; and sends our sign-in emails.</li>
         <li>Sentry receives the error reports described above.</li>
         <li>GitHub stores encrypted copies of the database, as backups.</li>
+        <li>
+          Pexels provides the free stock photos in the editor. When you search, our server sends Pexels your search words, never
+          your name, email or IP address. Photos you pick are copied into your account like your own uploads.
+        </li>
       </ul>
       <p>
         Their servers may be outside India, for example in the United States. We only use providers that protect data with security
