@@ -10,4 +10,10 @@ describe("createDb", () => {
     expect(onIdleError).toHaveBeenCalledWith(err);
     await pool.end();
   });
+
+  it("gives up on an unreachable database instead of waiting forever", async () => {
+    const { pool } = createDb("postgres://unused@127.0.0.1:1/unused", () => {});
+    expect(pool.options).toMatchObject({ connectionTimeoutMillis: 5_000, query_timeout: 15_000 });
+    await pool.end();
+  });
 });
