@@ -19,6 +19,8 @@ export function s3Storage(
     // which S3/R2 then reject for every real upload; ranged reads can't be validated either.
     requestChecksumCalculation: "WHEN_REQUIRED",
     responseChecksumValidation: "WHEN_REQUIRED",
+    // A stalled storage call fails (and the SDK retries it) instead of holding the request open.
+    requestHandler: { connectionTimeout: 5_000, requestTimeout: 20_000 },
   }),
 ): ObjectStorage {
   const bucketName = (bucket: Bucket) => (bucket === "public" ? config.publicBucket : config.privateBucket);

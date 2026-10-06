@@ -14,6 +14,7 @@ import { healthHandlers } from "./health/handlers";
 import type { Handler } from "./http/types";
 import { createLogger } from "./logging";
 import { meHandlers } from "./me/handlers";
+import { seoHandlers } from "./seo/handlers";
 import { shareHandlers } from "./shares/handlers";
 import { databaseStorage } from "./storage/database";
 import { storageFileHandlers } from "./storage/handlers";
@@ -44,6 +45,7 @@ function build() {
     admin: adminHandlers(deps),
     assets: assetHandlers(deps, storage),
     cron: cronHandlers(deps, storage, config.cronSecret),
+    seo: seoHandlers(deps),
     storageFiles: storageFileHandlers(deps, !config.storage),
   };
 }
