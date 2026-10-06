@@ -81,7 +81,11 @@ describe("POST /api/monitoring", () => {
   it("still relays when the rate-limit store is down, since that's when reports matter most", async () => {
     const forwarded: string[] = [];
     const forward = (async (url: string | URL | Request) => (forwarded.push(String(url)), new Response("{}"))) as typeof fetch;
-    const down = new Proxy({}, { get: () => () => Promise.reject(new Error("database down")) }) as typeof t.db;
+    const down = {
+      insert: () => {
+        throw new Error("database down");
+      },
+    } as unknown as typeof t.db;
     const tunnel = monitoringHandlers(testDeps(down, { config: { ...testConfig, sentryDsn: DSN } }), forward).tunnel;
     expect((await call(tunnel, post(envelope(DSN)))).status).toBe(200);
     expect(forwarded).toHaveLength(1);
