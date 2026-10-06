@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
+import { TryTemplate } from "@/components/landing/try-template";
 import { ButtonLink } from "@/components/ui/button";
 import { CrowdCanvas } from "@/components/ui/crowd-canvas";
 
@@ -33,7 +34,9 @@ export default function Landing() {
           Pick a template, make it yours, export a PNG. Free, and you can start without an account. Sign in with an email address to keep your designs.
         </p>
         <div className="flex flex-wrap justify-center gap-3">
-          <ButtonLink href="/home" size="lg" className="px-[26px]">
+          {/* The editor needs 1024 px; narrower screens start from Home instead. */}
+          <TryTemplate className="hidden lg:inline-block" />
+          <ButtonLink href="/home" size="lg" className="px-[26px] lg:hidden">
             Start designing
           </ButtonLink>
           <ButtonLink href="/templates" variant="secondary" size="lg" className="px-[26px]">
