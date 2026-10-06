@@ -141,7 +141,7 @@ export type TemplateItem = {
   height: number;
   featured: boolean;
   usesCount: number;
-  author: { handle: string | null; name: string } | null;
+  author: { handle: string | null; name: string | null } | null;
 };
 
 export type TemplateDetail = TemplateItem & { doc: Doc };

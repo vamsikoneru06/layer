@@ -6,19 +6,21 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSession } from "@/components/app/session";
 import { Button } from "@/components/ui/button";
-import { copyTemplate, getTemplate, type TemplateDetail as Template } from "@/lib/api";
-import { docFromTemplate, localDesigns, newLocalDesign } from "@/lib/local-designs";
+import { getTemplate, type TemplateDetail as Template } from "@/lib/api";
+import { openTemplate } from "@/lib/open-template";
 import { DocPreview } from "./doc-preview";
 import { categoryLabel, formatLabel } from "./templates-view";
 
-export function TemplateDetail({ id }: { id: string }) {
+/** `initial`: the template as the server rendered it; null when it isn't public (a hidden one opens for its author through the API). */
+export function TemplateDetail({ id, initial = null }: { id: string; initial?: Template | null }) {
   const router = useRouter();
   const session = useSession();
-  const [template, setTemplate] = useState<Template | null>(null);
+  const [template, setTemplate] = useState<Template | null>(initial);
   const [error, setError] = useState<string | null>(null);
   const [using, setUsing] = useState(false);
 
   useEffect(() => {
+    if (initial) return;
     let live = true;
     getTemplate(id)
       .then((t) => live && setTemplate(t))
@@ -26,21 +28,14 @@ export function TemplateDetail({ id }: { id: string }) {
     return () => {
       live = false;
     };
-  }, [id]);
+  }, [id, initial]);
 
   async function use() {
     setUsing(true);
     setError(null);
     try {
-      if (session.status === "user") {
-        const design = await copyTemplate(id);
-        return router.push(`/edit/${design.id}`);
-      }
-      // Guests: the same copy, kept on this device until they sign in.
-      const doc = template && docFromTemplate(template.doc);
-      if (!doc) throw new Error("Couldn't open this template. Try again.");
-      await localDesigns.put(newLocalDesign(doc));
-      router.push(`/edit/${doc.id}`);
+      if (!template) return;
+      router.push(`/edit/${await openTemplate(template, session.status === "user")}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't open this template. Try again.");
       setUsing(false);

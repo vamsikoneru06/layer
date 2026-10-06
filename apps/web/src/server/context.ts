@@ -20,6 +20,7 @@ import { databaseStorage } from "./storage/database";
 import { storageFileHandlers } from "./storage/handlers";
 import { s3Storage } from "./storage/s3";
 import { templateHandlers } from "./templates/handlers";
+import { publicTemplate } from "./templates/public";
 import { userHandlers } from "./users/handlers";
 
 function build() {
@@ -47,6 +48,7 @@ function build() {
     cron: cronHandlers(deps, storage, config.cronSecret),
     seo: seoHandlers(deps),
     storageFiles: storageFileHandlers(deps, !config.storage),
+    publicTemplate: (id: string) => publicTemplate(db, id),
   };
 }
 
@@ -58,3 +60,6 @@ let app: App | undefined;
 export function route(pick: (app: App) => Handler | ((req: Request) => Promise<Response>)): Handler {
   return (req, ctx) => pick((app ??= build()))(req, ctx);
 }
+
+/** The same lazily built app, for server components that read data directly (template pages). */
+export const server = (): App => (app ??= build());
