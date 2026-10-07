@@ -23,6 +23,11 @@ const ids = (res: { body: { items: { id: string }[] } }) => res.body.items.map((
 const handle = () => `u_${randomUUID().slice(0, 8)}`;
 
 describe("GET /api/templates", () => {
+  it("lets the CDN cache the public list for a minute", async () => {
+    const res = await list();
+    expect(res.headers.get("cache-control")).toBe("public, max-age=0, s-maxage=60, stale-while-revalidate=300");
+  });
+
   it("lists published templates newest first, a page at a time", async () => {
     const a = await createTemplate(t.db, { createdAt: new Date("2026-09-01T00:00:00Z") });
     const b = await createTemplate(t.db, { createdAt: new Date("2026-09-02T00:00:00Z") });

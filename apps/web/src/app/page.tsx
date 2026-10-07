@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
+import { TryTemplate } from "@/components/landing/try-template";
 import { ButtonLink } from "@/components/ui/button";
 import { CrowdCanvas } from "@/components/ui/crowd-canvas";
 
@@ -27,13 +28,15 @@ export default function Landing() {
 
       <section className="relative z-10 mx-auto mt-12 flex max-w-[980px] flex-col items-center gap-[26px] px-4 text-center sm:mt-[84px] sm:px-6">
         <h1 className="text-[clamp(44px,8vw,96px)] leading-[.96] font-bold tracking-[-0.035em] text-balance">
-          Your photos. Any template. Done in a minute.
+          Templates for posts, stories, posters and invitations.
         </h1>
         <p className="max-w-[440px] text-[19px] leading-normal text-muted">
-          Pick a template, drop in your photos, export. Free to use. All you need to sign in is an email address.
+          Pick a template, make it yours, export a PNG. Free, and you can start without an account. Sign in with an email address to keep your designs.
         </p>
         <div className="flex flex-wrap justify-center gap-3">
-          <ButtonLink href="/home" size="lg" className="px-[26px]">
+          {/* The editor needs 1024 px; narrower screens start from Home instead. */}
+          <TryTemplate className="hidden lg:inline-block" />
+          <ButtonLink href="/home" size="lg" className="px-[26px] lg:hidden">
             Start designing
           </ButtonLink>
           <ButtonLink href="/templates" variant="secondary" size="lg" className="px-[26px]">

@@ -23,6 +23,11 @@ export default function PrivacyPage() {
           <strong>Your work:</strong> the designs, folders and photos you create or upload, to save them and show them only to you.
         </li>
         <li>
+          <strong>Designs made without signing in:</strong> kept only in your browser&apos;s storage on your device. We don&apos;t
+          receive them. When you sign in, VASH moves them to your account and deletes them from the browser. Until then, clearing
+          your browser&apos;s site data deletes them, and you can delete each one on the Designs page.
+        </li>
+        <li>
           <strong>Sign-in sessions:</strong> a record for each device you sign in on, which can include its IP address and browser name,
           to keep you signed in and to spot misuse of your account.
         </li>
@@ -55,8 +60,9 @@ export default function PrivacyPage() {
         <li>An appearance cookie, only if you choose Light or Dark in Settings, so the app opens in your chosen theme.</li>
       </ul>
       <p>
-        There are no advertising or analytics cookies, so there&apos;s no cookie banner. Each cookie&apos;s name and how long it lasts
-        are in our <Link href="/cookies">Cookie Policy</Link>.
+        If you make designs without signing in, they&apos;re kept in this site&apos;s storage in your browser (IndexedDB). That
+        storage isn&apos;t a cookie and isn&apos;t sent to us. There are no advertising or analytics cookies, so there&apos;s no cookie
+        banner. Each cookie&apos;s name and how long it lasts are in our <Link href="/cookies">Cookie Policy</Link>.
       </p>
 
       <h2>Who helps us run VASH</h2>

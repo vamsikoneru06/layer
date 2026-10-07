@@ -42,9 +42,16 @@ export default function CookiesPage() {
       </p>
 
       <h2>Storage that isn&apos;t a cookie</h2>
+      <ul>
+        <li>
+          Designs you make without signing in are kept in your browser&apos;s IndexedDB storage until you sign in, when VASH moves them
+          to your account and deletes them from the browser.
+        </li>
+        <li>Whether you view your Designs as a grid or a list is kept in your browser&apos;s local storage.</li>
+      </ul>
       <p>
-        VASH remembers whether you view your Designs as a grid or a list in your browser&apos;s local storage. It stays on your device
-        and isn&apos;t sent to us.
+        Neither is a cookie, and neither is sent to us with your requests. The grid or list choice never leaves your device; designs
+        leave it only when you sign in.
       </p>
 
       <h2>Removing or blocking cookies</h2>
