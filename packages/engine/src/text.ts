@@ -29,8 +29,22 @@ interface RawLine {
   broken: boolean;
 }
 
+const segmenter = typeof Intl !== "undefined" && "Segmenter" in Intl ? new Intl.Segmenter(undefined, { granularity: "grapheme" }) : null;
+const PLAIN = /^[\x20-\x7e]*$/;
+
+/**
+ * Visible characters (grapheme clusters): an emoji with a skin tone, or a Telugu or Devanagari conjunct, is one
+ * character however many code units it takes. Lines only break between them, and letter spacing applies once per character.
+ */
+export function graphemes(s: string): string[] {
+  if (PLAIN.test(s)) return s.split("");
+  return segmenter ? Array.from(segmenter.segment(s), (g) => g.segment) : Array.from(s);
+}
+
+export const graphemeCount = (s: string): number => (PLAIN.test(s) ? s.length : graphemes(s).length);
+
 function wrap(node: TextNode, size: number, measure: Measure): RawLine[] {
-  const width = (s: string) => measure(s, node.font, size) + node.letterSpacing * s.length;
+  const width = (s: string) => measure(s, node.font, size) + (node.letterSpacing === 0 ? 0 : node.letterSpacing * graphemeCount(s));
   const lines: RawLine[] = [];
   for (const paragraph of node.content.split("\n")) {
     const words = paragraph.split(" ").filter((w, i, all) => w !== "" || all.length === 1);
@@ -47,15 +61,21 @@ function wrap(node: TextNode, size: number, measure: Measure): RawLine[] {
         current = word;
         continue;
       }
-      // The word alone is wider than the box: break it by characters.
-      let rest = word;
-      while (width(rest) > node.width && rest.length > 1) {
-        let cut = rest.length - 1;
-        while (cut > 1 && width(rest.slice(0, cut)) > node.width) cut--;
-        push(rest.slice(0, cut), false, true);
-        rest = rest.slice(cut);
+      // The word alone is wider than the box: break it between characters, at least one per line. The longest
+      // prefix that fits is found by binary search (width only grows as characters are added).
+      let rest = graphemes(word);
+      while (rest.length > 1 && width(rest.join("")) > node.width) {
+        let lo = 1;
+        let hi = rest.length - 1;
+        while (lo < hi) {
+          const mid = (lo + hi + 1) >> 1;
+          if (width(rest.slice(0, mid).join("")) <= node.width) lo = mid;
+          else hi = mid - 1;
+        }
+        push(rest.slice(0, lo).join(""), false, true);
+        rest = rest.slice(lo);
       }
-      current = rest;
+      current = rest.join("");
     }
     push(current, true);
   }
