@@ -54,7 +54,7 @@ describe("selection wrappers: one undo step each", () => {
     core.select(["a", "b"]);
     toggleLockSelection(core);
     expect(alignSelection(core, "left")).toBe(false);
-    expect(core.getState().notice).toBe("This layer is locked by the template.");
+    expect(core.getState().notice).toBe("This layer is locked. Unlock it to change it.");
     expect(toggleLockSelection(core)).toBe(true);
     expect(alignSelection(core, "left")).toBe(true);
   });

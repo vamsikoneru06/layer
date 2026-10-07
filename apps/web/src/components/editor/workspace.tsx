@@ -114,7 +114,7 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
     };
   }, [design, local]);
 
-  // Refusals ("Layout locked by the template.") and other engine messages show as a toast, then clear.
+  // Refusals ("This layer is locked. Unlock it to change it.") and other engine messages show as a toast, then clear.
   const notice = state?.notice ?? null;
   useEffect(() => {
     if (!notice || !editor) return;

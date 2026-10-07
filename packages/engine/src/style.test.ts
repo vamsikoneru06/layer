@@ -125,7 +125,7 @@ describe("planPasteStyle", () => {
   it("follows the lock policy: locked layers refuse, content-only layers take a style", () => {
     const doc = docWith([redRect, { ...rect("l", {}), lock: "locked" as const }, { ...rect("c", {}), lock: "content-only" as const }]);
     const style = styleOf(redRect);
-    expect(reason(planPasteStyle(doc, ["l"], "design", style))).toBe("This layer is locked by the template.");
+    expect(reason(planPasteStyle(doc, ["l"], "design", style))).toBe("This layer is locked. Unlock it to change it.");
     expect(planPasteStyle(doc, ["c"], "design", style).ok).toBe(true);
     expect(planPasteStyle(doc, ["l"], "template", style).ok).toBe(true);
   });

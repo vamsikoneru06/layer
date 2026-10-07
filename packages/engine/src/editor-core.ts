@@ -2,7 +2,7 @@ import { LIMITS, type Doc, type NodeId } from "@vash/schema";
 import type { Command } from "./commands";
 import { History } from "./history";
 import type { Box } from "./math";
-import { checkPolicy, type EditMode } from "./policy";
+import { checkPolicy, LOCKED, type EditMode } from "./policy";
 import type { Guide } from "./snapping";
 import type { Viewport } from "./viewport";
 
@@ -103,7 +103,7 @@ export class EditorCore {
     const node = this.doc.nodes[id];
     if (node?.type !== "text" || this.#chrome.editing) return false;
     if (this.mode === "design" && node.lock === "locked") {
-      this.setChrome({ notice: "This layer is locked by the template." });
+      this.setChrome({ notice: LOCKED });
       return false;
     }
     this.select([id]);

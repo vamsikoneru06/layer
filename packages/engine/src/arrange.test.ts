@@ -134,7 +134,7 @@ describe("planReorder", () => {
 
   it("refuses a locked layer in a design, with the policy's reason, but not in Author Mode", () => {
     const doc = docWith([locked(rect("a", {}), "locked"), rect("b", {})]);
-    expect(reason(planReorder(doc, ["a"], "design", "front"))).toBe("This layer is locked by the template.");
+    expect(reason(planReorder(doc, ["a"], "design", "front"))).toBe("This layer is locked. Unlock it to change it.");
     expect(planReorder(doc, ["a"], "template", "front").ok).toBe(true);
   });
 
@@ -229,7 +229,7 @@ describe("planAlign", () => {
     const layout = docWith([locked(rect("a", { x: 300 }), "content-only")]);
     expect(reason(planAlign(layout, ["a"], "design", "left"))).toBe("Layout locked by the template. You can still change the text or photo.");
     const fully = docWith([locked(rect("a", { x: 300 }), "locked")]);
-    expect(reason(planAlign(fully, ["a"], "design", "left"))).toBe("This layer is locked by the template.");
+    expect(reason(planAlign(fully, ["a"], "design", "left"))).toBe("This layer is locked. Unlock it to change it.");
     expect(planAlign(fully, ["a"], "template", "left").ok).toBe(true);
   });
 });
@@ -301,7 +301,7 @@ describe("planDistribute", () => {
 
   it("keeps the selection and follows the lock policy", () => {
     const doc = docWith([rect("a", { x: 100 }), locked(rect("b", { x: 200 }), "locked"), rect("c", { x: 800 })]);
-    expect(reason(planDistribute(doc, ["a", "b", "c"], "design", "horizontal"))).toBe("This layer is locked by the template.");
+    expect(reason(planDistribute(doc, ["a", "b", "c"], "design", "horizontal"))).toBe("This layer is locked. Unlock it to change it.");
     const free = docWith([rect("a", { x: 100 }), rect("b", { x: 200 }), rect("c", { x: 800 })]);
     expect(ok(planDistribute(free, ["c", "a", "b"], "design", "horizontal")).select).toEqual(["c", "a", "b"]);
   });
@@ -376,7 +376,7 @@ describe("planToggleLock and lockLabel", () => {
 
   it("lets a user unlock a template-locked layer (the policy allows lock-only changes) and then edit it", () => {
     const doc = docWith([locked(rect("a", { x: 300 }), "locked")]);
-    expect(reason(planAlign(doc, ["a"], "design", "left"))).toBe("This layer is locked by the template.");
+    expect(reason(planAlign(doc, ["a"], "design", "left"))).toBe("This layer is locked. Unlock it to change it.");
     const unlocked = run(doc, planToggleLock(doc, ["a"], "design"));
     expect(unlocked.nodes.a!.lock).toBe("free");
     expect(planAlign(unlocked, ["a"], "design", "left").ok).toBe(true);
