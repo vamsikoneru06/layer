@@ -3,9 +3,9 @@ import { galleryQuery, readGalleryParams } from "./gallery-params";
 
 describe("gallery URL filters", () => {
   it("reads known filters and round-trips them", () => {
-    const f = readGalleryParams(new URLSearchParams("q=menu&category=food&format=ig-story&sort=new"));
-    expect(f).toEqual({ q: "menu", category: "food", format: "ig-story", sort: "new" });
-    expect(galleryQuery(f)).toBe("?q=menu&category=food&format=ig-story&sort=new");
+    const f = readGalleryParams(new URLSearchParams("q=menu&category=menus&format=ig-story&sort=new"));
+    expect(f).toEqual({ q: "menu", category: "menus", format: "ig-story", sort: "new" });
+    expect(galleryQuery(f)).toBe("?q=menu&category=menus&format=ig-story&sort=new");
   });
 
   it("drops unknown values and keeps the plain gallery URL clean", () => {

@@ -1,8 +1,8 @@
 export * from "./types";
-export { CATEGORIES, CURRENT_SCHEMA_VERSION, FONT_FAMILIES, FORMAT_KEYS, FORMATS, LIMITS } from "./constants";
+export { CATEGORIES, CATEGORY_GROUPS, categoryLabel, CURRENT_SCHEMA_VERSION, FONT_FAMILIES, FORMAT_KEYS, FORMATS, LIMITS } from "./constants";
 export { validatePathData } from "./path";
 export { validateDoc, type ValidateOptions } from "./validate";
-export { migrateDoc, MIGRATIONS, type Migration, type MigrateResult } from "./migrate";
+export { migrateDoc, MIGRATIONS, V1_CATEGORIES, type Migration, type MigrateResult } from "./migrate";
 export { createEmptyDoc, defaultFilters, type EmptyDocOptions } from "./factory";
 export { lintTemplate, referencedAssetIds, replaceAssetIds, scanForPii, scrubForPublish, type PiiFinding } from "./template";
 
