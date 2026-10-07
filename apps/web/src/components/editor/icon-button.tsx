@@ -1,17 +1,44 @@
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 
-/** `title` is the tooltip when it should say more than the label (a shortcut, or why the button is off). */
-export function IconButton({ label, title = label, onClick, disabled, children }: { label: string; title?: string; onClick: () => void; disabled?: boolean; children: ReactNode }) {
+/**
+ * `title` is the tooltip when it should say more than the label (a shortcut, or why the button is off).
+ * `disabled` switches the button off for good. `unavailable` is for a button that is off right now for a
+ * reason worth reading: it looks disabled and does nothing, but stays focusable (`aria-disabled`) and the
+ * reason is announced after its name, so keyboard and screen-reader users get it too.
+ */
+export function IconButton({
+  label,
+  title = label,
+  onClick,
+  disabled,
+  unavailable,
+  children,
+}: {
+  label: string;
+  title?: string;
+  onClick: () => void;
+  disabled?: boolean;
+  unavailable?: string;
+  children: ReactNode;
+}) {
+  const reasonId = useId();
   return (
     <button
       type="button"
       aria-label={label}
       title={title}
-      onClick={onClick}
+      aria-disabled={unavailable ? true : undefined}
+      aria-describedby={unavailable ? reasonId : undefined}
+      onClick={unavailable ? undefined : onClick}
       disabled={disabled}
-      className="flex size-8 items-center justify-center rounded-lg text-text hover:bg-field disabled:opacity-35 disabled:hover:bg-transparent [&_svg]:size-[18px]"
+      className="flex size-8 items-center justify-center rounded-lg text-text hover:bg-field disabled:opacity-35 disabled:hover:bg-transparent aria-disabled:opacity-35 aria-disabled:hover:bg-transparent [&_svg]:size-[18px]"
     >
       {children}
+      {unavailable && (
+        <span id={reasonId} className="sr-only">
+          {unavailable}
+        </span>
+      )}
     </button>
   );
 }

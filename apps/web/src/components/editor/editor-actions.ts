@@ -143,8 +143,11 @@ const FLIP = [
   ["flipVertical", "Flip vertical", "vertical"],
 ] as const satisfies readonly (readonly [ActionId, string, Axis])[];
 
-/** Every editor action with its current enabled state. Rebuilt whenever the editor state changes. */
-export function buildActions(state: EditorState, core: EditorCore, host: ActionHost): Record<ActionId, Action> {
+/** The parts of the editor state that decide what the actions offer. */
+export type ActionState = Pick<EditorState, "doc" | "selection" | "mode" | "canUndo" | "canRedo"> & { viewport: Pick<EditorState["viewport"], "zoom"> };
+
+/** Every editor action with its current enabled state. Rebuilt when `state` or the clipboard style changes. */
+export function buildActions(state: ActionState, core: EditorCore, host: ActionHost): Record<ActionId, Action> {
   const { doc, selection } = state;
   const needsSelection = selection.length === 0 ? "Select a layer first." : undefined;
   const deleteRefusal = (): string | undefined => {
@@ -281,6 +284,9 @@ export function toMenuItems(actions: Record<ActionId, Action>, layout: Layout, m
 
 /** Actions listed in the shortcuts dialog, in order. */
 export const SHORTCUT_ACTIONS: readonly ActionId[] = ["undo", "redo", "cut", "copy", "paste", "duplicate", "delete", "selectAll", "group", "ungroup", "copyStyle", "pasteStyle", "bringForward", "bringToFront", "sendBackward", "sendToBack", "toggleLock", "save"];
+
+/** Names for the shortcuts dialog where an action's own label changes with the selection and would mislead there. */
+export const SHORTCUT_NAMES: Partial<Record<ActionId, string>> = { toggleLock: "Lock or unlock" };
 
 /** Keys and gestures the canvas handles itself, so they are not actions. */
 export const OTHER_SHORTCUTS: readonly { spec: string; does: string }[] = [

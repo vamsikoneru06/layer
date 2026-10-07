@@ -91,7 +91,7 @@ const ARRANGE_ROWS: readonly { name: string; buttons: readonly { id: ActionId; i
   },
 ];
 
-function PositionSection({ actions, mac }: { actions: Actions; mac: boolean }) {
+function ArrangeSection({ actions, mac }: { actions: Actions; mac: boolean }) {
   return (
     <Section title="Arrange">
       <div className="flex flex-col gap-1">
@@ -100,7 +100,7 @@ function PositionSection({ actions, mac }: { actions: Actions; mac: boolean }) {
             {row.buttons.map(({ id, icon }) => {
               const a = actions[id];
               return (
-                <IconButton key={id} label={a.label} title={actionTitle(a, mac)} onClick={a.run} disabled={!!a.disabled}>
+                <IconButton key={id} label={a.label} title={actionTitle(a, mac)} onClick={a.run} unavailable={a.disabled}>
                   {icon}
                 </IconButton>
               );
@@ -112,7 +112,7 @@ function PositionSection({ actions, mac }: { actions: Actions; mac: boolean }) {
   );
 }
 
-/** `actions` feeds the Position buttons; a host without them (the filters lab) shows the panel without that section. */
+/** `actions` feeds the Arrange buttons; a host without them (the filters lab) shows the panel without that section. */
 export function PropertiesPanel({ state, core, actions, mac = false }: { state: EditorState; core: EditorCore; actions?: Actions; mac?: boolean }) {
   const colors = useMemo(() => docColors(state.doc), [state.doc]);
   return (
@@ -131,7 +131,7 @@ function PanelBody({ state, core, actions, mac }: { state: EditorState; core: Ed
     return (
       <div className="flex flex-col gap-3.5">
         <p className="text-muted">{selection.length} layers selected. Select one layer to edit its properties.</p>
-        {actions && <PositionSection actions={actions} mac={mac} />}
+        {actions && <ArrangeSection actions={actions} mac={mac} />}
       </div>
     );
   }
@@ -198,7 +198,7 @@ function PanelBody({ state, core, actions, mac }: { state: EditorState; core: Ed
       {node.type === "shape" && <ShapeSection node={node} disabled={locked} update={update} />}
       {node.type === "frame" && <FiltersSection node={node} disabled={locked} update={update} />}
 
-      {actions && <PositionSection actions={actions} mac={mac} />}
+      {actions && <ArrangeSection actions={actions} mac={mac} />}
 
       <Section title="Position & size">
         <div className="grid grid-cols-2 gap-2">

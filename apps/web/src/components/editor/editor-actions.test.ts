@@ -1,7 +1,7 @@
 import { EditorCore, ZOOM_MAX } from "@vash/engine";
 import { createEmptyDoc, type Doc, type ShapeNode } from "@vash/schema";
 import { describe, expect, it, vi } from "vitest";
-import { actionTitle, ACTION_IDS, buildActions, CONTEXT_LAYOUTS, formatShortcut, MENUS, SHORTCUT_ACTIONS, toMenuItems, type ActionHost } from "./editor-actions";
+import { actionTitle, ACTION_IDS, buildActions, CONTEXT_LAYOUTS, formatShortcut, MENUS, SHORTCUT_ACTIONS, SHORTCUT_NAMES, toMenuItems, type ActionHost } from "./editor-actions";
 
 function rect(id: string, x: number, lock: ShapeNode["lock"] = "free"): ShapeNode {
   return {
@@ -401,6 +401,8 @@ describe("object controls", () => {
     expect(toMenuItems(a, ["bringToFront", "toggleLock"], false)).toMatchObject([{ shortcut: "Ctrl+Shift+]" }, { shortcut: "Alt+Shift+L" }]);
     for (const id of NEW_IDS) if (a[id].shortcut) expect(SHORTCUT_ACTIONS, id).toContain(id);
     for (const id of SHORTCUT_ACTIONS) expect(a[id].shortcut, id).toBeTruthy();
+    // The dialog names Lock by what the key does, not by what the current selection would do.
+    expect(SHORTCUT_NAMES.toggleLock).toBe("Lock or unlock");
   });
 
   it("titles a button with its shortcut, or with why it is off", () => {
