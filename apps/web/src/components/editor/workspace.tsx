@@ -272,7 +272,7 @@ export function Workspace({ design }: { design: Design }) {
   const artboard = state?.doc.artboard ?? design.doc.artboard;
 
   return (
-    <main className="flex h-svh flex-col overflow-hidden bg-bg text-text">
+    <main className="editor-stage flex h-svh flex-col overflow-hidden text-text">
       <EditorHeader
         editor={editor}
         doc={state?.doc ?? design.doc}
@@ -289,11 +289,11 @@ export function Workspace({ design }: { design: Design }) {
         mac={mac}
       />
 
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 flex-1 gap-2 px-2 pb-2">
         {!panelsHidden && <InsertRail editor={editor} />}
         <div className="relative flex min-w-0 flex-1 flex-col">
-          <div ref={container} className="relative min-h-0 flex-1 overflow-hidden bg-bg2">
-            <canvas ref={scene} className="absolute inset-0" aria-hidden />
+          <div ref={container} className="relative min-h-0 flex-1 overflow-hidden">
+            <canvas ref={scene} className="editor-develop absolute inset-0" aria-hidden />
             <canvas ref={overlay} className="absolute inset-0 touch-none" aria-label="Design canvas. Use the Layers panel to select layers with the keyboard." />
             {state && editor && <TextEditor editor={editor} state={state} />}
             {panelsHidden && (
@@ -305,7 +305,7 @@ export function Workspace({ design }: { design: Design }) {
           {!panelsHidden && <BottomBar editor={editor} zoom={zoom} size={artboard} actions={actions} />}
         </div>
         {!panelsHidden && (
-          <aside className="flex w-[288px] flex-none flex-col border-l-[.5px] border-line text-[13px]" aria-label="Design panel">
+          <aside className="editor-island flex w-[288px] flex-none flex-col overflow-hidden text-[13px]" aria-label="Design panel">
             <div className="px-4 pt-3.5 pb-3">
               <Segmented
                 name="Panel"
