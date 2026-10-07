@@ -41,7 +41,7 @@ export function ContextMenu({ at, items, onClose }: { at: { x: number; y: number
       ref={list}
       role="menu"
       aria-label="Layer actions"
-      className={cn("fixed z-50", MENU_PANEL)}
+      className={cn("fixed z-50 max-h-[calc(100svh-16px)] overflow-y-auto", MENU_PANEL)}
       style={{ left: at.x, top: at.y }}
       onKeyDown={(e) => {
         if (e.key === "Escape") onClose();

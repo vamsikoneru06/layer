@@ -1,18 +1,36 @@
 import {
+  alignSelection,
   checkPolicy,
+  copiedStyleOf,
+  copyStyleOfSelection,
+  distributeSelection,
   duplicateSelection,
+  flipSelection,
   groupSelection,
   handleKey,
+  lockLabel,
+  pasteStyleToSelection,
+  planAlign,
+  planDistribute,
   planDuplicate,
+  planFlip,
   planGroup,
+  planPasteStyle,
+  planReorder,
+  planToggleLock,
   planUngroup,
+  reorderSelection,
+  toggleLockSelection,
   ungroupSelection,
   ZOOM_MAX,
   ZOOM_MIN,
+  type AlignEdge,
+  type Axis,
   type Command,
   type EditorCore,
   type EditorState,
   type Plan,
+  type ReorderTarget,
 } from "@vash/engine";
 import type { MenuItem } from "@/components/ui/menu";
 
@@ -27,6 +45,23 @@ export const ACTION_IDS = [
   "selectAll",
   "group",
   "ungroup",
+  "copyStyle",
+  "pasteStyle",
+  "bringForward",
+  "bringToFront",
+  "sendBackward",
+  "sendToBack",
+  "alignLeft",
+  "alignCenter",
+  "alignRight",
+  "alignTop",
+  "alignMiddle",
+  "alignBottom",
+  "distributeHorizontal",
+  "distributeVertical",
+  "flipHorizontal",
+  "flipVertical",
+  "toggleLock",
   "newDesign",
   "open",
   "makeCopy",
@@ -85,6 +120,29 @@ export interface ActionHost {
 const DELETE_KEY = { key: "Delete", mod: false, shift: false, alt: false } as const;
 const reasonOf = (plan: Plan): string | undefined => (plan.ok ? undefined : plan.reason);
 
+const ORDER = [
+  ["bringForward", "Bring forward", "forward", "mod+]"],
+  ["bringToFront", "Bring to front", "front", "mod+shift+]"],
+  ["sendBackward", "Send backward", "backward", "mod+["],
+  ["sendToBack", "Send to back", "back", "mod+shift+["],
+] as const satisfies readonly (readonly [ActionId, string, ReorderTarget, string])[];
+const ALIGN = [
+  ["alignLeft", "Align left", "left"],
+  ["alignCenter", "Align centre", "center"],
+  ["alignRight", "Align right", "right"],
+  ["alignTop", "Align top", "top"],
+  ["alignMiddle", "Align middle", "middle"],
+  ["alignBottom", "Align bottom", "bottom"],
+] as const satisfies readonly (readonly [ActionId, string, AlignEdge])[];
+const DISTRIBUTE = [
+  ["distributeHorizontal", "Distribute horizontally", "horizontal"],
+  ["distributeVertical", "Distribute vertically", "vertical"],
+] as const satisfies readonly (readonly [ActionId, string, Axis])[];
+const FLIP = [
+  ["flipHorizontal", "Flip horizontal", "horizontal"],
+  ["flipVertical", "Flip vertical", "vertical"],
+] as const satisfies readonly (readonly [ActionId, string, Axis])[];
+
 /** Every editor action with its current enabled state. Rebuilt whenever the editor state changes. */
 export function buildActions(state: EditorState, core: EditorCore, host: ActionHost): Record<ActionId, Action> {
   const { doc, selection } = state;
@@ -107,6 +165,13 @@ export function buildActions(state: EditorState, core: EditorCore, host: ActionH
     { id: "selectAll", label: "Select all", shortcut: "mod+a", disabled: doc.root.length === 0 ? "Nothing to select." : undefined, run: () => core.select(core.doc.root) },
     { id: "group", label: "Group", shortcut: "mod+g", disabled: reasonOf(planGroup(doc, selection, state.mode)), run: () => void groupSelection(core) },
     { id: "ungroup", label: "Ungroup", shortcut: "mod+shift+g", disabled: reasonOf(planUngroup(doc, selection, state.mode)), run: () => void ungroupSelection(core) },
+    { id: "copyStyle", label: "Copy style", shortcut: "mod+alt+c", disabled: selection.length === 1 ? undefined : "Select one layer to copy its style.", run: () => void copyStyleOfSelection(core) },
+    { id: "pasteStyle", label: "Paste style", shortcut: "mod+alt+v", disabled: reasonOf(planPasteStyle(doc, selection, state.mode, copiedStyleOf(core))), run: () => void pasteStyleToSelection(core) },
+    ...ORDER.map(([id, label, where, shortcut]): Action => ({ id, label, shortcut, disabled: reasonOf(planReorder(doc, selection, state.mode, where)), run: () => void reorderSelection(core, where) })),
+    ...ALIGN.map(([id, label, edge]): Action => ({ id, label, disabled: reasonOf(planAlign(doc, selection, state.mode, edge)), run: () => void alignSelection(core, edge) })),
+    ...DISTRIBUTE.map(([id, label, axis]): Action => ({ id, label, disabled: reasonOf(planDistribute(doc, selection, state.mode, axis)), run: () => void distributeSelection(core, axis) })),
+    ...FLIP.map(([id, label, axis]): Action => ({ id, label, disabled: reasonOf(planFlip(doc, selection, state.mode, axis)), run: () => void flipSelection(core, axis) })),
+    { id: "toggleLock", label: lockLabel(doc, selection), shortcut: "alt+shift+l", disabled: reasonOf(planToggleLock(doc, selection, state.mode)), run: () => void toggleLockSelection(core) },
     { id: "newDesign", label: "New design", run: host.newDesign },
     { id: "open", label: "Open", run: host.open },
     { id: "makeCopy", label: "Make a copy", run: host.makeCopy },
@@ -129,13 +194,55 @@ type Layout = readonly (ActionId | "separator")[];
 
 export const MENUS = {
   file: ["newDesign", "open", "makeCopy", "separator", "rename", "moveToFolder", "designInfo", "separator", "save", "download"],
-  edit: ["undo", "redo", "separator", "cut", "copy", "paste", "duplicate", "delete", "separator", "selectAll", "group", "ungroup"],
+  edit: ["undo", "redo", "separator", "cut", "copy", "paste", "copyStyle", "pasteStyle", "duplicate", "delete", "separator", "selectAll", "group", "ungroup"],
+  arrange: [
+    "bringForward",
+    "bringToFront",
+    "sendBackward",
+    "sendToBack",
+    "separator",
+    "alignLeft",
+    "alignCenter",
+    "alignRight",
+    "alignTop",
+    "alignMiddle",
+    "alignBottom",
+    "separator",
+    "distributeHorizontal",
+    "distributeVertical",
+    "separator",
+    "flipHorizontal",
+    "flipVertical",
+    "separator",
+    "toggleLock",
+  ],
   view: ["zoomIn", "zoomOut", "fit", "separator", "fullscreen", "togglePanels"],
   help: ["shortcuts"],
 } as const satisfies Record<string, Layout>;
 
 export const CONTEXT_LAYOUTS = {
-  node: ["cut", "copy", "paste", "duplicate", "delete", "separator", "group", "ungroup"],
+  node: [
+    "cut",
+    "copy",
+    "paste",
+    "duplicate",
+    "delete",
+    "separator",
+    "group",
+    "ungroup",
+    "separator",
+    "copyStyle",
+    "pasteStyle",
+    "separator",
+    "bringForward",
+    "bringToFront",
+    "sendBackward",
+    "sendToBack",
+    "separator",
+    "flipHorizontal",
+    "flipVertical",
+    "toggleLock",
+  ],
   canvas: ["paste", "selectAll"],
 } as const satisfies Record<string, Layout>;
 
@@ -149,6 +256,11 @@ export function formatShortcut(spec: string, mac: boolean): string {
   const modifiers: Record<string, string> = mac ? { mod: "⌘", shift: "⇧", alt: "⌥" } : { mod: "Ctrl", shift: "Shift", alt: "Alt" };
   const lead = parts.map((p) => modifiers[p] ?? p);
   return mac ? [...lead, label].join("") : [...lead, label].join("+");
+}
+
+/** Tooltip for an action's button: why it can't run, or its name and shortcut. */
+export function actionTitle(a: Action, mac: boolean): string {
+  return a.disabled ?? (a.shortcut ? `${a.label} (${formatShortcut(a.shortcut, mac)})` : a.label);
 }
 
 /** Menu rows for a layout. Hidden actions are left out, and no separator is left leading, trailing or doubled. */
@@ -168,7 +280,7 @@ export function toMenuItems(actions: Record<ActionId, Action>, layout: Layout, m
 }
 
 /** Actions listed in the shortcuts dialog, in order. */
-export const SHORTCUT_ACTIONS: readonly ActionId[] = ["undo", "redo", "cut", "copy", "paste", "duplicate", "delete", "selectAll", "group", "ungroup", "save"];
+export const SHORTCUT_ACTIONS: readonly ActionId[] = ["undo", "redo", "cut", "copy", "paste", "duplicate", "delete", "selectAll", "group", "ungroup", "copyStyle", "pasteStyle", "bringForward", "bringToFront", "sendBackward", "sendToBack", "toggleLock", "save"];
 
 /** Keys and gestures the canvas handles itself, so they are not actions. */
 export const OTHER_SHORTCUTS: readonly { spec: string; does: string }[] = [
