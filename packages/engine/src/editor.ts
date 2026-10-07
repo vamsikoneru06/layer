@@ -1,4 +1,4 @@
-import type { Doc } from "@vash/schema";
+import type { Doc, NodeId } from "@vash/schema";
 import { EditorCore, type EditorState } from "./editor-core";
 import { exportPng } from "./export";
 import { createFilterRenderer, type FilterFn } from "./filters";
@@ -8,6 +8,7 @@ import { renderOverlay } from "./overlay";
 import type { EditMode } from "./policy";
 import { renderScene, type ImageState } from "./render";
 import { hitTest } from "./hit-test";
+import { frameAt } from "./photos";
 import { handleKey } from "./shortcuts";
 import type { Measure } from "./text";
 import { textEditBox, type TextEditBox } from "./text-edit";
@@ -39,6 +40,11 @@ export interface Editor {
   exportPng(o: { scale: number; transparent: boolean }): Promise<Blob>;
   /** Placement of the on-canvas text box while a text layer is being edited. */
   textEditBox(): TextEditBox | null;
+  /**
+   * The frame a photo dropped at this point on screen would fill, outlined while dragging over it.
+   * Pass null when the drag leaves or ends to clear the outline.
+   */
+  dropTarget(at: { clientX: number; clientY: number } | null): NodeId | null;
   destroy(): void;
 }
 
@@ -202,6 +208,15 @@ export function createEditor(o: EditorOptions): Editor {
     zoomTo: (zoom) => core.setChrome({ viewport: zoomAt(core.getState().viewport, { x: size.width / 2, y: size.height / 2 }, zoom) }),
     invalidate,
     exportPng: (e) => exportPng(core.doc, { ...e, measure, image, imagesReady: o.imagesReady, filter }),
+    dropTarget: (at) => {
+      let id: NodeId | null = null;
+      if (at) {
+        const r = o.overlay.getBoundingClientRect();
+        id = frameAt(core.doc, toWorld(core.getState().viewport, { x: at.clientX - r.left, y: at.clientY - r.top }));
+      }
+      if (core.getState().hover !== id) core.setChrome({ hover: id });
+      return id;
+    },
     textEditBox: () => {
       const s = core.getState();
       return s.editing ? textEditBox(s.doc, s.editing, s.viewport, measure) : null;
