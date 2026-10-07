@@ -8,7 +8,7 @@ import { renderOverlay } from "./overlay";
 import type { EditMode } from "./policy";
 import { renderScene, type ImageState } from "./render";
 import { hitTest } from "./hit-test";
-import { handleKey } from "./shortcuts";
+import { handleKey, type KeyInput } from "./shortcuts";
 import type { Measure } from "./text";
 import { textEditBox, type TextEditBox } from "./text-edit";
 import { fitViewport, toWorld, zoomAt } from "./viewport";
@@ -55,6 +55,25 @@ export interface KeyTarget {
   isContentEditable?: boolean;
   tagName?: string;
   closest?: (selector: string) => unknown;
+}
+
+/** The members of a keydown event that make up a shortcut. */
+export interface KeyEventLike {
+  key: string;
+  code: string;
+  metaKey: boolean;
+  ctrlKey: boolean;
+  shiftKey: boolean;
+  altKey: boolean;
+}
+
+/**
+ * A key press as `handleKey` takes it. With Option held, macOS reports the character it types ("ç" for C),
+ * so a letter then comes from the physical key (`code`) to let Option shortcuts match.
+ */
+export function keyInputOf(e: KeyEventLike, mac: boolean): KeyInput {
+  const letter = e.altKey ? /^Key([A-Z])$/.exec(e.code) : null;
+  return { key: letter ? letter[1]!.toLowerCase() : e.key, mod: mac ? e.metaKey : e.ctrlKey, shift: e.shiftKey, alt: e.altKey };
 }
 
 /** The element a mouse press last focused; anything inside it still counts as mouse-focused. */
@@ -211,8 +230,7 @@ export function createEditor(o: EditorOptions): Editor {
       e.preventDefault();
       return;
     }
-    const mod = navigator.platform.startsWith("Mac") ? e.metaKey : e.ctrlKey;
-    if (handleKey(core, { key: e.key, mod, shift: e.shiftKey, alt: e.altKey })) e.preventDefault();
+    if (handleKey(core, keyInputOf(e, navigator.platform.startsWith("Mac")))) e.preventDefault();
   };
   const onKeyUp = (e: KeyboardEvent) => {
     if (e.key === " ") {

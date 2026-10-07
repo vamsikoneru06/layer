@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activatesFocusedControl, isTyping, pointerFocusAfterFocusIn, pointerFocusAfterKey, type KeyTarget, type PointerFocus } from "./editor";
+import { activatesFocusedControl, isTyping, keyInputOf, pointerFocusAfterFocusIn, pointerFocusAfterKey, type KeyTarget, type PointerFocus } from "./editor";
 
 /** A fake element: `ancestors` are the selectors `closest` finds. */
 const el = (o: { tag?: string; editable?: boolean; ancestors?: string[] } = {}): KeyTarget => ({
@@ -94,5 +94,26 @@ describe("mouse-focus record", () => {
     expect(activatesFocusedControl(button, " ", p)).toBe(false);
     expect(activatesFocusedControl(button, " ", pointerFocusAfterKey(p, "Tab"))).toBe(true);
     expect(activatesFocusedControl(other, " ", pointerFocusAfterFocusIn(p, other))).toBe(true);
+  });
+});
+
+describe("keyInputOf", () => {
+  const press = (o: Partial<Parameters<typeof keyInputOf>[0]>) => ({ key: "a", code: "KeyA", metaKey: false, ctrlKey: false, shiftKey: false, altKey: false, ...o });
+
+  it("takes the modifier for the platform", () => {
+    expect(keyInputOf(press({ metaKey: true }), true)).toEqual({ key: "a", mod: true, shift: false, alt: false });
+    expect(keyInputOf(press({ metaKey: true }), false).mod).toBe(false);
+    expect(keyInputOf(press({ ctrlKey: true, shiftKey: true }), false)).toEqual({ key: "a", mod: true, shift: true, alt: false });
+  });
+
+  it("reads a letter from the physical key when Option is held (macOS types ç for Option+C)", () => {
+    expect(keyInputOf(press({ key: "ç", code: "KeyC", altKey: true, metaKey: true }), true)).toEqual({ key: "c", mod: true, shift: false, alt: true });
+    expect(keyInputOf(press({ key: "Ò", code: "KeyL", altKey: true, shiftKey: true }), true)).toMatchObject({ key: "l", alt: true, shift: true });
+  });
+
+  it("leaves other keys alone, and every key without Alt", () => {
+    expect(keyInputOf(press({ key: "ç", code: "KeyC" }), true).key).toBe("ç");
+    expect(keyInputOf(press({ key: "ArrowLeft", code: "ArrowLeft", altKey: true }), true).key).toBe("ArrowLeft");
+    expect(keyInputOf(press({ key: "¡", code: "Digit1", altKey: true }), true).key).toBe("¡");
   });
 });
