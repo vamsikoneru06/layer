@@ -12,7 +12,27 @@ export { fontRequests } from "./fonts";
 export { createNode, insertLayer, newNodeId, type InsertKind } from "./insert";
 export { CLIPBOARD_PREFIX, planDuplicate } from "./clipboard";
 export { planGroup, planUngroup } from "./structure";
-export { INVALID_CHANGE, copySelection, cutSelection, duplicateSelection, groupSelection, pasteText, runPlan, ungroupSelection } from "./edit-ops";
+export { planAlign, planDistribute, planFlip, planReorder, planToggleLock, lockLabel, type AlignEdge, type Axis, type ReorderTarget } from "./arrange";
+export { STYLE_FIELDS, planPasteStyle, styleOf, type Style } from "./style";
+export {
+  INVALID_CHANGE,
+  alignSelection,
+  copySelection,
+  copiedStyleOf,
+  copyStyleOfSelection,
+  cutSelection,
+  distributeSelection,
+  duplicateSelection,
+  flipSelection,
+  groupSelection,
+  hasCopiedStyle,
+  pasteStyleToSelection,
+  pasteText,
+  reorderSelection,
+  runPlan,
+  toggleLockSelection,
+  ungroupSelection,
+} from "./edit-ops";
 export { topLevelSelection, type Plan } from "./selection-utils";
 export { createFilterRenderer, FILTER_KEYS, FILTER_PRESETS, isNeutral, presetFilters, type FilterFn, type FilterValues } from "./filters";
 export { textEditBox, type TextEditBox } from "./text-edit";

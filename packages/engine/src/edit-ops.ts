@@ -1,9 +1,11 @@
 import { validateDoc, type NodeId } from "@vash/schema";
 import { applyCommand, type Command } from "./commands";
+import { planAlign, planDistribute, planFlip, planReorder, planToggleLock, type AlignEdge, type Axis, type ReorderTarget } from "./arrange";
 import { planCopy, planDuplicate, planPaste } from "./clipboard";
 import type { EditorCore } from "./editor-core";
 import { topLevelSelection, type Plan } from "./selection-utils";
 import { planGroup, planUngroup } from "./structure";
+import { planPasteStyle, styleOf, type Style } from "./style";
 
 export const INVALID_CHANGE = "That change would make the design invalid, so it wasn't made.";
 
@@ -31,6 +33,33 @@ export const duplicateSelection = (core: EditorCore): boolean => runPlan(core, p
 export const groupSelection = (core: EditorCore): boolean => runPlan(core, planGroup(core.doc, core.getState().selection, core.mode));
 export const ungroupSelection = (core: EditorCore): boolean => runPlan(core, planUngroup(core.doc, core.getState().selection, core.mode));
 export const pasteText = (core: EditorCore, text: string): boolean => runPlan(core, planPaste(core.doc, text, core.mode));
+
+export const reorderSelection = (core: EditorCore, where: ReorderTarget): boolean => runPlan(core, planReorder(core.doc, core.getState().selection, core.mode, where));
+export const alignSelection = (core: EditorCore, edge: AlignEdge): boolean => runPlan(core, planAlign(core.doc, core.getState().selection, core.mode, edge));
+export const distributeSelection = (core: EditorCore, axis: Axis): boolean => runPlan(core, planDistribute(core.doc, core.getState().selection, core.mode, axis));
+export const flipSelection = (core: EditorCore, axis: Axis): boolean => runPlan(core, planFlip(core.doc, core.getState().selection, core.mode, axis));
+export const toggleLockSelection = (core: EditorCore): boolean => runPlan(core, planToggleLock(core.doc, core.getState().selection, core.mode));
+
+/** The style last copied in each editor. It lives outside the document, so it is not saved and not undoable. */
+const copiedStyles = new WeakMap<EditorCore, Style>();
+
+/** The style copied in this editor, or null. */
+export const copiedStyleOf = (core: EditorCore): Style | null => copiedStyles.get(core) ?? null;
+export const hasCopiedStyle = (core: EditorCore): boolean => copiedStyles.has(core);
+
+/** Remembers the style of the one selected layer. With any other selection it leaves a notice and copies nothing. */
+export function copyStyleOfSelection(core: EditorCore): boolean {
+  const { selection } = core.getState();
+  const node = selection.length === 1 ? core.doc.nodes[selection[0]!] : undefined;
+  if (!node) {
+    core.setChrome({ notice: "Select one layer to copy its style." });
+    return false;
+  }
+  copiedStyles.set(core, styleOf(node));
+  return true;
+}
+
+export const pasteStyleToSelection = (core: EditorCore): boolean => runPlan(core, planPasteStyle(core.doc, core.getState().selection, core.mode, copiedStyleOf(core)));
 
 /** Clipboard text for a plan, or null (with a notice when the layers cannot be copied). */
 function copyText(core: EditorCore, selection: readonly NodeId[]): string | null {
