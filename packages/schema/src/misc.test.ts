@@ -43,6 +43,20 @@ describe("migrateDoc", () => {
     expect(result).toEqual({ ok: true, doc: { schemaVersion: 3, a: 1, b: 2 }, migrated: true });
   });
 
+  it("v1 to v2: files templates by job instead of topic", () => {
+    const v1 = (category: unknown) => ({ ...sampleTemplate(), schemaVersion: 1, meta: { ...sampleTemplate().meta, category } });
+    const cat = (r: ReturnType<typeof migrateDoc>) => (r.ok ? (r.doc as { meta: { category: unknown } }).meta.category : "failed");
+    expect(cat(migrateDoc(v1("food")))).toBe("menus");
+    expect(cat(migrateDoc(v1("birthday")))).toBe("celebrations");
+    expect(cat(migrateDoc(v1("minimal")))).toBe("photo-posts");
+    expect(cat(migrateDoc(v1(null)))).toBeNull();
+    // Unknown or hostile values don't survive the move.
+    expect(cat(migrateDoc(v1("nope")))).toBeNull();
+    expect(cat(migrateDoc(v1("__proto__")))).toBeNull();
+    const migrated = migrateDoc(v1("sale"));
+    expect(migrated.ok && validateDoc(migrated.doc).ok).toBe(true);
+  });
+
   it("fails on a gap in the migration chain", () => {
     expect(migrateDoc({ schemaVersion: 1 }, [], 2)).toEqual({ ok: false, error: "no migration from schemaVersion 1" });
   });

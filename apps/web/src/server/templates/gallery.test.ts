@@ -56,9 +56,9 @@ describe("GET /api/templates", () => {
   });
 
   it("filters by category, format and featured, and searches titles and tags", async () => {
-    const party = await createTemplate(t.db, { title: "Sunset Birthday Bash", tags: ["party"], category: "birthday", format: "ig-post" });
-    const menu = await createTemplate(t.db, { title: "Menu", tags: ["food", "dinner"], category: "food", format: "poster", width: 1240, height: 1754, featured: true });
-    expect(ids(await list("?category=food"))).toEqual([menu.id]);
+    const party = await createTemplate(t.db, { title: "Sunset Birthday Bash", tags: ["party"], category: "celebrations", format: "ig-post" });
+    const menu = await createTemplate(t.db, { title: "Menu", tags: ["food", "dinner"], category: "menus", format: "poster", width: 1240, height: 1754, featured: true });
+    expect(ids(await list("?category=menus"))).toEqual([menu.id]);
     expect(ids(await list("?format=ig-post"))).toEqual([party.id]);
     expect(ids(await list("?sort=featured"))).toEqual([menu.id]);
     expect(ids(await list("?q=birthday"))).toEqual([party.id]);

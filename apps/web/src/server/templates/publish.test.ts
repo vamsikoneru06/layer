@@ -31,7 +31,7 @@ async function stored(ownerId: string, kind: "photo" | "thumbnail" = "photo") {
   return asset;
 }
 const publish = (as: { id: string } | null, body: Record<string, unknown>, handlers = h) =>
-  call(handlers.publish, { method: "POST", as, body: { title: "Party", category: "birthday", tags: ["Fun", "fun"], ...body } });
+  call(handlers.publish, { method: "POST", as, body: { title: "Party", category: "celebrations", tags: ["Fun", "fun"], ...body } });
 const versionOf = async (templateId: string, version = 1) =>
   (await t.db.select().from(templateVersions).where(eq(templateVersions.templateId, templateId))).find((v) => v.version === version)!;
 
@@ -169,7 +169,7 @@ describe("POST /api/templates/:id/versions", () => {
     const used = await storageUsedBytes(t.db, alice.id);
     const publicObjects = [...storage.objects.keys()].filter((k) => k.startsWith("public:")).length;
 
-    const next = await call(h.publishVersion, { method: "POST", as: alice, params: { id }, body: { ...body, title: "Party, fixed typo", category: "birthday" } });
+    const next = await call(h.publishVersion, { method: "POST", as: alice, params: { id }, body: { ...body, title: "Party, fixed typo", category: "celebrations" } });
     expect(next.status).toBe(201);
     expect(await storageUsedBytes(t.db, alice.id)).toBe(used);
     expect([...storage.objects.keys()].filter((k) => k.startsWith("public:")).length).toBe(publicObjects);
