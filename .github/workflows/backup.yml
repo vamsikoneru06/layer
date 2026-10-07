@@ -1,0 +1,72 @@
+name: Backup
+
+# A daily encrypted dump of the production database, kept 7 days as a workflow artifact. Artifacts of a public
+# repository can be downloaded by other GitHub users, so the dump is encrypted before it leaves the runner and the
+# plaintext is deleted. Restore steps: docs/runbooks/restore.md.
+
+on:
+  schedule:
+    - cron: "30 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup-production
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    steps:
+      - name: Check setup
+        id: setup
+        env:
+          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          if [ -z "$DATABASE_URL_UNPOOLED" ] || [ -z "$BACKUP_PASSPHRASE" ]; then
+            echo "::notice title=Backup skipped::Set DATABASE_URL_UNPOOLED and BACKUP_PASSPHRASE in the production environment (docs/deploy.md)."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # pg_dump must be at least the server's major version; 18 dumps Neon's 17 and 18.
+      - name: Install the PostgreSQL 18 client
+        if: steps.setup.outputs.ready == 'true'
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSo /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-18
+
+      - name: Dump and encrypt
+        if: steps.setup.outputs.ready == 'true'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_UNPOOLED }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          umask 077
+          plain="$RUNNER_TEMP/vash.dump"
+          mkdir -p "$RUNNER_TEMP/out"
+          out="$RUNNER_TEMP/out/vash-$(date -u +%Y-%m-%dT%H%MZ).dump.gpg"
+          trap 'shred -u "$plain" 2>/dev/null || rm -f "$plain"' EXIT
+          /usr/lib/postgresql/18/bin/pg_dump --format=custom --no-owner --no-privileges --dbname="$DATABASE_URL" --file="$plain"
+          printf '%s' "$BACKUP_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
+            --symmetric --cipher-algo AES256 --output "$out" "$plain"
+          echo "Encrypted backup: $(du -h "$out" | cut -f1)"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: steps.setup.outputs.ready == 'true'
+        with:
+          name: vash-db-backup
+          path: ${{ runner.temp }}/out/*.dump.gpg
+          retention-days: 7
+          if-no-files-found: error
