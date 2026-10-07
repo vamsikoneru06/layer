@@ -1,6 +1,6 @@
 "use client";
 
-import { createEditor, hitTest, toWorld, topLevelOf, type Editor, type EditorState } from "@vash/engine";
+import { copiedStyleOf, createEditor, hitTest, toWorld, topLevelOf, type Editor, type EditorState } from "@vash/engine";
 import { parseDoc, type Doc } from "@vash/schema";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
@@ -254,10 +254,8 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
     return () => cancelAnimationFrame(frame);
   }, [editor, panelsHidden, fullscreen.active]);
 
-  const host: ActionHost = {
-    panelsHidden,
-    canFullscreen: fullscreen.supported,
-    local,
+  // The latest host. The actions below are memoised, so their host methods go through this ref and never run a stale closure.
+  const latestHost: Omit<ActionHost, "panelsHidden" | "canFullscreen" | "local"> = {
     copy: () => void clipboard.copy(),
     cut: () => void clipboard.cut(),
     paste: () => void clipboard.paste(),
@@ -276,9 +274,50 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
     togglePanels: () => setPanelsHidden((hidden) => !hidden),
     shortcuts: () => setShortcutsOpen(true),
   };
-  const actions = state && editor ? buildActions(state, editor.core, host) : null;
+  const hostRef = useRef(latestHost);
+  hostRef.current = latestHost;
+  const host = useMemo<ActionHost>(() => {
+    const call = (name: keyof typeof latestHost) => () => hostRef.current[name]();
+    return {
+      panelsHidden,
+      canFullscreen: fullscreen.supported,
+      local,
+      copy: call("copy"),
+      cut: call("cut"),
+      paste: call("paste"),
+      newDesign: call("newDesign"),
+      open: call("open"),
+      makeCopy: call("makeCopy"),
+      rename: call("rename"),
+      moveToFolder: call("moveToFolder"),
+      designInfo: call("designInfo"),
+      save: call("save"),
+      download: call("download"),
+      zoomIn: call("zoomIn"),
+      zoomOut: call("zoomOut"),
+      fit: call("fit"),
+      fullscreen: call("fullscreen"),
+      togglePanels: call("togglePanels"),
+      shortcuts: call("shortcuts"),
+    };
+  }, [panelsHidden, fullscreen.supported, local]);
+  // Hover, viewport and marquee changes rebuild the state but not these inputs, so they do not rebuild the actions.
+  const doc = state?.doc;
+  const selection = state?.selection;
+  const mode = state?.mode;
+  const canUndo = state?.canUndo;
+  const canRedo = state?.canRedo;
+  const zoomLevel = state?.viewport.zoom;
+  const copiedStyle = editor ? copiedStyleOf(editor.core) : null;
+  const actions = useMemo(
+    () =>
+      editor && doc && selection && mode && zoomLevel !== undefined
+        ? buildActions({ doc, selection, mode, canUndo: !!canUndo, canRedo: !!canRedo, viewport: { zoom: zoomLevel } }, editor.core, host)
+        : null,
+    [editor, doc, selection, mode, canUndo, canRedo, zoomLevel, copiedStyle, host],
+  );
 
-  const zoom = state?.viewport.zoom ?? 1;
+  const zoom = zoomLevel ?? 1;
   const artboard = state?.doc.artboard ?? design.doc.artboard;
 
   return (

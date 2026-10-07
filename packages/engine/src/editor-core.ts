@@ -150,7 +150,9 @@ export class EditorCore {
 
   #snapshot(): EditorState {
     const doc = this.history.doc;
-    const selection = this.#selection.filter((id) => doc.nodes[id]);
+    const present = this.#selection.filter((id) => doc.nodes[id]);
+    // Keep the same array while nothing was dropped, so a view can tell the selection did not change.
+    const selection = present.length === this.#selection.length ? this.#selection : present;
     this.#selection = selection;
     const layoutLocked = this.mode === "design" && selection.some((id) => doc.nodes[id]?.lock !== "free");
     return { ...this.#chrome, doc, mode: this.mode, selection, layoutLocked, canUndo: this.history.canUndo, canRedo: this.history.canRedo };
