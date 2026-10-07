@@ -50,7 +50,7 @@ export function EditorHeader({
   saveToAccount: ReactNode;
 }) {
   return (
-    <header className="flex h-14 flex-none items-center gap-3 border-b-[.5px] border-line px-3">
+    <header className="flex h-14 flex-none items-center gap-3 px-3">
       <Link href="/designs" aria-label="Back to your designs" className="flex-none rounded-md transition-opacity hover:opacity-75">
         <Image src="/vash-logo.png" alt="" width={28} height={28} className="size-7 rounded-md" priority />
       </Link>
