@@ -2,14 +2,36 @@
 
 import { apply, checkPolicy, FILTER_PRESETS, isNeutral, presetFilters, rotation, type Command, type EditorCore, type EditorState, type FilterValues } from "@vash/engine";
 import { defaultFilters, FONT_FAMILIES, LIMITS, type FrameNode, type Node, type ShapeNode, type TextNode } from "@vash/schema";
-import { AlignCenter, AlignJustify, AlignLeft, AlignRight, Lock } from "lucide-react";
-import { useMemo } from "react";
+import {
+  AlignCenter,
+  AlignCenterHorizontal,
+  AlignCenterVertical,
+  AlignEndHorizontal,
+  AlignEndVertical,
+  AlignHorizontalSpaceBetween,
+  AlignJustify,
+  AlignLeft,
+  AlignRight,
+  AlignStartHorizontal,
+  AlignStartVertical,
+  AlignVerticalSpaceBetween,
+  ArrowDown,
+  ArrowUp,
+  BringToFront,
+  FlipHorizontal2,
+  FlipVertical2,
+  Lock,
+  SendToBack,
+} from "lucide-react";
+import { useMemo, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { docColors } from "@/lib/color";
 import { DocColorsContext } from "./color-picker";
 import { ColorField, NumberField, Row, Section, Segmented, SelectField, Slider, Switch } from "./fields";
+import { actionTitle, type Action, type ActionId } from "./editor-actions";
 import { FillField } from "./fill-field";
 import { FONT_FACES } from "./font-faces";
+import { IconButton } from "./icon-button";
 
 const TYPE_LABEL: Record<Node["type"], string> = { frame: "Photo frame", text: "Text", shape: "Shape", sticker: "Sticker", group: "Group" };
 
@@ -34,22 +56,84 @@ function nearestWeight(family: string, weight: number): number {
 
 const WEIGHT_NAMES: Record<number, string> = { 100: "Thin", 200: "Extra light", 300: "Light", 400: "Regular", 500: "Medium", 600: "Semibold", 700: "Bold", 800: "Extra bold", 900: "Black" };
 
-export function PropertiesPanel({ state, core }: { state: EditorState; core: EditorCore }) {
+type Actions = Record<ActionId, Action>;
+
+/** Icon buttons for the arrange actions, in rows by kind. Each one shows why it is off, or its name and shortcut, as its tooltip. */
+const ARRANGE_ROWS: readonly { name: string; buttons: readonly { id: ActionId; icon: ReactNode }[] }[] = [
+  {
+    name: "Align",
+    buttons: [
+      { id: "alignLeft", icon: <AlignStartVertical aria-hidden /> },
+      { id: "alignCenter", icon: <AlignCenterVertical aria-hidden /> },
+      { id: "alignRight", icon: <AlignEndVertical aria-hidden /> },
+      { id: "alignTop", icon: <AlignStartHorizontal aria-hidden /> },
+      { id: "alignMiddle", icon: <AlignCenterHorizontal aria-hidden /> },
+      { id: "alignBottom", icon: <AlignEndHorizontal aria-hidden /> },
+    ],
+  },
+  {
+    name: "Distribute and flip",
+    buttons: [
+      { id: "distributeHorizontal", icon: <AlignHorizontalSpaceBetween aria-hidden /> },
+      { id: "distributeVertical", icon: <AlignVerticalSpaceBetween aria-hidden /> },
+      { id: "flipHorizontal", icon: <FlipHorizontal2 aria-hidden /> },
+      { id: "flipVertical", icon: <FlipVertical2 aria-hidden /> },
+    ],
+  },
+  {
+    name: "Order",
+    buttons: [
+      { id: "bringForward", icon: <ArrowUp aria-hidden /> },
+      { id: "bringToFront", icon: <BringToFront aria-hidden /> },
+      { id: "sendBackward", icon: <ArrowDown aria-hidden /> },
+      { id: "sendToBack", icon: <SendToBack aria-hidden /> },
+    ],
+  },
+];
+
+function ArrangeSection({ actions, mac }: { actions: Actions; mac: boolean }) {
+  return (
+    <Section title="Arrange">
+      <div className="flex flex-col gap-1">
+        {ARRANGE_ROWS.map((row) => (
+          <div key={row.name} role="group" aria-label={row.name} className="flex gap-1">
+            {row.buttons.map(({ id, icon }) => {
+              const a = actions[id];
+              return (
+                <IconButton key={id} label={a.label} title={actionTitle(a, mac)} onClick={a.run} unavailable={a.disabled}>
+                  {icon}
+                </IconButton>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+/** `actions` feeds the Arrange buttons; a host without them (the filters lab) shows the panel without that section. */
+export function PropertiesPanel({ state, core, actions, mac = false }: { state: EditorState; core: EditorCore; actions?: Actions; mac?: boolean }) {
   const colors = useMemo(() => docColors(state.doc), [state.doc]);
   return (
     <DocColorsContext value={colors}>
-      <PanelBody state={state} core={core} />
+      <PanelBody state={state} core={core} actions={actions} mac={mac} />
     </DocColorsContext>
   );
 }
 
-function PanelBody({ state, core }: { state: EditorState; core: EditorCore }) {
+function PanelBody({ state, core, actions, mac }: { state: EditorState; core: EditorCore; actions?: Actions; mac: boolean }) {
   const { doc, selection, mode } = state;
   const change = changer(core);
   const allowed = (cmd: Command) => checkPolicy(doc, cmd, mode).ok;
 
   if (selection.length > 1) {
-    return <p className="text-muted">{selection.length} layers selected. Select one layer to edit its properties.</p>;
+    return (
+      <div className="flex flex-col gap-3.5">
+        <p className="text-muted">{selection.length} layers selected. Select one layer to edit its properties.</p>
+        {actions && <ArrangeSection actions={actions} mac={mac} />}
+      </div>
+    );
   }
 
   const node = selection.length === 1 ? doc.nodes[selection[0]!] : undefined;
@@ -113,6 +197,8 @@ function PanelBody({ state, core }: { state: EditorState; core: EditorCore }) {
       {node.type === "text" && <TextSection node={node} disabled={locked} update={update} />}
       {node.type === "shape" && <ShapeSection node={node} disabled={locked} update={update} />}
       {node.type === "frame" && <FiltersSection node={node} disabled={locked} update={update} />}
+
+      {actions && <ArrangeSection actions={actions} mac={mac} />}
 
       <Section title="Position & size">
         <div className="grid grid-cols-2 gap-2">
