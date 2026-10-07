@@ -12,7 +12,7 @@ export { fontRequests } from "./fonts";
 export { createNode, insertLayer, newNodeId, type InsertKind } from "./insert";
 export { CLIPBOARD_PREFIX, planDuplicate } from "./clipboard";
 export { planGroup, planUngroup } from "./structure";
-export { planAlign, planDistribute, planFlip, planReorder, planToggleLock, lockLabel, type AlignEdge, type Axis, type ReorderTarget } from "./arrange";
+export { planAlign, planDistribute, planFlip, planMoveLayer, planReorder, planToggleLock, lockLabel, type AlignEdge, type Axis, type ReorderTarget } from "./arrange";
 export { STYLE_FIELDS, planPasteStyle, styleOf, type Style } from "./style";
 export {
   INVALID_CHANGE,
@@ -26,10 +26,13 @@ export {
   flipSelection,
   groupSelection,
   hasCopiedStyle,
+  moveLayer,
   pasteStyleToSelection,
   pasteText,
+  renameLayer,
   reorderSelection,
   runPlan,
+  toggleLockOfLayer,
   toggleLockSelection,
   ungroupSelection,
 } from "./edit-ops";

@@ -1,6 +1,6 @@
 import { validateDoc, type Doc, type Node } from "@vash/schema";
 import { describe, expect, it } from "vitest";
-import { lockLabel, planAlign, planDistribute, planFlip, planReorder, planToggleLock, type ReorderTarget } from "./arrange";
+import { lockLabel, planAlign, planDistribute, planFlip, planMoveLayer, planReorder, planToggleLock, type ReorderTarget } from "./arrange";
 import { applyCommand } from "./commands";
 import { aabb, apply, boxCorners, type Box } from "./math";
 import { worldMatrix } from "./scene";
@@ -454,5 +454,56 @@ describe("planToggleLock and lockLabel", () => {
     expect(reason(planToggleLock(doc, [], "design"))).toBe("Select a layer first.");
     expect(lockLabel(doc, [])).toBe("Lock");
     expect(ok(planToggleLock(doc, ["a"], "design")).select).toEqual(["a"]);
+  });
+});
+
+describe("planMoveLayer", () => {
+  const flat = () => docWith(["a", "b", "c", "d"].map((id) => rect(id, {})));
+
+  it("moves a layer up, down and to either end among its siblings", () => {
+    const doc = flat();
+    expect(run(doc, planMoveLayer(doc, "a", 2, "design")).root).toEqual(["b", "c", "a", "d"]);
+    expect(run(doc, planMoveLayer(doc, "d", 1, "design")).root).toEqual(["a", "d", "b", "c"]);
+    expect(run(doc, planMoveLayer(doc, "b", 3, "design")).root).toEqual(["a", "c", "d", "b"]);
+    expect(run(doc, planMoveLayer(doc, "c", 0, "design")).root).toEqual(["c", "a", "b", "d"]);
+  });
+
+  it("clamps an index past either end", () => {
+    const doc = flat();
+    expect(run(doc, planMoveLayer(doc, "a", 99, "design")).root).toEqual(["b", "c", "d", "a"]);
+    expect(run(doc, planMoveLayer(doc, "d", -5, "design")).root).toEqual(["d", "a", "b", "c"]);
+  });
+
+  it("refuses a move that changes nothing", () => {
+    const doc = flat();
+    expect(reason(planMoveLayer(doc, "b", 1, "design"))).toBe("Already there.");
+    expect(reason(planMoveLayer(doc, "d", 99, "design"))).toBe("Already there.");
+  });
+
+  it("refuses an unknown layer", () => {
+    expect(reason(planMoveLayer(flat(), "zzz", 0, "design"))).toBe("Select a layer first.");
+  });
+
+  it("moves inside its own group only", () => {
+    const doc = docWith([group("g", {}, ["x", "y", "z"]), rect("a", {})], [rect("x", {}), rect("y", {}), rect("z", {})]);
+    const next = run(doc, planMoveLayer(doc, "x", 2, "design"));
+    expect((next.nodes.g as { children: string[] }).children).toEqual(["y", "z", "x"]);
+    expect(next.root).toEqual(["g", "a"]);
+    expect(reason(planMoveLayer(doc, "x", 0, "design"))).toBe("Already there.");
+  });
+
+  it("is the one reorder command with the layer selected afterwards", () => {
+    const doc = flat();
+    const plan = ok(planMoveLayer(doc, "a", 2, "design"));
+    expect(plan.command).toEqual({ type: "reorder", id: "a", index: 2 });
+    expect(plan.select).toEqual(["a"]);
+  });
+
+  it("refuses a locked layer with the policy's reason, but not in Author Mode, and moves past a locked sibling", () => {
+    const doc = docWith([locked(rect("a", {}), "locked"), rect("b", {}), locked(rect("c", {}), "content-only")]);
+    expect(reason(planMoveLayer(doc, "a", 2, "design"))).toBe("This layer is locked. Unlock it to change it.");
+    expect(reason(planMoveLayer(doc, "c", 0, "design"))).toBe("Layout locked by the template. You can still change the text or photo.");
+    expect(planMoveLayer(doc, "a", 2, "template").ok).toBe(true);
+    expect(run(doc, planMoveLayer(doc, "b", 0, "design")).root).toEqual(["b", "a", "c"]);
   });
 });

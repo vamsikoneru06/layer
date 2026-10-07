@@ -1,9 +1,9 @@
-import { validateDoc, type NodeId } from "@vash/schema";
+import { LIMITS, validateDoc, type NodeId } from "@vash/schema";
 import { applyCommand, type Command } from "./commands";
-import { planAlign, planDistribute, planFlip, planReorder, planToggleLock, type AlignEdge, type Axis, type ReorderTarget } from "./arrange";
+import { planAlign, planDistribute, planFlip, planMoveLayer, planReorder, planToggleLock, type AlignEdge, type Axis, type ReorderTarget } from "./arrange";
 import { planCopy, planDuplicate, planPaste } from "./clipboard";
 import type { EditorCore } from "./editor-core";
-import { topLevelSelection, type Plan } from "./selection-utils";
+import { checked, refuse, topLevelSelection, type Plan } from "./selection-utils";
 import { planGroup, planUngroup } from "./structure";
 import { planPasteStyle, styleOf, type Style } from "./style";
 
@@ -39,6 +39,27 @@ export const alignSelection = (core: EditorCore, edge: AlignEdge): boolean => ru
 export const distributeSelection = (core: EditorCore, axis: Axis): boolean => runPlan(core, planDistribute(core.doc, core.getState().selection, core.mode, axis));
 export const flipSelection = (core: EditorCore, axis: Axis): boolean => runPlan(core, planFlip(core.doc, core.getState().selection, core.mode, axis));
 export const toggleLockSelection = (core: EditorCore): boolean => runPlan(core, planToggleLock(core.doc, core.getState().selection, core.mode));
+
+/** Runs a plan but keeps the current selection, for edits made to a layer that is not necessarily the selected one. */
+function runKeepingSelection(core: EditorCore, plan: Plan): boolean {
+  return runPlan(core, plan.ok ? { ...plan, select: [...core.getState().selection] } : plan);
+}
+
+/** Moves one layer to `index` among its siblings (one undo step) and selects it. */
+export const moveLayer = (core: EditorCore, id: NodeId, index: number): boolean => runPlan(core, planMoveLayer(core.doc, id, index, core.mode));
+
+/** The lock toggle for one layer, whatever is selected; the selection stays as it was. */
+export const toggleLockOfLayer = (core: EditorCore, id: NodeId): boolean => runKeepingSelection(core, planToggleLock(core.doc, [id], core.mode));
+
+/** Renames a layer (one undo step). The name is trimmed; empty and over-long names are refused with a notice. */
+export function renameLayer(core: EditorCore, id: NodeId, name: string): boolean {
+  const trimmed = name.trim();
+  if (!core.doc.nodes[id]) return runKeepingSelection(core, refuse("Select a layer first."));
+  if (trimmed === "") return runKeepingSelection(core, refuse("A layer needs a name."));
+  if (trimmed.length > LIMITS.nameChars) return runKeepingSelection(core, refuse(`Names can be up to ${LIMITS.nameChars} characters.`));
+  if (trimmed === core.doc.nodes[id]!.name) return true;
+  return runKeepingSelection(core, checked(core.doc, { type: "update", id, patch: { name: trimmed } }, core.mode, []));
+}
 
 /** The style last copied in each editor. It lives outside the document, so it is not saved and not undoable. */
 const copiedStyles = new WeakMap<EditorCore, Style>();

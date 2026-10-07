@@ -54,6 +54,17 @@ export function planReorder(doc: Doc, selection: readonly NodeId[], mode: EditMo
   return checked(doc, { type: "batch", commands }, mode, selection);
 }
 
+/**
+ * Moves one layer to `index` among its own siblings (the position it ends up at, counting the others
+ * without it, like `reorder`). Past either end it goes to that end. Moving between parents is not offered.
+ */
+export function planMoveLayer(doc: Doc, id: NodeId, index: number, mode: EditMode): Plan {
+  if (!doc.nodes[id]) return refuse(SELECT_FIRST);
+  const list = siblingsOf(doc, parentOf(doc, id));
+  const target = Math.min(Math.max(Math.trunc(index) || 0, 0), list.length - 1);
+  if (list.indexOf(id) === target) return refuse("Already there.");
+  return checked(doc, { type: "reorder", id, index: target }, mode, [id]);
+}
 /** The layer's visible box: its width and height at its world transform, as an axis-aligned rectangle. */
 function visibleBox(doc: Doc, id: NodeId): Box {
   const node = doc.nodes[id]!;

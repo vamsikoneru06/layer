@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { LIMITS } from "@vash/schema";
 import { EditorCore } from "./editor-core";
 import {
   alignSelection,
@@ -7,8 +8,11 @@ import {
   distributeSelection,
   flipSelection,
   hasCopiedStyle,
+  moveLayer,
   pasteStyleToSelection,
+  renameLayer,
   reorderSelection,
+  toggleLockOfLayer,
   toggleLockSelection,
 } from "./edit-ops";
 import { handleKey, type KeyInput } from "./shortcuts";
@@ -176,5 +180,78 @@ describe("shortcuts", () => {
     expect(handleKey(c, key("]"))).toBe(false);
     expect(c.doc.root).toEqual(["a", "b", "c", "d"]);
     expect(c.doc.nodes.b!.lock).toBe("free");
+  });
+});
+
+describe("moveLayer, renameLayer and toggleLockOfLayer", () => {
+  it("moves one layer as one undo step and selects it", () => {
+    const core = setup();
+    const before = core.doc;
+    expect(moveLayer(core, "a", 3)).toBe(true);
+    expect(core.doc.root).toEqual(["b", "c", "t", "a"]);
+    expect(core.getState().selection).toEqual(["a"]);
+    core.undo();
+    expect(core.doc).toEqual(before);
+    expect(core.getState().canUndo).toBe(false);
+  });
+
+  it("says why a move changed nothing", () => {
+    const core = setup();
+    expect(moveLayer(core, "a", 0)).toBe(false);
+    expect(core.getState().notice).toBe("Already there.");
+    core.select(["b"]);
+    toggleLockOfLayer(core, "a");
+    expect(moveLayer(core, "a", 2)).toBe(false);
+    expect(core.getState().notice).toBe("This layer is locked. Unlock it to change it.");
+  });
+
+  it("renames with a trimmed name in one undo step and keeps the selection", () => {
+    const core = setup();
+    core.select(["b"]);
+    const before = core.doc;
+    expect(renameLayer(core, "a", "  Sky  ")).toBe(true);
+    expect(core.doc.nodes.a!.name).toBe("Sky");
+    expect(core.getState().selection).toEqual(["b"]);
+    core.undo();
+    expect(core.doc).toEqual(before);
+  });
+
+  it("refuses empty and over-long names with a notice, and changes nothing", () => {
+    const core = setup();
+    expect(renameLayer(core, "a", "   ")).toBe(false);
+    expect(core.getState().notice).toBe("A layer needs a name.");
+    expect(renameLayer(core, "a", "x".repeat(LIMITS.nameChars + 1))).toBe(false);
+    expect(core.getState().notice).toBe(`Names can be up to ${LIMITS.nameChars} characters.`);
+    expect(renameLayer(core, "a", "x".repeat(LIMITS.nameChars))).toBe(true);
+    expect(core.doc.nodes.a!.name).toHaveLength(LIMITS.nameChars);
+    expect(renameLayer(core, "nope", "Hi")).toBe(false);
+  });
+
+  it("treats the same name as done without making an undo step", () => {
+    const core = setup();
+    expect(renameLayer(core, "a", " a ")).toBe(true);
+    expect(core.getState().canUndo).toBe(false);
+  });
+
+  it("surfaces the lock policy's reason for a locked layer, and renames a content-only one", () => {
+    const core = setup();
+    core.select(["a"]);
+    toggleLockSelection(core);
+    expect(renameLayer(core, "a", "New")).toBe(false);
+    expect(core.getState().notice).toBe("This layer is locked. Unlock it to change it.");
+    expect(core.doc.nodes.a!.name).toBe("a");
+    const tpl = new EditorCore(docWith([{ ...rect("a", {}), lock: "content-only" }]));
+    expect(renameLayer(tpl, "a", "New")).toBe(true);
+  });
+
+  it("toggles the lock of one layer without changing the selection", () => {
+    const core = setup();
+    core.select(["b", "c"]);
+    expect(toggleLockOfLayer(core, "a")).toBe(true);
+    expect(core.doc.nodes.a!.lock).toBe("locked");
+    expect(core.doc.nodes.b!.lock).toBe("free");
+    expect(core.getState().selection).toEqual(["b", "c"]);
+    expect(toggleLockOfLayer(core, "a")).toBe(true);
+    expect(core.doc.nodes.a!.lock).toBe("free");
   });
 });
