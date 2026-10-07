@@ -6,7 +6,9 @@ import { createAsset, createUser } from "../../../tests/support/factories";
 import { call } from "../../../tests/support/invoke";
 import { memoryStorage } from "../../../tests/support/storage";
 import { assets, rateLimits, session, storageDeletions, verification } from "../db/schema";
+import { CLEANUP_SCHEDULE } from "./cleanup";
 import { cronHandlers } from "./handlers";
+import vercelJson from "../../../vercel.json";
 
 let t: TestDb;
 beforeAll(async () => {
@@ -82,5 +84,28 @@ describe("GET /api/cron/cleanup", () => {
     const res = await call(h.cleanup, { headers: { authorization: `Bearer ${SECRET}` } });
     expect(res.body).toMatchObject({ pendingUploadsPurged: 1, storageDeleted: 0 });
     expect(await t.db.select().from(storageDeletions).where(eq(storageDeletions.storageKey, stale.storageKey))).toMatchObject([{ ownerId: owner.id, assetId: stale.id }]);
+  });
+
+  it("runs each authorised cleanup inside the cron monitor, which sees failures", async () => {
+    const runs: ("ok" | "failed")[] = [];
+    const monitor = <T>(job: () => Promise<T>) =>
+      job().then(
+        (v) => (runs.push("ok"), v),
+        (err: unknown) => {
+          runs.push("failed");
+          throw err;
+        },
+      );
+    const h = cronHandlers(testDeps(t.db, { now: () => NOW }), memoryStorage(), SECRET, monitor);
+    expect((await call(h.cleanup)).status).toBe(401);
+    expect((await call(h.cleanup, { headers: { authorization: `Bearer ${SECRET}` } })).status).toBe(200);
+    const broken = { transaction: () => Promise.reject(new Error("db down")) } as unknown as typeof t.db;
+    const failing = cronHandlers(testDeps(broken, { now: () => NOW }), memoryStorage(), SECRET, monitor);
+    expect((await call(failing.cleanup, { headers: { authorization: `Bearer ${SECRET}` } })).status).toBe(500);
+    expect(runs).toEqual(["ok", "failed"]);
+  });
+
+  it("uses the same schedule as vercel.json, which the Sentry cron monitor expects", () => {
+    expect(vercelJson.crons).toEqual([{ path: "/api/cron/cleanup", schedule: CLEANUP_SCHEDULE }]);
   });
 });

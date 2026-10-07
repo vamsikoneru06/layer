@@ -35,7 +35,7 @@ Do NOT use:
 Do use: the site favicon (`apps/web/src/app/icon.png`), and keep the Terms (`/terms`) and Privacy (`/privacy`)
 pages accurate when data handling changes.
 
-Copy must be true. Example: the app needs sign-in to create a design, so never claim "no sign-up needed".
+Copy must be true. Example: guests can create, edit and export designs (kept in the browser, `lib/local-designs.ts`), but uploading photos and keeping designs across devices need an account, so never claim "everything works without an account".
 
 The look is "Liquid Glass" and monochrome: colour tokens in `apps/web/src/app/globals.css` (`--bg`, `--text`,
 `--muted`, `--line`, `--field`, `--seg`...), light and dark mode, glass classes (`glass-btn`, `glass-primary`,
@@ -100,7 +100,12 @@ npx -y -p @electric-sql/pglite-socket@0.2.11 -p @electric-sql/pglite pglite-serv
 Then set `DATABASE_URL=postgres://postgres@127.0.0.1:5433/postgres` and run `corepack pnpm db:migrate`.
 In development, sign-in links are printed in the server log when no mail keys are set.
 
-Known gap: `db:seed` points at `apps/web/scripts/seed.ts`, which doesn't exist yet.
+`corepack pnpm db:seed` loads the seed templates and sample photos (idempotent).
+
+Production: `docs/deploy.md` (one-time setup, how deploys work, rollback); restores: `docs/runbooks/restore.md`.
+Deploys run from `.github/workflows/deploy.yml` after CI on `main`, so every migration must work with the code
+already serving (add first, remove in a later release). Errors go to Sentry only when `NEXT_PUBLIC_SENTRY_DSN` is set;
+never log or report tokens, signed URLs or emails (`src/lib/monitoring/scrub.ts` does this for Sentry).
 
 ## Workflow
 

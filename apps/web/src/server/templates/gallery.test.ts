@@ -23,6 +23,11 @@ const ids = (res: { body: { items: { id: string }[] } }) => res.body.items.map((
 const handle = () => `u_${randomUUID().slice(0, 8)}`;
 
 describe("GET /api/templates", () => {
+  it("lets the CDN cache the public list for a minute", async () => {
+    const res = await list();
+    expect(res.headers.get("cache-control")).toBe("public, max-age=0, s-maxage=60, stale-while-revalidate=300");
+  });
+
   it("lists published templates newest first, a page at a time", async () => {
     const a = await createTemplate(t.db, { createdAt: new Date("2026-09-01T00:00:00Z") });
     const b = await createTemplate(t.db, { createdAt: new Date("2026-09-02T00:00:00Z") });
@@ -51,9 +56,9 @@ describe("GET /api/templates", () => {
   });
 
   it("filters by category, format and featured, and searches titles and tags", async () => {
-    const party = await createTemplate(t.db, { title: "Sunset Birthday Bash", tags: ["party"], category: "birthday", format: "ig-post" });
-    const menu = await createTemplate(t.db, { title: "Menu", tags: ["food", "dinner"], category: "food", format: "poster", width: 1240, height: 1754, featured: true });
-    expect(ids(await list("?category=food"))).toEqual([menu.id]);
+    const party = await createTemplate(t.db, { title: "Sunset Birthday Bash", tags: ["party"], category: "celebrations", format: "ig-post" });
+    const menu = await createTemplate(t.db, { title: "Menu", tags: ["food", "dinner"], category: "menus", format: "poster", width: 1240, height: 1754, featured: true });
+    expect(ids(await list("?category=menus"))).toEqual([menu.id]);
     expect(ids(await list("?format=ig-post"))).toEqual([party.id]);
     expect(ids(await list("?sort=featured"))).toEqual([menu.id]);
     expect(ids(await list("?q=birthday"))).toEqual([party.id]);

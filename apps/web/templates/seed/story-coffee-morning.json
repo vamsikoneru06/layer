@@ -1,10 +1,10 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "story-coffee-morning",
   "kind": "template",
   "meta": {
     "title": "Coffee Morning",
-    "category": "food",
+    "category": "menus",
     "tags": [
       "coffee",
       "cafe",

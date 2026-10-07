@@ -1,11 +1,14 @@
 "use client";
 
-import { createInteraction, EditorCore, fitViewport, renderOverlay, renderScene, type Measure } from "@vash/engine";
+import { createFilterRenderer, createInteraction, EditorCore, fitViewport, presetFilters, renderOverlay, renderScene, type LoadedImage, type Measure } from "@vash/engine";
 import { createEmptyDoc, defaultFilters, type Doc, type Node } from "@vash/schema";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 const LAYERS = 150;
+/** Spec §11.1: the drag budget holds with 10 filtered photos among the 150 layers. */
+const PHOTOS = 10;
+const PHOTO_PRESETS = ["film", "noir", "vivid", "warm", "fade"] as const;
 const STEPS = 120;
 const BUDGET_MS = 16;
 
@@ -49,12 +52,41 @@ function benchDoc(): Doc {
         maxChars: null,
       };
     } else {
-      node = { ...base(i), type: "frame", shape: { kind: "rect", cornerRadius: 24 }, content: null, filters: defaultFilters(), placeholder: true };
+      const photo = Math.floor(i / 5);
+      const filled = photo < PHOTOS;
+      const filters = filled ? { ...presetFilters(PHOTO_PRESETS[photo % PHOTO_PRESETS.length]!), blur: photo % 3 === 0 ? 0.2 : 0 } : defaultFilters();
+      node = {
+        ...base(i),
+        type: "frame",
+        shape: { kind: "rect", cornerRadius: 24 },
+        content: filled ? { assetId: `photo${photo}`, offsetX: 0, offsetY: 0, scale: 1 } : null,
+        filters,
+        placeholder: !filled,
+      };
     }
     doc.nodes[node.id] = node;
     doc.root.push(node.id);
   }
   return doc;
+}
+
+/** A 1600×1200 "photo" drawn locally (gradients and circles), so the bench needs no image files or hosts. */
+function benchPhoto(seed: number): LoadedImage {
+  const r = rng(seed);
+  const canvas = new OffscreenCanvas(1600, 1200);
+  const ctx = canvas.getContext("2d")!;
+  const g = ctx.createLinearGradient(0, 0, 1600, 1200);
+  g.addColorStop(0, `hsl(${r() * 360} 60% 55%)`);
+  g.addColorStop(1, `hsl(${r() * 360} 50% 30%)`);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 1600, 1200);
+  for (let i = 0; i < 40; i++) {
+    ctx.fillStyle = `hsl(${r() * 360} 70% ${30 + r() * 50}% / 0.6)`;
+    ctx.beginPath();
+    ctx.arc(r() * 1600, r() * 1200, 20 + r() * 200, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  return { source: canvas, width: 1600, height: 1200 };
 }
 
 interface Result {
@@ -83,6 +115,7 @@ export function Bench() {
   const overlay = useRef<HTMLCanvasElement>(null);
   const [result, setResult] = useState<Result | null>(null);
   const [running, setRunning] = useState(false);
+  const filters = useRef<ReturnType<typeof createFilterRenderer> | null>(null);
 
   /** A fresh 150-layer scene with a drag in progress on the middle layer. */
   function setup() {
@@ -103,13 +136,16 @@ export function Bench() {
       return measureCtx.measureText(text).width;
     };
     const doc = benchDoc();
+    const photos = new Map<string, LoadedImage>(Array.from({ length: PHOTOS }, (_, i) => [`photo${i}`, benchPhoto(100 + i)]));
+    filters.current ??= createFilterRenderer();
+    const filter = filters.current.apply;
     const core = new EditorCore(doc);
     const ui = createInteraction(core);
     const viewport = fitViewport({ width, height }, doc.artboard, 24);
     core.setChrome({ viewport });
     const draw = () => {
       const s = core.getState();
-      renderScene(sceneCtx, s.doc, s.viewport, { measure, image: () => "loading", dpr });
+      renderScene(sceneCtx, s.doc, s.viewport, { measure, image: (id) => photos.get(id) ?? "missing", dpr, filter });
       renderOverlay(overlayCtx, s.doc, s.viewport, dpr, s);
     };
     draw(); // warm caches the way a real session would be warm
@@ -170,7 +206,7 @@ export function Bench() {
         </Button>
       </div>
       <p className="max-w-2xl text-sm text-muted">
-        {LAYERS} layers (shapes, shrink-to-fit text, frames; some rotated and translucent) on a 1080×1920 artboard. Drags one layer through {STEPS} pointer moves
+        {LAYERS} layers (shapes, shrink-to-fit text, frames, {PHOTOS} of them with filtered photos; some rotated and translucent) on a 1080×1920 artboard. Drags one layer through {STEPS} pointer moves
         with snapping. &ldquo;Measure work&rdquo; times the CPU cost of each frame; &ldquo;Measure frames&rdquo; times real frame intervals (keep this window visible,
         or the browser throttles it). Budget: {BUDGET_MS} ms per frame (60 fps).
       </p>
