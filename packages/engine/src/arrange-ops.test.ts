@@ -67,6 +67,7 @@ describe("copy and paste style", () => {
     core.select(["a"]);
     expect(copyStyleOfSelection(core)).toBe(true);
     expect(hasCopiedStyle(core)).toBe(true);
+    expect(core.getState().notice).toBe("Style copied.");
     expect(copiedStyleOf(core)).toMatchObject({ type: "shape", fields: { opacity: 0.5 } });
     core.select(["b", "t"]);
     const before = core.doc;

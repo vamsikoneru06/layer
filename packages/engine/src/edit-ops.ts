@@ -47,7 +47,7 @@ const copiedStyles = new WeakMap<EditorCore, Style>();
 export const copiedStyleOf = (core: EditorCore): Style | null => copiedStyles.get(core) ?? null;
 export const hasCopiedStyle = (core: EditorCore): boolean => copiedStyles.has(core);
 
-/** Remembers the style of the one selected layer. With any other selection it leaves a notice and copies nothing. */
+/** Remembers the style of the one selected layer and says so. With any other selection it leaves a notice and copies nothing. */
 export function copyStyleOfSelection(core: EditorCore): boolean {
   const { selection } = core.getState();
   const node = selection.length === 1 ? core.doc.nodes[selection[0]!] : undefined;
@@ -56,6 +56,7 @@ export function copyStyleOfSelection(core: EditorCore): boolean {
     return false;
   }
   copiedStyles.set(core, styleOf(node));
+  core.setChrome({ notice: "Style copied." }); // also redraws, so the Paste style button enables
   return true;
 }
 

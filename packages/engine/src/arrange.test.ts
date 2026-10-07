@@ -308,14 +308,69 @@ describe("planDistribute", () => {
 });
 
 describe("planFlip", () => {
-  it("negates the scale on one axis and leaves the centre alone", () => {
+  it("mirrors in the parent frame: one scale and the rotation are negated, the centre stays put", () => {
     const doc = docWith([rect("a", { x: 300, y: 200, rotation: 30, scaleX: 1.5, scaleY: 2 })]);
     const h = run(doc, planFlip(doc, ["a"], "design", "horizontal"));
-    expect(h.nodes.a!.transform).toEqual({ x: 300, y: 200, rotation: 30, scaleX: -1.5, scaleY: 2 });
+    expect(h.nodes.a!.transform).toEqual({ x: 300, y: 200, rotation: -30, scaleX: -1.5, scaleY: 2 });
     const v = run(doc, planFlip(doc, ["a"], "design", "vertical"));
-    expect(v.nodes.a!.transform).toEqual({ x: 300, y: 200, rotation: 30, scaleX: 1.5, scaleY: -2 });
+    expect(v.nodes.a!.transform).toEqual({ x: 300, y: 200, rotation: -30, scaleX: 1.5, scaleY: -2 });
     expect(centre(h, "a")).toEqual(centre(doc, "a"));
     expect(validateDoc(h)).toMatchObject({ ok: true });
+  });
+
+  describe("on screen", () => {
+    const corners = (doc: Doc, id: string) => {
+      const n = doc.nodes[id]!;
+      return boxCorners(n.width, n.height, worldMatrix(doc, id));
+    };
+    const area = (ps: { x: number; y: number }[]) => ps.reduce((sum, p, i) => sum + (p.x * ps[(i + 1) % ps.length]!.y - ps[(i + 1) % ps.length]!.x * p.y), 0) / 2;
+    /** After the flip `id` covers the mirror image of where it was, about `about`'s centre, with its orientation reversed. */
+    const expectMirrored = (before: Doc, after: Doc, id: string, axis: "horizontal" | "vertical", about = id) => {
+      const c = centre(before, about);
+      const mirror = (p: { x: number; y: number }) => (axis === "horizontal" ? { x: 2 * c.x - p.x, y: p.y } : { x: p.x, y: 2 * c.y - p.y });
+      const got = corners(after, id);
+      // Compare as point sets: a rectangle's mirror image is the same corner set listed in another order.
+      for (const w of corners(before, id).map(mirror)) expect(got.some((g) => Math.hypot(g.x - w.x, g.y - w.y) < 1e-6)).toBe(true);
+      expect(Math.sign(area(got))).toBe(-Math.sign(area(corners(before, id))));
+    };
+    const wide = (id: string, t: Parameters<typeof rect>[1]) => ({ ...rect(id, t), width: 300, height: 100 });
+
+    it.each([0, 30, 90, -135])("mirrors a layer rotated %i degrees across its own vertical and horizontal line", (rotation) => {
+      const doc = docWith([wide("a", { x: 400, y: 300, rotation })]);
+      for (const axis of ["horizontal", "vertical"] as const) {
+        const next = run(doc, planFlip(doc, ["a"], "design", axis));
+        expectMirrored(doc, next, "a", axis);
+        expect(run(next, planFlip(next, ["a"], "design", axis))).toEqual(doc);
+      }
+    });
+
+    it("mirrors a layer inside a rotated group on screen, not across the group's axis", () => {
+      const doc = docWith([group("g", { x: 500, y: 500, rotation: 25 }, ["c"])], [wide("c", { x: 60, y: -40, rotation: 10 })]);
+      for (const axis of ["horizontal", "vertical"] as const) {
+        const next = run(doc, planFlip(doc, ["c"], "design", axis));
+        expectMirrored(doc, next, "c", axis);
+        expect(run(next, planFlip(next, ["c"], "design", axis)).nodes.c!.transform.rotation).toBeCloseTo(10, 9);
+      }
+    });
+
+    it("mirrors a layer inside a rotated, already flipped group on screen", () => {
+      const doc = docWith([group("g", { x: 500, y: 500, rotation: 40, scaleX: -1 }, ["c"])], [wide("c", { x: 60, y: -40, rotation: 70 })]);
+      for (const axis of ["horizontal", "vertical"] as const) expectMirrored(doc, run(doc, planFlip(doc, ["c"], "design", axis)), "c", axis);
+    });
+
+    it("mirrors a rotated group as a whole", () => {
+      const doc = docWith([group("g", { x: 500, y: 500, rotation: 90 }, ["c"])], [wide("c", { x: 60, y: -40 })]);
+      for (const axis of ["horizontal", "vertical"] as const) {
+        const next = run(doc, planFlip(doc, ["g"], "design", axis));
+        expectMirrored(doc, next, "c", axis, "g");
+      }
+    });
+
+    it("keeps the rotation inside the schema limit", () => {
+      const doc = docWith([group("g", { rotation: 90 }, ["c"])], [rect("c", { rotation: 3_599 })]);
+      const next = run(doc, planFlip(doc, ["c"], "design", "horizontal"));
+      expect(validateDoc(next)).toMatchObject({ ok: true });
+    });
   });
 
   it("flips several layers each about its own centre, and flipping twice restores the design", () => {

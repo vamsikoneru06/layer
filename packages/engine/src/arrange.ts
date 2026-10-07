@@ -1,6 +1,6 @@
-import type { Doc, Lock, NodeId } from "@vash/schema";
+import { LIMITS, type Doc, type Lock, type NodeId } from "@vash/schema";
 import type { Command } from "./commands";
-import { aabb, apply, boxCorners, IDENTITY, invert, type Box } from "./math";
+import { aabb, apply, boxCorners, decompose, IDENTITY, invert, type Box } from "./math";
 import type { EditMode } from "./policy";
 import { parentOf, worldMatrix } from "./scene";
 import { checked, refuse, siblingsOf, subtreeOf, topLevelSelection, type Plan } from "./selection-utils";
@@ -131,14 +131,31 @@ export function planDistribute(doc: Doc, selection: readonly NodeId[], mode: Edi
   return checked(doc, { type: "batch", commands }, mode, selection);
 }
 
-/** Mirrors each selected layer about its own centre by negating its scale. Text would read backwards, so it is refused. */
+/** Angle (degrees) wrapped into [-180, 180). */
+const wrapDegrees = (a: number) => ((((a + 180) % 360) + 360) % 360) - 180;
+
+/**
+ * Mirrors each selected layer on screen about its own centre: left to right, or top to bottom. Transforms are
+ * T·R·S, so negating one scale alone would mirror across the layer's own rotated axis. Instead the layer is
+ * mirrored across the line (through its centre) that is screen-vertical or screen-horizontal. In the parent's
+ * frame that line sits at angle `ell`, and reflecting R(θ)·S(sx, sy) across it gives R(2·ell − θ)·S(−sx, sy)
+ * for the horizontal flip and R(2·ell − θ)·S(sx, −sy) for the vertical one. Flipping twice restores the layer.
+ * Text would read backwards, so it is refused.
+ */
 export function planFlip(doc: Doc, selection: readonly NodeId[], mode: EditMode, axis: Axis): Plan {
   const roots = topLevelSelection(doc, selection);
   if (roots.length === 0) return refuse(SELECT_FIRST);
   if (roots.some((id) => subtreeOf((n) => doc.nodes[n], id).some((n) => n.type === "text"))) return refuse("Text can't be flipped.");
   const commands = roots.map((id): Command => {
     const t = doc.nodes[id]!.transform;
-    return { type: "update", id, patch: { transform: axis === "horizontal" ? { ...t, scaleX: -t.scaleX } : { ...t, scaleY: -t.scaleY } } };
+    const parent = parentOf(doc, id);
+    // The screen x axis seen from the parent's frame: a mirrored parent turns the angle the other way.
+    const pt = parent ? decompose(worldMatrix(doc, parent)) : null;
+    const ell = pt ? (pt.scaleY < 0 ? pt.rotation : -pt.rotation) : 0;
+    let rotation = 2 * ell - t.rotation + 0; // "+ 0" turns -0 into 0
+    if (Math.abs(rotation) > LIMITS.rotation) rotation = wrapDegrees(rotation);
+    const flipped = axis === "horizontal" ? { ...t, rotation, scaleX: -t.scaleX } : { ...t, rotation, scaleY: -t.scaleY };
+    return { type: "update", id, patch: { transform: flipped } };
   });
   return checked(doc, { type: "batch", commands }, mode, selection);
 }

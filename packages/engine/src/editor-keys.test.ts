@@ -111,6 +111,15 @@ describe("keyInputOf", () => {
     expect(keyInputOf(press({ key: "Ò", code: "KeyL", altKey: true, shiftKey: true }), true)).toMatchObject({ key: "l", alt: true, shift: true });
   });
 
+  it("does not read the physical key off macOS: AltGr letters stay what they type, and Dvorak keeps its letter", () => {
+    expect(keyInputOf(press({ key: "ć", code: "KeyC", altKey: true, ctrlKey: true }), false)).toEqual({ key: "ć", mod: true, shift: false, alt: true });
+    expect(keyInputOf(press({ key: "c", code: "KeyJ", altKey: true, ctrlKey: true }), false).key).toBe("c");
+  });
+
+  it("keeps a letter that is already a letter on macOS, even when the physical key differs (Dvorak)", () => {
+    expect(keyInputOf(press({ key: "c", code: "KeyJ", altKey: true, metaKey: true }), true).key).toBe("c");
+  });
+
   it("leaves other keys alone, and every key without Alt", () => {
     expect(keyInputOf(press({ key: "ç", code: "KeyC" }), true).key).toBe("ç");
     expect(keyInputOf(press({ key: "ArrowLeft", code: "ArrowLeft", altKey: true }), true).key).toBe("ArrowLeft");

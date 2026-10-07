@@ -17,7 +17,7 @@ a floating toolbar and layer drag are later batches.
 | Bring to front / Send to back | Selected layers move to the top (or bottom) of their sibling list, keeping their relative order. | Ctrl+Shift+] / Ctrl+Shift+[ |
 | Align left, centre, right, top, middle, bottom | One layer aligns to the page (artboard). Several align to the bounding box of the selection. Uses each layer's visible (world, axis-aligned) box, so rotated layers line up as they look. Only position changes. | none |
 | Distribute horizontally / vertically | Three or more layers: the outermost two stay, the rest move so the gaps between visible boxes are equal. | none |
-| Flip horizontal / vertical | Negates the layer's own `scaleX` / `scaleY` (its centre stays put). Text, and groups containing text, are refused: "Text can't be flipped." | none |
+| Flip horizontal / vertical | Mirrors the layer on screen, left to right or top to bottom, about its centre (the centre stays put). Because transforms are T·R·S, this negates one scale and also reverses the rotation (adjusted for a rotated or flipped parent group). Text, and groups containing text, are refused: "Text can't be flipped." | none |
 | Lock / Unlock | If every selected layer is free, locks them; otherwise unlocks the locked ones. The lock policy decides what is allowed. The label reads "Lock" or "Unlock". | Alt+Shift+L |
 | Copy style / Paste style | Copies the style of one selected layer (everything except identity, geometry and content: see below) and pastes it onto selected layers of the same type. Layers of another type are skipped and the notice says how many. | Ctrl+Alt+C / Ctrl+Alt+V |
 

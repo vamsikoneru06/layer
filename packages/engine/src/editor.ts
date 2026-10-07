@@ -69,10 +69,12 @@ export interface KeyEventLike {
 
 /**
  * A key press as `handleKey` takes it. With Option held, macOS reports the character it types ("ç" for C),
- * so a letter then comes from the physical key (`code`) to let Option shortcuts match.
+ * so there a letter comes from the physical key (`code`) to let Option shortcuts match. Other platforms
+ * keep `key`: on Windows and Linux Ctrl+Alt is AltGr, which types characters, and the physical key would
+ * also be wrong on Dvorak or Colemak layouts.
  */
 export function keyInputOf(e: KeyEventLike, mac: boolean): KeyInput {
-  const letter = e.altKey ? /^Key([A-Z])$/.exec(e.code) : null;
+  const letter = mac && e.altKey && !/^[a-z]$/i.test(e.key) ? /^Key([A-Z])$/.exec(e.code) : null;
   return { key: letter ? letter[1]!.toLowerCase() : e.key, mod: mac ? e.metaKey : e.ctrlKey, shift: e.shiftKey, alt: e.altKey };
 }
 
@@ -230,6 +232,7 @@ export function createEditor(o: EditorOptions): Editor {
       e.preventDefault();
       return;
     }
+    if (e.getModifierState?.("AltGraph")) return; // AltGr types a character, it is not a shortcut
     if (handleKey(core, keyInputOf(e, navigator.platform.startsWith("Mac")))) e.preventDefault();
   };
   const onKeyUp = (e: KeyboardEvent) => {
