@@ -39,7 +39,7 @@ const TYPE_LABEL: Record<Node["type"], string> = { frame: "Photo frame", text: "
  * Applies a change as one undo step. Colour pickers send a stream of previews (`final` false) then one
  * final value; those run as a single transaction, like a drag on the canvas.
  */
-function changer(core: EditorCore) {
+export function changer(core: EditorCore) {
   return (cmd: Command, final = true) => {
     if (final && !core.history.inTransaction) return void core.dispatch(cmd);
     if (!core.history.inTransaction) core.beginTransaction();
@@ -59,7 +59,7 @@ const WEIGHT_NAMES: Record<number, string> = { 100: "Thin", 200: "Extra light", 
 type Actions = Record<ActionId, Action>;
 
 /** Icon buttons for the arrange actions, in rows by kind. Each one shows why it is off, or its name and shortcut, as its tooltip. */
-const ARRANGE_ROWS: readonly { name: string; buttons: readonly { id: ActionId; icon: ReactNode }[] }[] = [
+export const ARRANGE_ROWS: readonly { name: string; buttons: readonly { id: ActionId; icon: ReactNode }[] }[] = [
   {
     name: "Align",
     buttons: [

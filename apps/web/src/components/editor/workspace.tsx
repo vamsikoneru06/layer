@@ -16,6 +16,7 @@ import { DesignInfoDialog } from "./design-info-dialog";
 import { ContextMenu } from "./context-menu";
 import { buildActions, CONTEXT_LAYOUTS, toMenuItems, type ActionHost } from "./editor-actions";
 import { EditorHeader } from "./editor-header";
+import { FloatingToolbar } from "./floating-toolbar";
 import { Segmented } from "./fields";
 import { InsertRail } from "./insert-rail";
 import { SaveToAccount } from "./save-to-account";
@@ -345,8 +346,9 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
         <div className="relative flex min-w-0 flex-1 flex-col">
           <div ref={container} className="relative min-h-0 flex-1 overflow-hidden bg-bg2">
             <canvas ref={scene} className="absolute inset-0" aria-hidden />
-            <canvas ref={overlay} className="absolute inset-0 touch-none" aria-label="Design canvas. Use the Layers panel to select layers with the keyboard." />
+            <canvas ref={overlay} tabIndex={-1} className="absolute inset-0 touch-none outline-none" aria-label="Design canvas. Use the Layers panel to select layers with the keyboard." />
             {state && editor && <TextEditor editor={editor} state={state} />}
+            {state && editor && actions && <FloatingToolbar core={editor.core} state={state} actions={actions} mac={mac} container={container} focusCanvas={() => overlay.current?.focus()} />}
             {panelsHidden && (
               <button type="button" onClick={() => setPanelsHidden(false)} className="glass-btn glass-secondary absolute top-3 right-3 h-8 rounded-lg px-3 text-[13px]">
                 <span className="glass-label">Show panels</span>
