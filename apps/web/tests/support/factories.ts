@@ -49,7 +49,7 @@ export async function createTemplate(db: Db, overrides: Partial<typeof templates
   const tags = values.tags ?? ["party"];
   const [row] = await db
     .insert(templates)
-    .values({ id, authorId: null, title, category: "birthday", tags, format: "ig-post", width: 1080, height: 1080, searchText: [title, ...tags].join(" "), ...values })
+    .values({ id, authorId: null, title, category: "celebrations", tags, format: "ig-post", width: 1080, height: 1080, searchText: [title, ...tags].join(" "), ...values })
     .returning();
   if (!row) throw new Error("template insert returned nothing");
   await db.insert(templateVersions).values({ templateId: id, version: row.currentVersion, doc: { ...(givenDoc ?? templateDoc({ title })), id }, createdAt: row.createdAt });

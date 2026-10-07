@@ -1,10 +1,10 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "thumb-podcast",
   "kind": "template",
   "meta": {
     "title": "Podcast Episode",
-    "category": "business",
+    "category": "thumbnails",
     "tags": [
       "podcast",
       "episode",
