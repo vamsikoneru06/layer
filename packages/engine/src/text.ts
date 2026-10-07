@@ -43,6 +43,19 @@ export function graphemes(s: string): string[] {
 
 export const graphemeCount = (s: string): number => (PLAIN.test(s) ? s.length : graphemes(s).length);
 
+/** The first `maxChars` visible characters of `s`, never more than `maxUnits` UTF-16 units (the schema's limit), never half a character. */
+export function limitText(s: string, maxChars: number, maxUnits: number): string {
+  if (PLAIN.test(s)) return s.slice(0, Math.min(maxChars, maxUnits));
+  let out = "";
+  let count = 0;
+  for (const g of graphemes(s)) {
+    if (count === maxChars || out.length + g.length > maxUnits) break;
+    out += g;
+    count++;
+  }
+  return out;
+}
+
 function wrap(node: TextNode, size: number, measure: Measure): RawLine[] {
   const width = (s: string) => measure(s, node.font, size) + (node.letterSpacing === 0 ? 0 : node.letterSpacing * graphemeCount(s));
   const lines: RawLine[] = [];
