@@ -25,7 +25,7 @@ describe("folder deleted mid-request", () => {
     const vanished = randomUUID();
     await expect(createDesign(ctx, alice.id, { doc: emptyDoc(), folderId: vanished })).rejects.toMatchObject({ status: 422 });
 
-    const design = await createDesign(ctx, alice.id, { doc: emptyDoc() });
+    const { design } = await createDesign(ctx, alice.id, { doc: emptyDoc() });
     await expect(updateDesignMeta(ctx, alice.id, design.id, { folderId: vanished })).rejects.toMatchObject({ status: 422 });
   });
 });

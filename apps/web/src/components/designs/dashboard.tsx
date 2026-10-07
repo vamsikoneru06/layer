@@ -13,6 +13,7 @@ import { listDesigns, type DesignItem } from "@/lib/api";
 import { editedLabel, firstName, greeting } from "@/lib/designs";
 import { cn } from "@/lib/utils";
 import { DesignThumb } from "./design-thumb";
+import { LocalDesignsGrid, useLocalDesigns } from "./local-designs-grid";
 import { useCreateDesign } from "./use-create-design";
 
 // Outline sizes are the handoff's, drawn to read at a glance rather than to scale.
@@ -104,6 +105,21 @@ function CustomSizeDialog({ open, onClose, onCreate }: { open: boolean; onClose:
   );
 }
 
+function GuestRecentDesigns() {
+  const { designs, error, remove } = useLocalDesigns(5);
+  if (error) return <p className="text-sm text-danger">{error}</p>;
+  if (designs?.length === 0) {
+    return (
+      <EmptyState
+        icon={<Sparkles />}
+        title="Your first design is a minute away"
+        body="Pick a size above or a template. No account needed: designs are saved in this browser until you sign in."
+      />
+    );
+  }
+  return designs ? <LocalDesignsGrid designs={designs} onDelete={(id) => void remove(id)} /> : null;
+}
+
 function RecentDesigns() {
   const session = useSession();
   const [designs, setDesigns] = useState<DesignItem[] | null>(null);
@@ -116,20 +132,7 @@ function RecentDesigns() {
       .catch((err: Error) => setError(err.message));
   }, [session.status]);
 
-  if (session.status === "guest") {
-    return (
-      <EmptyState
-        icon={<Sparkles />}
-        title="Your first design is a minute away"
-        body="Sign in and your designs will be waiting here next time."
-        action={
-          <Link href="/signin" className="text-sm font-medium underline-offset-4 hover:underline">
-            Sign in →
-          </Link>
-        }
-      />
-    );
-  }
+  if (session.status === "guest") return <GuestRecentDesigns />;
   if (error) return <p className="text-sm text-danger">{error}</p>;
   if (designs?.length === 0) {
     return <EmptyState icon={<Sparkles />} title="Your first design is a minute away" body="Pick a size above to start." />;
@@ -229,7 +232,7 @@ export function Dashboard() {
             h={38}
             dashed
             busy={busy === "custom"}
-            onClick={() => (session.status === "user" ? setCustomOpen(true) : router.push("/signin"))}
+            onClick={() => setCustomOpen(true)}
           />
         </div>
       </section>
