@@ -43,6 +43,13 @@
       "when": 1790600632957,
       "tag": "0005_stored_objects",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791346633511,
+      "tag": "0006_job_categories",
+      "breakpoints": true
     }
   ]
 }
