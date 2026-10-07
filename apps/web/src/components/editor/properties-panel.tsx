@@ -93,7 +93,7 @@ const ARRANGE_ROWS: readonly { name: string; buttons: readonly { id: ActionId; i
 
 function PositionSection({ actions, mac }: { actions: Actions; mac: boolean }) {
   return (
-    <Section title="Position">
+    <Section title="Arrange">
       <div className="flex flex-col gap-1">
         {ARRANGE_ROWS.map((row) => (
           <div key={row.name} role="group" aria-label={row.name} className="flex gap-1">

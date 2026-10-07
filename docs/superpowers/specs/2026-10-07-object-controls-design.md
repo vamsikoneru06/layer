@@ -48,7 +48,7 @@ node types in the engine, with a test that pins it.
 - **Edit** menu: Copy style and Paste style after Paste.
 - **Right-click on a layer:** adds Copy style, Paste style, separator, Bring forward, Bring to front, Send backward,
   Send to back, separator, Flip horizontal, Flip vertical, Lock/Unlock.
-- **Properties panel:** a **Position** section shown whenever at least one layer is selected (including several),
+- **Properties panel:** an **Arrange** section shown whenever at least one layer is selected (including several),
   with icon buttons (lucide-react) for the six aligns, two distributes, four order moves and two flips. Each button
   has an `aria-label`, and its tooltip shows the disabled reason when disabled.
 - **Keyboard shortcuts dialog:** lists the new shortcuts (it reads the registry).
