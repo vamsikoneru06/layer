@@ -329,9 +329,9 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
                 onChange={setPanel}
               />
             </div>
-            {state && editor && panel === "properties" && (
+            {state && editor && actions && panel === "properties" && (
               <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
-                <PropertiesPanel state={state} core={editor.core} />
+                <PropertiesPanel state={state} core={editor.core} actions={actions} mac={mac} />
               </div>
             )}
             {state && editor && panel === "layers" && <LayersPanel state={state} core={editor.core} />}
