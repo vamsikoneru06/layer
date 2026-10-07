@@ -1,0 +1,273 @@
+{
+  "schemaVersion": 2,
+  "id": "post-offset-collage",
+  "kind": "template",
+  "meta": {
+    "title": "Offset Collage",
+    "category": "photo-posts",
+    "tags": [
+      "collage",
+      "grid",
+      "city",
+      "white border"
+    ],
+    "format": "ig-post"
+  },
+  "artboard": {
+    "width": 1080,
+    "height": 1080,
+    "background": {
+      "type": "solid",
+      "color": "#FFFFFF"
+    }
+  },
+  "root": [
+    "photo1",
+    "photo2",
+    "photo3",
+    "count",
+    "title",
+    "body"
+  ],
+  "nodes": {
+    "photo1": {
+      "id": "photo1",
+      "name": "Large photo",
+      "transform": {
+        "x": 340,
+        "y": 370,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 560,
+      "height": 620,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "content": {
+        "assetId": "f435f08f-034c-81cf-9612-e1bc59fc2f38",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "photo2": {
+      "id": "photo2",
+      "name": "Top photo",
+      "transform": {
+        "x": 840,
+        "y": 270,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 360,
+      "height": 420,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "content": {
+        "assetId": "d8407115-1221-8d6f-aad2-4049b870d70e",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "photo3": {
+      "id": "photo3",
+      "name": "Bottom photo",
+      "transform": {
+        "x": 840,
+        "y": 770,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 360,
+      "height": 500,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "content": {
+        "assetId": "dbd5765f-80ae-8df4-90e5-8c5fdd48c701",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "count": {
+      "id": "count",
+      "name": "Count",
+      "transform": {
+        "x": 180,
+        "y": 748,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 240,
+      "height": 36,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "01 / 03",
+      "font": {
+        "family": "Space Grotesk",
+        "weight": 500,
+        "style": "normal"
+      },
+      "size": 22,
+      "color": "#9A9A9A",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 12
+    },
+    "title": {
+      "id": "title",
+      "name": "Title",
+      "transform": {
+        "x": 340,
+        "y": 840,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 560,
+      "height": 120,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "City notes",
+      "font": {
+        "family": "Bricolage Grotesque",
+        "weight": 800,
+        "style": "normal"
+      },
+      "size": 96,
+      "color": "#111111",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 24
+    },
+    "body": {
+      "id": "body",
+      "name": "Body",
+      "transform": {
+        "x": 340,
+        "y": 957,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 560,
+      "height": 90,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Coffee, corners and the 8:40 train.",
+      "font": {
+        "family": "Inter",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 28,
+      "color": "#555555",
+      "align": "left",
+      "lineHeight": 1.4,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 80
+    }
+  },
+  "assets": {
+    "f435f08f-034c-81cf-9612-e1bc59fc2f38": {
+      "id": "f435f08f-034c-81cf-9612-e1bc59fc2f38",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 1400,
+      "height": 1000
+    },
+    "d8407115-1221-8d6f-aad2-4049b870d70e": {
+      "id": "d8407115-1221-8d6f-aad2-4049b870d70e",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 933,
+      "height": 1400
+    },
+    "dbd5765f-80ae-8df4-90e5-8c5fdd48c701": {
+      "id": "dbd5765f-80ae-8df4-90e5-8c5fdd48c701",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 933,
+      "height": 1400
+    }
+  }
+}
