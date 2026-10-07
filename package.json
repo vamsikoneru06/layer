@@ -12,11 +12,12 @@
     "build": "pnpm -r build",
     "db:generate": "pnpm --filter @vash/web db:generate",
     "db:migrate": "pnpm --filter @vash/web db:migrate",
-    "db:seed": "pnpm --filter @vash/web db:seed"
+    "db:seed": "pnpm --filter @vash/web db:seed",
+    "admin:grant": "pnpm --filter @vash/web admin:grant"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/node": "^24.13.6",
+    "@types/node": "^26.6.4",
     "eslint": "^10.11.0",
     "globals": "^17.12.0",
     "typescript": "~6.0.3",

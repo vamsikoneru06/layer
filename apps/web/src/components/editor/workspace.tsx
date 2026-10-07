@@ -11,12 +11,14 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Menu } from "@/components/ui/menu";
 import { getDesign, saveDesign, saveDesignAsCopy, type Design } from "@/lib/api";
+import { localDesigns } from "@/lib/local-designs";
 import { createAutosaver, type Autosaver, type SaveStatus } from "@/lib/autosave";
 import { createImageLoader } from "@/lib/images";
 import { cn } from "@/lib/utils";
 import { ExportPopover } from "./export-popover";
 import { Segmented } from "./fields";
 import { InsertRail } from "./insert-rail";
+import { SaveToAccount } from "./save-to-account";
 import { usePhotoDrop } from "./use-photo-drop";
 import { LayersPanel } from "./layers-panel";
 import { PropertiesPanel } from "./properties-panel";
@@ -58,8 +60,8 @@ const STATUS: Record<SaveStatus, { icon: ReactNode; label: string }> = {
 
 const LINK = "font-medium text-text underline-offset-4 hover:underline";
 
-function SaveIndicator({ status, onRetry, onResolve }: { status: SaveStatus; onRetry: () => void; onResolve: () => void }) {
-  const s = STATUS[status];
+function SaveIndicator({ status, local, onRetry, onResolve }: { status: SaveStatus; local: boolean; onRetry: () => void; onResolve: () => void }) {
+  const s = local && status === "saved" ? { ...STATUS.saved, label: "Saved in this browser" } : STATUS[status];
   const alarming = status === "error" || status === "conflict" || status === "signed-out";
   return (
     <span role="status" className={cn("flex items-center gap-1.5 text-[13px] text-muted [&_svg]:size-4", alarming && "text-danger")}>
@@ -85,7 +87,13 @@ function SaveIndicator({ status, onRetry, onResolve }: { status: SaveStatus; onR
   );
 }
 
-export function Workspace({ design }: { design: Design }) {
+/** Saves a design kept on this device; versions count up locally so the autosaver works the same. */
+const saveLocal = (id: string) => async (doc: Doc, version: number) => {
+  await localDesigns.put({ id, doc, version: version + 1, updatedAt: new Date().toISOString() });
+  return version + 1;
+};
+
+export function Workspace({ design, local = false }: { design: Design; local?: boolean }) {
   const router = useRouter();
   const container = useRef<HTMLDivElement>(null);
   const scene = useRef<HTMLCanvasElement>(null);
@@ -105,7 +113,7 @@ export function Workspace({ design }: { design: Design }) {
     const images = createImageLoader(() => e?.invalidate());
     e = createEditor({ container: container.current!, scene: scene.current!, overlay: overlay.current!, doc: design.doc, image: images.image, imagesReady: images.ready });
     setEditor(e);
-    const s = createAutosaver<Doc>({ version: design.version, delayMs: 1500, retryMs: 5000, save: (doc, v) => saveDesign(design.id, doc, v), onStatus: setStatus });
+    const s = createAutosaver<Doc>({ version: design.version, delayMs: 1500, retryMs: 5000, save: local ? saveLocal(design.id) : (doc, v) => saveDesign(design.id, doc, v), onStatus: setStatus });
     saver.current = s;
     let last = e.getState().doc;
     const off = e.subscribe(() => {
@@ -132,7 +140,7 @@ export function Workspace({ design }: { design: Design }) {
       void s.flush().finally(() => s.dispose());
       e.destroy();
     };
-  }, [design]);
+  }, [design, local]);
 
   const photoDrop = usePhotoDrop(editor);
 
@@ -195,7 +203,7 @@ export function Workspace({ design }: { design: Design }) {
           <Image src="/vash-logo.png" alt="" width={28} height={28} className="size-7 rounded-md" priority />
         </Link>
         <h1 className="max-w-[320px] truncate text-sm font-semibold">{state?.doc.meta.title ?? design.title}</h1>
-        <SaveIndicator status={status} onRetry={() => void saver.current?.flush()} onResolve={() => setConflictOpen(true)} />
+        <SaveIndicator status={status} local={local} onRetry={() => void saver.current?.flush()} onResolve={() => setConflictOpen(true)} />
         <div className="flex-1" />
         <IconButton label="Undo (Ctrl+Z)" onClick={() => editor?.core.undo()} disabled={!state?.canUndo}>
           <Undo2 aria-hidden />
@@ -216,6 +224,7 @@ export function Workspace({ design }: { design: Design }) {
             </button>
           )}
         />
+        {local && <SaveToAccount id={design.id} saver={saver} />}
         <ExportPopover editor={editor} doc={state?.doc ?? design.doc} />
       </header>
 
