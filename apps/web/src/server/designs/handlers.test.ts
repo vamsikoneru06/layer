@@ -1,4 +1,6 @@
+import { randomUUID } from "node:crypto";
 import { createEmptyDoc } from "@vash/schema";
+import { eq } from "drizzle-orm";
 import { hasLoneSurrogate } from "../text";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestDb, type TestDb } from "../../../tests/support/db";
@@ -31,6 +33,30 @@ describe("create", () => {
     const d = await newDesign(alice);
     expect(d).toMatchObject({ version: 1, title: "Birthday card" });
     expect(d.doc.id).toBe(d.id);
+  });
+
+  it("creates under a client-chosen id, and a repeat returns that design instead of making a copy", async () => {
+    const alice = await createUser(t.db);
+    const id = randomUUID();
+    const first = await call(h.create, { method: "POST", as: alice, body: { id, doc: emptyDoc() } });
+    expect(first.status).toBe(201);
+    expect(first.body).toMatchObject({ id, doc: { id } });
+    // A retry after a lost response, even with a changed document, keeps the saved one.
+    const again = await call(h.create, { method: "POST", as: alice, body: { id, doc: { ...emptyDoc(), meta: { ...emptyDoc().meta, title: "Changed" } } } });
+    expect(again.status).toBe(200);
+    expect(again.body).toMatchObject({ id, version: 1, title: first.body.title });
+    expect(await t.db.$count(designs, eq(designs.id, id))).toBe(1);
+  });
+
+  it("refuses a client id that another account already uses, without revealing anything", async () => {
+    const alice = await createUser(t.db);
+    const bob = await createUser(t.db);
+    const id = randomUUID();
+    expect((await call(h.create, { method: "POST", as: alice, body: { id, doc: emptyDoc() } })).status).toBe(201);
+    const res = await call(h.create, { method: "POST", as: bob, body: { id, doc: emptyDoc() } });
+    expect(res.status).toBe(409);
+    expect(JSON.stringify(res.body)).not.toContain(alice.id);
+    expect(await t.db.$count(designs, eq(designs.ownerId, bob.id))).toBe(0);
   });
 
   it("rejects an invalid document with 422 and issues", async () => {
@@ -66,7 +92,8 @@ describe("create", () => {
 
   it("rejects mass-assignment fields", async () => {
     const alice = await createUser(t.db);
-    for (const extra of [{ ownerId: "x" }, { version: 9 }, { id: "00000000-0000-4000-8000-000000000000" }]) {
+    // `id` is allowed (owner-scoped, see "creates under a client-chosen id"), but must be a uuid.
+    for (const extra of [{ ownerId: "x" }, { version: 9 }, { id: "not-a-uuid" }]) {
       expect((await call(h.create, { method: "POST", as: alice, body: { doc: emptyDoc(), ...extra } })).status).toBe(400);
     }
   });

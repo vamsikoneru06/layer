@@ -14,7 +14,7 @@ const Title = z.string().trim().min(1).max(LIMITS.titleChars);
 const FolderId = z.uuid().nullable();
 const DOC_BODY_LIMIT = LIMITS.docBytes + 16 * 1024;
 
-const CreateBody = z.object({ title: Title.optional(), folderId: FolderId.optional(), doc: z.unknown() }).strict();
+const CreateBody = z.object({ id: z.uuid().transform((s) => s.toLowerCase()).optional(), title: Title.optional(), folderId: FolderId.optional(), doc: z.unknown() }).strict();
 const SaveBody = z.object({ doc: z.unknown(), version: z.number().int().positive() }).strict();
 const PatchBody = z
   .object({ title: Title.optional(), folderId: FolderId.optional() })
@@ -47,7 +47,8 @@ export function designHandlers(deps: Deps) {
 
     create: endpoint(deps, { auth: "user", rateLimit: createLimit }, async ({ req, user }) => {
       const body = await readJson(req, CreateBody, DOC_BODY_LIMIT);
-      return Response.json(toDesignJson(await service.createDesign(ctx, user.id, body)), { status: 201 });
+      const { design, created } = await service.createDesign(ctx, user.id, body);
+      return Response.json(toDesignJson(design), { status: created ? 201 : 200 });
     }),
 
     get: endpoint(deps, { auth: "user" }, async ({ user, params }) => {

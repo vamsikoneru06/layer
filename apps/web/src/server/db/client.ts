@@ -1,4 +1,5 @@
 import "server-only";
+import { attachDatabasePool } from "@vercel/functions";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import * as schema from "./schema";
@@ -15,5 +16,7 @@ export function createDb(databaseUrl: string, onIdleError: (err: Error) => void)
   // The server can drop an idle client (Neon does); pg then emits "error" on the pool, which would
   // crash the process if nothing listened. The pool discards that client and opens a new one on demand.
   pool.on("error", onIdleError);
+  // On Vercel (Fluid compute), close idle clients before the instance suspends instead of leaking them; a no-op elsewhere.
+  attachDatabasePool(pool);
   return { db: drizzle(pool, { schema }), pool };
 }

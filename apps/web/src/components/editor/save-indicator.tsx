@@ -16,8 +16,8 @@ const STATUS: Record<SaveStatus, { icon: ReactNode; label: string }> = {
 
 const LINK = "font-medium text-text underline-offset-4 hover:underline";
 
-export function SaveIndicator({ status, onRetry, onResolve }: { status: SaveStatus; onRetry: () => void; onResolve: () => void }) {
-  const s = STATUS[status];
+export function SaveIndicator({ status, local, onRetry, onResolve }: { status: SaveStatus; local: boolean; onRetry: () => void; onResolve: () => void }) {
+  const s = local && status === "saved" ? { ...STATUS.saved, label: "Saved in this browser" } : STATUS[status];
   const alarming = status === "error" || status === "conflict" || status === "signed-out";
   return (
     <span role="status" className={cn("flex items-center gap-1.5 text-[13px] text-muted [&_svg]:size-4", alarming && "text-danger")}>

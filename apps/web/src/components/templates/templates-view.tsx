@@ -3,10 +3,12 @@
 import { CATEGORIES, FORMATS, type Doc } from "@vash/schema";
 import { ChevronDown, LayoutTemplate, Search } from "lucide-react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getTemplate, listTemplates, type TemplateItem, type TemplateSort } from "@/lib/api";
+import { galleryQuery, readGalleryParams } from "@/lib/gallery-params";
 import { cn } from "@/lib/utils";
 import { DocPreview } from "./doc-preview";
 
@@ -85,11 +87,15 @@ const SORTS: readonly { value: TemplateSort; label: string }[] = [
 ];
 
 export function TemplatesView() {
-  const [q, setQ] = useState("");
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<string | null>(null);
-  const [format, setFormat] = useState("");
-  const [sort, setSort] = useState<TemplateSort>("popular");
+  const router = useRouter();
+  const params = useSearchParams();
+  // Filters start from the URL, so /templates?category=food opens filtered.
+  const [initial] = useState(() => readGalleryParams(params));
+  const [q, setQ] = useState(initial.q);
+  const [query, setQuery] = useState(initial.q);
+  const [category, setCategory] = useState<string | null>(initial.category);
+  const [format, setFormat] = useState(initial.format);
+  const [sort, setSort] = useState<TemplateSort>(initial.sort);
   const [items, setItems] = useState<TemplateItem[] | null>(null);
   const [cursor, setCursor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -100,6 +106,12 @@ export function TemplatesView() {
     const t = setTimeout(() => setQuery(q.trim()), 250);
     return () => clearTimeout(t);
   }, [q]);
+
+  // ...and every change goes back into it (replace, so Back leaves the gallery instead of undoing filters).
+  useEffect(() => {
+    const next = `/templates${galleryQuery({ q: query, category, format, sort })}`;
+    if (next !== `${window.location.pathname}${window.location.search}`) router.replace(next, { scroll: false });
+  }, [query, category, format, sort, router]);
 
   useEffect(() => {
     let live = true;

@@ -11,13 +11,16 @@ function bearerMatches(header: string | null, secret: string): boolean {
   return timingSafeEqual(createHash("sha256").update(presented).digest(), createHash("sha256").update(secret).digest());
 }
 
-export function cronHandlers(deps: Deps, storage: ObjectStorage | null, cronSecret: string | null) {
+/** Wraps a run, e.g. with Sentry cron check-ins so a failed or missed run raises an alert. */
+export type CronMonitor = <T>(job: () => Promise<T>) => Promise<T>;
+
+export function cronHandlers(deps: Deps, storage: ObjectStorage | null, cronSecret: string | null, monitor: CronMonitor = (job) => job()) {
   return {
     cleanup: endpoint(deps, { auth: "none" }, async ({ req }) => {
       if (!cronSecret || !bearerMatches(req.headers.get("authorization"), cronSecret)) {
         throw new HttpError(401, "Unauthorized", "A valid cron token is required.");
       }
-      const result = await runCleanup(deps.db, storage, deps.now());
+      const result = await monitor(() => runCleanup(deps.db, storage, deps.now()));
       deps.logger.info("cron.cleanup", result);
       return Response.json(result);
     }),

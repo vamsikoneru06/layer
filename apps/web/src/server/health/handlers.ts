@@ -23,6 +23,8 @@ export function healthHandlers(deps: Deps) {
   }
 
   return {
+    /** Liveness only: the app booted and its config is valid. For frequent uptime checks, which must not wake the database. */
+    live: endpoint(deps, { auth: "none" }, async () => Response.json({ status: "ok" })),
     get: endpoint(deps, { auth: "none" }, async () =>
       (await probe()) ? Response.json({ status: "ok" }) : Response.json({ status: "unavailable" }, { status: 503 }),
     ),

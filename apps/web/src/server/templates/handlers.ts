@@ -17,6 +17,7 @@ import * as repo from "./repository";
 import { useTemplate } from "./use";
 import { canSee, toTemplateJson } from "./view";
 
+const GALLERY_CACHE = "public, max-age=0, s-maxage=60, stale-while-revalidate=300";
 const publicRead = { name: "publicRead", rule: RATE_LIMITS.publicRead, by: "ip" } as const;
 const createLimit = { name: "designCreate", rule: RATE_LIMITS.designCreate, by: "user" } as const;
 const writeLimit = { name: "userWrite", rule: RATE_LIMITS.userWrite, by: "user" } as const;
@@ -63,7 +64,9 @@ export function templateHandlers(deps: Deps, storage: ObjectStorage | null = nul
   };
   return {
     list: endpoint(deps, { auth: "none", rateLimit: publicRead }, async ({ req }) => {
-      return Response.json(await galleryPage(deps.db, readQuery(req, GalleryParams)));
+      // Identical for every visitor (no auth), so the CDN may serve it: a new or newly hidden template can take up to
+      // six minutes to show in the list. A hidden template's own page and "use" stop working at once (not cached).
+      return Response.json(await galleryPage(deps.db, readQuery(req, GalleryParams)), { headers: { "cache-control": GALLERY_CACHE } });
     }),
 
     get: endpoint(deps, { auth: "optional", rateLimit: publicRead }, async ({ user, params }) => {
