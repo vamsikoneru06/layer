@@ -66,9 +66,8 @@ Goal: landing page to exported PNG with your own photos, no sign-up, as spec §1
    the device until you save; "Clear this device" button).
 
 ### M2. Templates people can find
-Done in this branch: items 1, 3 and 4, plus filter URLs (`/templates?category=food&format=ig-story`). Item 2 is left: the
-gallery already searches title and tags and filters by category and size, but the categories are topics (food, events),
-not jobs (menus, weekly specials). Changing them means re-tagging every seed and published template: **owner decision**.
+Done in #40 (items 1, 3 and 4, plus filter URLs such as `/templates?category=menus&format=ig-story`) and in the job
+categories PR (item 2): 9 jobs in 4 groups, documents at schemaVersion 2, stored templates and interests migrated.
 
 1. **Server-rendered template pages** with the template's title, description and preview in `<title>`,
    meta description and Open Graph tags (right now every detail page is titled "Template · VASH", which wastes the sitemap).

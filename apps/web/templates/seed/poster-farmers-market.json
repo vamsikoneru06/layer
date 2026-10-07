@@ -1,10 +1,10 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "poster-farmers-market",
   "kind": "template",
   "meta": {
     "title": "Farmers' Market",
-    "category": "food",
+    "category": "announcements",
     "tags": [
       "market",
       "local",
