@@ -50,6 +50,13 @@
       "when": 1791346633511,
       "tag": "0006_job_categories",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791424921541,
+      "tag": "0007_row_level_security",
+      "breakpoints": true
     }
   ]
 }
