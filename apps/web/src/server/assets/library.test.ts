@@ -45,7 +45,7 @@ describe("POST /api/assets/resolve", () => {
   it("stops resolving a hidden template's photos, except for its author and admins", async () => {
     const author = await createUser(t.db);
     const bob = await createUser(t.db);
-    const admin = await createUser(t.db, { role: "admin" });
+    const admin = await createUser(t.db, { role: "admin", twoFactorEnabled: true });
     const tpl = await createTemplate(t.db, { authorId: author.id });
     const copy = await createAsset(t.db, { ownerId: null, visibility: "public", templateId: tpl.id });
     const ids = (res: { body: { assets: { id: string }[] } }) => res.body.assets.map((a) => a.id);

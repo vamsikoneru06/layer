@@ -1,9 +1,22 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { getMe, type Me } from "@/lib/api";
+import { createDesignFromDoc, getMe, type Me } from "@/lib/api";
+import { localDesigns, moveToAccount } from "@/lib/local-designs";
 
-type Session = { status: "loading" } | { status: "guest" } | { status: "user"; me: Me } | { status: "error"; message: string };
+/** `moved`: designs made in this browser before signing in, moved to the account when this session started. */
+export type Moved = { count: number; failed: number };
+type Session = { status: "loading" } | { status: "guest" } | { status: "user"; me: Me; moved?: Moved } | { status: "error"; message: string };
+
+/** Designs left in this browser go to the account before any screen lists the account's designs. */
+async function moveLocalDesigns(): Promise<Moved | undefined> {
+  try {
+    const { moved, failed } = await moveToAccount(localDesigns, createDesignFromDoc);
+    return moved.length || failed ? { count: moved.length, failed } : undefined;
+  } catch {
+    return undefined; // No site storage in this browser: nothing was kept here.
+  }
+}
 
 const SessionContext = createContext<Session>({ status: "loading" });
 const SetMeContext = createContext<(me: Me) => void>(() => {});
@@ -14,7 +27,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let live = true;
     getMe()
-      .then((me) => live && setSession(me ? { status: "user", me } : { status: "guest" }))
+      .then(async (me) => {
+        if (!me) return live && setSession({ status: "guest" });
+        const moved = await moveLocalDesigns();
+        if (live) setSession({ status: "user", me, moved });
+      })
       .catch((err: Error) => live && setSession({ status: "error", message: err.message }));
     return () => {
       live = false;

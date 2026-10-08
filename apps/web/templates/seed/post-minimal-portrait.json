@@ -1,10 +1,10 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "post-minimal-portrait",
   "kind": "template",
   "meta": {
     "title": "Minimal Portrait",
-    "category": "minimal",
+    "category": "photo-posts",
     "tags": [
       "portrait",
       "black and white",

@@ -1,10 +1,10 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "post-hiring",
   "kind": "template",
   "meta": {
     "title": "We're Hiring",
-    "category": "business",
+    "category": "announcements",
     "tags": [
       "hiring",
       "jobs",

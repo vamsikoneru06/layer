@@ -1,10 +1,10 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "thumb-48-hours",
   "kind": "template",
   "meta": {
     "title": "48 Hours In",
-    "category": "travel",
+    "category": "thumbnails",
     "tags": [
       "vlog",
       "travel",

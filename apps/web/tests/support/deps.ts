@@ -5,21 +5,29 @@ import type { Deps } from "@/server/deps";
 import { silentLogger } from "@/server/logging";
 import { testConfig } from "./config";
 
-/** Real dependencies except auth: the `x-test-user-id` header names the (real, stored) user. */
+/**
+ * Real dependencies except auth: the `x-test-user-id` header names the (real, stored) user. A user with two-factor on
+ * counts as having passed a code just now, unless `x-test-two-factor-at` gives another time ("never" for none).
+ */
 export function testDeps(db: Db, overrides: Partial<Deps> = {}): Deps {
+  const now = overrides.now ?? (() => new Date());
   return {
     db,
     config: testConfig,
     logger: silentLogger,
-    now: () => new Date(),
+    now,
     async authenticate(req) {
       const id = req.headers.get("x-test-user-id");
       if (!id) return null;
       const [row] = await db
-        .select({ id: user.id, email: user.email, role: user.role, handle: user.handle })
+        .select({ id: user.id, email: user.email, role: user.role, handle: user.handle, twoFactorEnabled: user.twoFactorEnabled })
         .from(user)
         .where(eq(user.id, id));
-      return row ?? null;
+      if (!row) return null;
+      const { twoFactorEnabled, ...rest } = row;
+      const at = req.headers.get("x-test-two-factor-at");
+      const verifiedAt = !twoFactorEnabled || at === "never" ? null : at ? new Date(at) : now();
+      return { ...rest, twoFactor: { enabled: twoFactorEnabled, verifiedAt } };
     },
     ...overrides,
   };

@@ -1,18 +1,19 @@
 "use client";
 
-import { CATEGORIES, FORMATS, type Doc } from "@vash/schema";
+import { CATEGORY_GROUPS, categoryLabel, FORMATS, type Doc } from "@vash/schema";
 import { ChevronDown, LayoutTemplate, Search } from "lucide-react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getTemplate, listTemplates, type TemplateItem, type TemplateSort } from "@/lib/api";
+import { galleryQuery, readGalleryParams } from "@/lib/gallery-params";
 import { cn } from "@/lib/utils";
 import { DocPreview } from "./doc-preview";
 
 const CARD_BOX = { width: 260, height: 260 };
 
-export const categoryLabel = (c: string) => c.charAt(0).toUpperCase() + c.slice(1);
 export const formatLabel = (f: string) => (f in FORMATS ? FORMATS[f as keyof typeof FORMATS].label : "Custom size");
 
 /** Template documents, fetched once per page load and shared by every card and the detail page. */
@@ -85,11 +86,15 @@ const SORTS: readonly { value: TemplateSort; label: string }[] = [
 ];
 
 export function TemplatesView() {
-  const [q, setQ] = useState("");
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<string | null>(null);
-  const [format, setFormat] = useState("");
-  const [sort, setSort] = useState<TemplateSort>("popular");
+  const router = useRouter();
+  const params = useSearchParams();
+  // Filters start from the URL, so /templates?category=menus opens filtered.
+  const [initial] = useState(() => readGalleryParams(params));
+  const [q, setQ] = useState(initial.q);
+  const [query, setQuery] = useState(initial.q);
+  const [category, setCategory] = useState<string | null>(initial.category);
+  const [format, setFormat] = useState(initial.format);
+  const [sort, setSort] = useState<TemplateSort>(initial.sort);
   const [items, setItems] = useState<TemplateItem[] | null>(null);
   const [cursor, setCursor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -100,6 +105,12 @@ export function TemplatesView() {
     const t = setTimeout(() => setQuery(q.trim()), 250);
     return () => clearTimeout(t);
   }, [q]);
+
+  // ...and every change goes back into it (replace, so Back leaves the gallery instead of undoing filters).
+  useEffect(() => {
+    const next = `/templates${galleryQuery({ q: query, category, format, sort })}`;
+    if (next !== `${window.location.pathname}${window.location.search}`) router.replace(next, { scroll: false });
+  }, [query, category, format, sort, router]);
 
   useEffect(() => {
     let live = true;
@@ -168,14 +179,20 @@ export function TemplatesView() {
         </div>
       </div>
 
-      <div role="group" aria-label="Category" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+      <div role="group" aria-label="Category" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 md:flex-wrap md:overflow-visible">
         <button type="button" aria-pressed={category === null} onClick={() => setCategory(null)} className={chip(category === null)}>
           All
         </button>
-        {CATEGORIES.map((c) => (
-          <button key={c} type="button" aria-pressed={category === c} onClick={() => setCategory(c)} className={chip(category === c)}>
-            {categoryLabel(c)}
-          </button>
+        {/* Each job under who does it: one scrolling row on phones, wrapping by group on wider screens. */}
+        {CATEGORY_GROUPS.map((g) => (
+          <div key={g.label} role="group" aria-label={g.label} className="flex flex-none items-center gap-2">
+            <span className="ml-2 flex-none text-[12px] text-muted">{g.label}</span>
+            {g.categories.map((c) => (
+              <button key={c.id} type="button" aria-pressed={category === c.id} onClick={() => setCategory(c.id)} className={chip(category === c.id)}>
+                {c.label}
+              </button>
+            ))}
+          </div>
         ))}
       </div>
 

@@ -5,7 +5,7 @@ export const metadata = { title: "Terms · VASH" };
 
 export default function TermsPage() {
   return (
-    <LegalPage title="Terms and Conditions" updated="7 October 2026">
+    <LegalPage title="Terms and Conditions" updated="9 October 2026">
       <p>
         These terms are an agreement between you and the operator of VASH (&ldquo;we&rdquo;, &ldquo;us&rdquo;), an individual based in
         India. They cover your use of VASH, a free photo design editor. By creating an account or using VASH, you agree to them and to
@@ -15,7 +15,11 @@ export default function TermsPage() {
       <h2>Who can use VASH</h2>
       <ul>
         <li>You must be 18 or older.</li>
-        <li>You need an email address or a Google account to sign in. Keep it secure: anyone who can read your email can sign in as you.</li>
+        <li>
+          You can make and export designs without an account. They&apos;re saved only in your browser, so we can&apos;t recover them if
+          that browser&apos;s data is cleared.
+        </li>
+        <li>To keep designs in an account you need an email address or a Google account. Keep it secure: anyone who can read your email can sign in as you.</li>
         <li>One person per account. Don&apos;t sign in as someone else or create accounts with automated tools.</li>
       </ul>
 
