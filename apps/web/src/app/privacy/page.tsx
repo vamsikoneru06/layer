@@ -65,12 +65,13 @@ export default function PrivacyPage() {
       <h2>Cookies</h2>
       <ul>
         <li>A session cookie that keeps you signed in. It&apos;s required for the app to work.</li>
+        <li>A short-lived cookie, only while you sign in with Google, that protects the sign-in from forged requests.</li>
         <li>An appearance cookie, only if you choose Light or Dark in Settings, so the app opens in your chosen theme.</li>
       </ul>
       <p>
         If you make designs without signing in, they&apos;re kept in this site&apos;s storage in your browser (IndexedDB). That
         storage isn&apos;t a cookie and isn&apos;t sent to us. There are no advertising or analytics cookies, so there&apos;s no cookie
-        banner.
+        banner. Each cookie&apos;s name and how long it lasts are in our <Link href="/cookies">Cookie Policy</Link>.
       </p>
 
       <h2>Who helps us run VASH</h2>
