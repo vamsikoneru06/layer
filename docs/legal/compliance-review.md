@@ -15,7 +15,7 @@ templates), it processes **personal data** of users in India and possibly the EU
 
 - Operator: one individual in India. Free service, no payments, no ads, no analytics.
 - Data: email, name, Google profile picture link (Google sign-in), designs, uploaded photos, session IP and browser,
-  rate-limit counters (IP or account, up to 2 days), template reports, an id-only record of account deletions.
+  rate-limit counters (IP or account, up to 2 days), template reports, bug reports (text, page path and browser; account id when signed in; 180 days), an id-only record of account deletions.
 - Processors: Vercel (hosting), Neon (Postgres), Supabase (photo storage), Google (OAuth sign-in, Gmail sending), Sentry (scrubbed error reports, up to 90 days), GitHub (encrypted database backups, 7 days).
 - User content becomes public when a user publishes a template (API exists; publish UI not built yet).
 - Security: strict CSP, owner-scoped API with cross-user tests, rate limits, file-signature checks on uploads,

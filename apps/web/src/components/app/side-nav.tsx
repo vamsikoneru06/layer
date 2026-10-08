@@ -1,6 +1,6 @@
 "use client";
 
-import { House, Images, LayoutGrid, LayoutTemplate, LogIn, LogOut, Plus, Settings, type LucideIcon } from "lucide-react";
+import { Bug, House, Images, LayoutGrid, LayoutTemplate, LogIn, LogOut, Plus, Settings, type LucideIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -125,6 +125,11 @@ export function SideNav() {
       <Link href="/home#create" aria-label="New design" className="glass-btn glass-primary group relative size-11 rounded-xl">
         <Plus aria-hidden className="size-5 transition-[rotate] duration-300 ease-(--ease) group-hover:rotate-90 motion-reduce:transition-none" />
         <Tip>New design</Tip>
+      </Link>
+
+      <Link href={`/report-a-bug?from=${encodeURIComponent(pathname)}`} aria-label="Report a bug" className={ITEM_CLASS}>
+        <Bug aria-hidden className="size-5" strokeWidth={1.75} />
+        <Tip>Report a bug</Tip>
       </Link>
 
       <Profile />

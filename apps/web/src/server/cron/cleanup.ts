@@ -1,5 +1,5 @@
 import { and, eq, lt } from "drizzle-orm";
-import { assets, rateLimits, session, storageDeletions, verification } from "../db/schema";
+import { assets, bugReports, rateLimits, session, storageDeletions, verification } from "../db/schema";
 import type { Db } from "../db/types";
 import { objectDeletion } from "../assets/repository";
 import { drainStorageDeletions } from "../storage/outbox";
@@ -11,7 +11,8 @@ const HOUR = 3_600_000;
 /** When Vercel Cron calls the cleanup (UTC); must match vercel.json. Hobby allows one run a day. */
 export const CLEANUP_SCHEDULE = "0 3 * * *";
 
-export const CLEANUP = { pendingUploadMaxAgeMs: 24 * HOUR, rateLimitRetentionMs: 48 * HOUR } as const;
+/** Bug reports are kept 180 days, as the Privacy page says. */
+export const CLEANUP = { pendingUploadMaxAgeMs: 24 * HOUR, rateLimitRetentionMs: 48 * HOUR, bugReportRetentionMs: 180 * 24 * HOUR } as const;
 
 export type CleanupResult = Awaited<ReturnType<typeof runCleanup>>;
 
@@ -32,12 +33,17 @@ export async function runCleanup(db: Db, storage: ObjectStorage | null, now: Dat
     .returning({ key: rateLimits.key });
   const verifications = await db.delete(verification).where(lt(verification.expiresAt, now)).returning({ id: verification.id });
   const sessions = await db.delete(session).where(lt(session.expiresAt, now)).returning({ id: session.id });
+  const bugs = await db
+    .delete(bugReports)
+    .where(lt(bugReports.createdAt, new Date(now.getTime() - CLEANUP.bugReportRetentionMs)))
+    .returning({ id: bugReports.id });
   const outbox = storage ? await drainStorageDeletions(db, storage, now) : { deleted: 0, failed: 0 };
   return {
     pendingUploadsPurged,
     rateLimitWindowsDeleted: windows.length,
     verificationsDeleted: verifications.length,
     sessionsDeleted: sessions.length,
+    bugReportsDeleted: bugs.length,
     storageDeleted: outbox.deleted,
     storageFailed: outbox.failed,
   };

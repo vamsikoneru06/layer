@@ -18,4 +18,6 @@ export const RATE_LIMITS = {
   userWrite: { windowSeconds: 60, max: 300 },
   // Browser error reports relayed to Sentry; keeps one visitor from spending the free monthly quota.
   errorReport: { windowSeconds: 60, max: 30 },
+  // The /report-a-bug form: per account, or per IP for guests.
+  bugReport: { windowSeconds: 3_600, max: 10 },
 } as const satisfies Record<string, RateLimitRule>;

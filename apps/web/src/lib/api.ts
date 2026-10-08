@@ -238,3 +238,9 @@ export async function uploadPhoto(file: File): Promise<Photo> {
   if (!put.ok) throw new ApiError(put.status, `${file.name} couldn't be uploaded (storage answered ${put.status}).`);
   return request<Photo>(`/api/assets/${ticket.asset.id}/complete`, { method: "POST", json: { width, height } });
 }
+
+export type BugReportInput = { summary: string; expected: string; steps: string; page: string };
+
+export function sendBugReport(report: BugReportInput): Promise<{ id: string }> {
+  return request<{ id: string }>("/api/bug-reports", { method: "POST", json: report });
+}
