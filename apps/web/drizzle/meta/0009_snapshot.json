@@ -1,6 +1,6 @@
 {
-  "id": "97becea1-45f0-40c7-8b5c-ac80245c374f",
-  "prevId": "195eebae-3076-4499-b83f-a7d278f1bb70",
+  "id": "51359e14-2c9e-45cc-9ad0-ce029bb4a8bc",
+  "prevId": "97becea1-45f0-40c7-8b5c-ac80245c374f",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -461,6 +461,36 @@
           "type": "jsonb",
           "primaryKey": false,
           "notNull": true
+        },
+        "format": {
+          "name": "format",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "generated": {
+            "as": "\"designs\".\"doc\" -> 'meta' ->> 'format'",
+            "type": "stored"
+          }
+        },
+        "width": {
+          "name": "width",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "generated": {
+            "as": "round((\"designs\".\"doc\" -> 'artboard' ->> 'width')::numeric)::int",
+            "type": "stored"
+          }
+        },
+        "height": {
+          "name": "height",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "generated": {
+            "as": "round((\"designs\".\"doc\" -> 'artboard' ->> 'height')::numeric)::int",
+            "type": "stored"
+          }
         },
         "version": {
           "name": "version",

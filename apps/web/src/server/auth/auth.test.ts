@@ -15,7 +15,7 @@ const mailer = captureMailer();
 beforeAll(async () => {
   t = await createTestDb();
   auth = createAuth({ db: t.db, config: testConfig, mailer, now: () => new Date() });
-  route = createAuthRoute(auth, testConfig);
+  route = createAuthRoute(auth, { db: t.db, config: testConfig, now: () => new Date() });
 });
 afterAll(() => t.close());
 
@@ -70,7 +70,7 @@ describe("magic-link sign-in", () => {
     expect(setCookie).toMatch(/HttpOnly/i);
     expect(setCookie).toMatch(/SameSite=Lax/i);
 
-    const current = await createAuthenticator(auth)(new Request(`${origin}/api/me`, { headers: { cookie: cookie! } }));
+    const current = await createAuthenticator(auth, t.db)(new Request(`${origin}/api/me`, { headers: { cookie: cookie! } }));
     expect(current).toMatchObject({ email, role: "user", handle: null });
 
     expect(sessionCookie(await verify(link))).toBeNull();
@@ -80,7 +80,7 @@ describe("magic-link sign-in", () => {
     const email = "admin-to-be@example.test";
     await requestLink({ email });
     const cookie = sessionCookie(await verify(linkSentTo(email)))!;
-    const authenticate = createAuthenticator(auth);
+    const authenticate = createAuthenticator(auth, t.db);
     const me = () => authenticate(new Request(`${origin}/api/me`, { headers: { cookie } }));
     expect(await me()).toMatchObject({ email, role: "user", handle: null });
     await t.db.update(user).set({ role: "admin", handle: "maya" }).where(eq(user.email, email));
@@ -117,7 +117,7 @@ describe("magic-link sign-in", () => {
   });
 
   it("treats a request without a session as signed out", async () => {
-    expect(await createAuthenticator(auth)(new Request(`${origin}/api/me`))).toBeNull();
+    expect(await createAuthenticator(auth, t.db)(new Request(`${origin}/api/me`))).toBeNull();
   });
 });
 
@@ -197,7 +197,7 @@ describe("magic-link abuse controls", () => {
   it("still limits links per client when no proxy is trusted (shared bucket, fail closed)", async () => {
     const untrusted = createAuthRoute(
       createAuth({ db: t.db, config: { ...testConfig, trustProxy: false }, mailer, now: () => new Date() }),
-      testConfig,
+      { db: t.db, config: testConfig, now: () => new Date() },
     );
     const statuses = [];
     for (let i = 0; i < 21; i++) {

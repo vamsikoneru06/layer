@@ -35,11 +35,11 @@ function build() {
   const mailer =
     config.mail.kind === "resend" ? resendMailer(config.mail) : config.mail.kind === "gmail" ? gmailMailer(config.mail) : consoleMailer(logger);
   const auth = createAuth({ db, config, mailer, now });
-  const deps: Deps = { db, config, logger, now, authenticate: createAuthenticator(auth) };
+  const deps: Deps = { db, config, logger, now, authenticate: createAuthenticator(auth, db) };
   // An S3-compatible bucket when configured; otherwise photos are kept in the database itself.
   const storage = config.storage ? s3Storage(config.storage) : databaseStorage({ db, secret: config.authSecret, origin: config.appOrigin, now });
   return {
-    auth: createAuthRoute(auth, config),
+    auth: createAuthRoute(auth, { db, config, now }),
     health: healthHandlers(deps),
     folders: folderHandlers(deps),
     designs: designHandlers(deps),

@@ -23,8 +23,9 @@ async function request<T>(path: string, init?: RequestInit & { json?: unknown })
     throw new ApiError(0, "Couldn’t reach VASH. Check your connection and try again.");
   }
   if (!res.ok) {
-    const problem = (await res.json().catch(() => null)) as { detail?: string } | null;
-    throw new ApiError(res.status, problem?.detail ?? "Something went wrong. Please try again.");
+    // Our API sends problem+json ("detail"); Better Auth's routes send { message }.
+    const problem = (await res.json().catch(() => null)) as { detail?: string; message?: string } | null;
+    throw new ApiError(res.status, problem?.detail ?? problem?.message ?? "Something went wrong. Please try again.");
   }
   return (res.status === 204 ? undefined : await res.json()) as T;
 }
@@ -39,6 +40,8 @@ export type Me = {
   handle: string | null;
   role: string;
   onboardedAt: string | null;
+  /** Used for admins: two-factor on, and until when this device can use admin tools. */
+  twoFactor: { enabled: boolean; unlockedUntil: string | null };
 };
 
 export type DesignItem = {
@@ -128,6 +131,16 @@ export const deleteFolder = (id: string) => request<void>(`/api/folders/${id}`, 
 export const updateMe = (patch: { name?: string }) => request<Me>("/api/me", { method: "PATCH", json: patch });
 
 export const deleteMe = (confirm: string) => request<void>("/api/me", { method: "DELETE", json: { confirm } });
+
+/** Better Auth's two-factor routes, behind VASH's rules (server/auth/two-factor.ts). */
+const twoFactorPost = <T,>(path: string, json: unknown = {}) => request<T>(`/api/auth/two-factor/${path}`, { method: "POST", json });
+export const twoFactor = {
+  enable: () => twoFactorPost<{ totpURI: string; backupCodes: string[] }>("enable"),
+  verifyCode: (code: string) => twoFactorPost<unknown>("verify-totp", { code }),
+  verifyBackupCode: (code: string) => twoFactorPost<unknown>("verify-backup-code", { code }),
+  newBackupCodes: () => twoFactorPost<{ backupCodes: string[] }>("generate-backup-codes"),
+  disable: () => twoFactorPost<unknown>("disable"),
+};
 
 export const signOut = () => request<unknown>("/api/auth/sign-out", { method: "POST", json: {} });
 

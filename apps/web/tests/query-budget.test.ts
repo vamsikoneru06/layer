@@ -39,7 +39,7 @@ beforeAll(async () => {
   await migrate(db as never, { migrationsFolder: fileURLToPath(new URL("../drizzle", import.meta.url)) });
   const mailer = captureMailer();
   const auth = createAuth({ db, config: testConfig, mailer, now: () => new Date() });
-  const route = createAuthRoute(auth, testConfig);
+  const route = createAuthRoute(auth, { db, config: testConfig, now: () => new Date() });
   await route.POST(
     new Request(`${origin}/api/auth/sign-in/magic-link`, {
       method: "POST",
@@ -50,7 +50,7 @@ beforeAll(async () => {
   const link = /https?:\/\/\S+/.exec(mailer.sent.at(-1)!.text)![0];
   const res = await route.GET(new Request(link, { headers: { "x-forwarded-for": "198.51.100.9" } }));
   cookie = res.headers.getSetCookie().map((c) => c.split(";")[0]).join("; ");
-  deps = { db, config: testConfig, logger: silentLogger, now: () => new Date(), authenticate: createAuthenticator(auth) };
+  deps = { db, config: testConfig, logger: silentLogger, now: () => new Date(), authenticate: createAuthenticator(auth, db) };
 }, 60_000);
 afterAll(() => client.close());
 

@@ -40,8 +40,24 @@ describe("admin moderation", () => {
     }
   });
 
+  it("needs two-step verification set up and a code from the last 12 hours", async () => {
+    const reports = (as: { id: string }, at?: string) => call(h.reports, { as, headers: at ? { "x-test-two-factor-at": at } : {} });
+    // The ticking clock starts at 2026-09-25T09:00:00Z.
+    const unenrolled = await createUser(t.db, { role: "admin" });
+    const admin = await createUser(t.db, { role: "admin", twoFactorEnabled: true });
+
+    const setup = await reports(unenrolled);
+    expect(setup.status).toBe(403);
+    expect(setup.body.code).toBe("two_factor_setup_required");
+    const never = await reports(admin, "never");
+    expect(never.status).toBe(403);
+    expect(never.body.code).toBe("two_factor_required");
+    expect((await reports(admin, "2026-09-24T20:00:00.000Z")).body.code).toBe("two_factor_required");
+    expect((await reports(admin, "2026-09-24T22:00:00.000Z")).status).toBe(200);
+  });
+
   it("lists open reports oldest first, with the template, its author and the reporter", async () => {
-    const admin = await createUser(t.db, { role: "admin" });
+    const admin = await createUser(t.db, { role: "admin", twoFactorEnabled: true });
     const author = await createUser(t.db, { handle: handle() });
     const reporter = await createUser(t.db, { handle: handle() });
     const tpl = await createTemplate(t.db, { authorId: author.id, title: "Loud" });
@@ -56,7 +72,7 @@ describe("admin moderation", () => {
   });
 
   it("resolves a report once, recording who did it", async () => {
-    const admin = await createUser(t.db, { role: "admin" });
+    const admin = await createUser(t.db, { role: "admin", twoFactorEnabled: true });
     const tpl = await createTemplate(t.db);
     const r = await fileReport(tpl.id, (await createUser(t.db)).id, new Date());
     const resolve = () => call(h.resolveReport, { method: "POST", as: admin, params: { id: r.id }, body: { status: "dismissed" } });
@@ -72,7 +88,7 @@ describe("admin moderation", () => {
   });
 
   it("hiding takes a template out of the gallery, unfeatures it and closes its open reports; restoring brings it back", async () => {
-    const admin = await createUser(t.db, { role: "admin" });
+    const admin = await createUser(t.db, { role: "admin", twoFactorEnabled: true });
     const tpl = await createTemplate(t.db, { featured: true });
     await fileReport(tpl.id, (await createUser(t.db)).id, new Date());
     await fileReport(tpl.id, (await createUser(t.db)).id, new Date());
@@ -94,7 +110,7 @@ describe("admin moderation", () => {
   });
 
   it("features only published templates", async () => {
-    const admin = await createUser(t.db, { role: "admin" });
+    const admin = await createUser(t.db, { role: "admin", twoFactorEnabled: true });
     const tpl = await createTemplate(t.db);
     const hiddenTpl = await createTemplate(t.db, { status: "hidden" });
     const moderate = (id: string, action: string) => call(h.moderate, { method: "POST", as: admin, params: { id }, body: { action } });

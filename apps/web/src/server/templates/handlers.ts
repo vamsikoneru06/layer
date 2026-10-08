@@ -71,7 +71,7 @@ export function templateHandlers(deps: Deps, storage: ObjectStorage | null = nul
 
     get: endpoint(deps, { auth: "optional", rateLimit: publicRead }, async ({ user, params }) => {
       const row = await repo.getTemplateWithDoc(deps.db, parseId(params.id));
-      if (!row || !canSee(row, user) || !row.doc) throw notFound();
+      if (!row || !canSee(row, user, deps.now()) || !row.doc) throw notFound();
       const { doc, ...card } = row;
       return Response.json({ ...toTemplateJson(card), doc });
     }),
