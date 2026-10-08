@@ -144,7 +144,26 @@ describe("autosave (PUT)", () => {
     const alice = await createUser(t.db);
     const d = await newDesign(alice);
     const res = await call(h.save, { method: "PUT", as: alice, params: { id: d.id }, body: { doc: emptyDoc("Renamed in editor"), version: 1 } });
-    expect(res.body).toMatchObject({ version: 2, title: "Renamed in editor" });
+    expect(res.body).toMatchObject({ version: 2, title: "Renamed in editor", doc: { meta: { title: "Renamed in editor" } } });
+  });
+
+  it("leaves the document out of the answer when the client prefers a minimal one", async () => {
+    const alice = await createUser(t.db);
+    const d = await newDesign(alice);
+    const res = await call(h.save, { method: "PUT", as: alice, params: { id: d.id }, headers: { prefer: "return=minimal" }, body: { doc: emptyDoc("Quick"), version: 1 } });
+    expect(res.status).toBe(200);
+    expect(res.headers.get("preference-applied")).toBe("return=minimal");
+    expect(res.body).toMatchObject({ id: d.id, version: 2, title: "Quick" });
+    expect(res.body).not.toHaveProperty("doc");
+    const stored = await call(h.get, { as: alice, params: { id: d.id } });
+    expect(stored.body.doc.meta.title).toBe("Quick");
+  });
+
+  it("returns 404 for a missing design even when the document is invalid", async () => {
+    const alice = await createUser(t.db);
+    const missing = "6f1c2b7e-0000-4000-8000-000000000000";
+    expect((await call(h.save, { method: "PUT", as: alice, params: { id: missing }, body: { doc: {}, version: 1 } })).status).toBe(404);
+    expect((await call(h.save, { method: "PUT", as: alice, params: { id: missing }, body: { doc: emptyDoc(), version: 1 } })).status).toBe(404);
   });
 
   it("answers 409 with the current version when stale", async () => {
@@ -215,6 +234,26 @@ describe("metadata, delete, duplicate", () => {
     expect((await call(h.patch, { method: "PATCH", as: alice, params: { id: d.id }, body: { folderId: mine.id } })).body.folderId).toBe(mine.id);
     expect((await call(h.patch, { method: "PATCH", as: alice, params: { id: d.id }, body: { folderId: his.id } })).status).toBe(422);
     expect((await call(h.patch, { method: "PATCH", as: alice, params: { id: d.id }, body: { folderId: null } })).body.folderId).toBeNull();
+  });
+
+  it("answers 404 before a bad folder's 422 for someone else's design", async () => {
+    const alice = await createUser(t.db);
+    const bob = await createUser(t.db);
+    const d = await newDesign(alice);
+    const his = await createFolder(t.db, bob.id);
+    expect((await call(h.patch, { method: "PATCH", as: bob, params: { id: d.id }, body: { folderId: randomUUID() } })).status).toBe(404);
+    expect((await call(h.patch, { method: "PATCH", as: bob, params: { id: d.id }, body: { folderId: his.id } })).status).toBe(404);
+    expect((await call(h.patch, { method: "PATCH", as: bob, params: { id: d.id }, body: { title: "Mine now" } })).status).toBe(404);
+  });
+
+  it("leaves the document out of a rename's answer when the client prefers a minimal one", async () => {
+    const alice = await createUser(t.db);
+    const d = await newDesign(alice);
+    const res = await call(h.patch, { method: "PATCH", as: alice, params: { id: d.id }, headers: { prefer: "return=minimal" }, body: { title: "Holi" } });
+    expect(res.headers.get("preference-applied")).toBe("return=minimal");
+    expect(res.body).toMatchObject({ id: d.id, title: "Holi", version: 2 });
+    expect(res.body).not.toHaveProperty("doc");
+    expect((await call(h.get, { as: alice, params: { id: d.id } })).body.doc.meta.title).toBe("Holi");
   });
 
   it("deletes and duplicates only the caller's designs", async () => {

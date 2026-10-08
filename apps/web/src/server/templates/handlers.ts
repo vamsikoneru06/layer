@@ -70,11 +70,10 @@ export function templateHandlers(deps: Deps, storage: ObjectStorage | null = nul
     }),
 
     get: endpoint(deps, { auth: "optional", rateLimit: publicRead }, async ({ user, params }) => {
-      const card = await repo.getTemplateCard(deps.db, parseId(params.id));
-      if (!card || !canSee(card, user)) throw notFound();
-      const version = await repo.getTemplateVersion(deps.db, card.id, card.currentVersion);
-      if (!version) throw notFound();
-      return Response.json({ ...toTemplateJson(card), doc: version.doc });
+      const row = await repo.getTemplateWithDoc(deps.db, parseId(params.id));
+      if (!row || !canSee(row, user) || !row.doc) throw notFound();
+      const { doc, ...card } = row;
+      return Response.json({ ...toTemplateJson(card), doc });
     }),
 
     use: endpoint(deps, { auth: "user", rateLimit: createLimit }, async ({ user, params }) => {

@@ -70,10 +70,23 @@ describe("magic-link sign-in", () => {
     expect(setCookie).toMatch(/HttpOnly/i);
     expect(setCookie).toMatch(/SameSite=Lax/i);
 
-    const current = await createAuthenticator(auth, t.db)(new Request(`${origin}/api/me`, { headers: { cookie: cookie! } }));
+    const current = await createAuthenticator(auth)(new Request(`${origin}/api/me`, { headers: { cookie: cookie! } }));
     expect(current).toMatchObject({ email, role: "user", handle: null });
 
     expect(sessionCookie(await verify(link))).toBeNull();
+  });
+
+  it("reads the role and handle from the database on every request, in the one session query", async () => {
+    const email = "admin-to-be@example.test";
+    await requestLink({ email });
+    const cookie = sessionCookie(await verify(linkSentTo(email)))!;
+    const authenticate = createAuthenticator(auth);
+    const me = () => authenticate(new Request(`${origin}/api/me`, { headers: { cookie } }));
+    expect(await me()).toMatchObject({ email, role: "user", handle: null });
+    await t.db.update(user).set({ role: "admin", handle: "maya" }).where(eq(user.email, email));
+    expect(await me()).toMatchObject({ email, role: "admin", handle: "maya" });
+    await t.db.delete(user).where(eq(user.email, email));
+    expect(await me()).toBeNull();
   });
 
   it("never lets a sign-up body set the role", async () => {
@@ -104,7 +117,7 @@ describe("magic-link sign-in", () => {
   });
 
   it("treats a request without a session as signed out", async () => {
-    expect(await createAuthenticator(auth, t.db)(new Request(`${origin}/api/me`))).toBeNull();
+    expect(await createAuthenticator(auth)(new Request(`${origin}/api/me`))).toBeNull();
   });
 });
 
