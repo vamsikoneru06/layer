@@ -68,7 +68,7 @@ pnpm monorepo (pnpm 12 via corepack, Node 24+), TypeScript everywhere.
 | `apps/web/src/app` | Routes. `(app)/` = signed-in shell (Home, Designs); `edit/[id]` = editor; `dev/*` = development-only pages |
 | `apps/web/src/components` | UI: `app/` (shell, side bar), `designs/`, `editor/` (workspace, panels, fields), `ui/`, `legal/` |
 | `apps/web/src/server` | API handlers, services, repositories, auth, storage (S3 API), rate limits, cron |
-| `apps/web/templates` | The 49 seed templates (`seed-templates.ts` is the source; run `templates:build` to regenerate the JSON) |
+| `apps/web/templates` | The 20 seed templates (`seed-templates.ts` is the source; run `templates:build` to regenerate the JSON) |
 | `packages/schema` (`@vash/schema`) | Document format, validator, migrations, limits, font allowlist |
 | `packages/engine` (`@vash/engine`) | The editor engine: pure TypeScript, zero runtime dependencies |
 
@@ -122,9 +122,9 @@ never log or report tokens, signed URLs or emails (`src/lib/monitoring/scrub.ts`
 ## What's next
 
 1. **Photos in the editor**: uploading, the Photos panel, dropping onto frames and filling empty frames in
-   reading order work (`packages/engine/src/photos.ts`, `components/editor/photos-panel.tsx`). Still to do (spec
-   §8.2): double-click a frame to pan and zoom its photo on the canvas, drag a photo between frames to swap, and
-   Pexels search (`PEXELS_API_KEY`, credit the photographer). The storage backend exists (`apps/web/src/server/storage`, `server/assets`,
+   reading order, double-click to move and zoom a photo, and swapping by dragging onto another frame all work
+   (`packages/engine/src/photos.ts`, `interaction.ts`, `components/editor/photos-panel.tsx`). Still to do: Pexels
+   search (`PEXELS_API_KEY`, credit the photographer). The storage backend exists (`apps/web/src/server/storage`, `server/assets`,
    `docs/superpowers/plans/2026-09-26-storage-and-uploads.md`). In development uploads work without setup: with no `STORAGE_*` keys, photos are
    stored in the database (`src/server/storage/database.ts`, 50 MB per user). Production requires the Supabase keys
    (Vercel caps request bodies near 4.5 MB and the free database is 0.5 GB in total).
