@@ -4,6 +4,7 @@ import { moveLayer, parentOf, renameLayer, toggleLockOfLayer, type EditorCore, t
 import { LIMITS, type Node, type NodeId } from "@vash/schema";
 import { ChevronDown, ChevronRight, Eye, EyeOff, Group, Image as ImageIcon, Lock, LockOpen, Shapes, Sticker, Type } from "lucide-react";
 import { useEffect, useRef, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from "react";
+import { useToast } from "@/components/ui/toast";
 import { dropIndex, layerName } from "@/lib/layer-order";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,7 @@ export function LayersPanel({ state, core }: { state: EditorState; core: EditorC
   const [collapsed, setCollapsed] = useState<ReadonlySet<NodeId>>(new Set());
   const [dragging, setDragging] = useState<NodeId | null>(null);
   const [drop, setDrop] = useState<Drop | null>(null);
+  const toast = useToast();
   // A row that was moved or renamed is drawn again as a new element in the list, so focus is put back on it afterwards.
   const focusAfter = useRef<NodeId | null>(null);
   useEffect(() => {
@@ -52,9 +54,14 @@ export function LayersPanel({ state, core }: { state: EditorState; core: EditorC
     else core.select([id]);
   };
 
-  const move = (id: NodeId, index: number) => {
+  // `index` counts the siblings bottom first, as the engine does; the panel shows the top layer as position 1.
+  const move = (id: NodeId, index: number, total: number) => {
     focusAfter.current = id;
-    if (!moveLayer(core, id, index)) focusAfter.current = null;
+    if (!moveLayer(core, id, index)) {
+      focusAfter.current = null;
+      return;
+    }
+    toast({ message: `Moved to position ${total - index} of ${total}.`, duration: 3000 });
   };
 
   const onRowKeyDown = (e: KeyboardEvent, id: NodeId, siblings: readonly NodeId[]) => {
@@ -67,7 +74,7 @@ export function LayersPanel({ state, core }: { state: EditorState; core: EditorC
       // Up on the screen is toward the front, which is later in the list. Stopped here so the canvas does not nudge the layer.
       e.preventDefault();
       e.stopPropagation();
-      move(id, siblings.indexOf(id) + (e.key === "ArrowUp" ? 1 : -1));
+      move(id, siblings.indexOf(id) + (e.key === "ArrowUp" ? 1 : -1), siblings.length);
     }
   };
 
@@ -86,7 +93,7 @@ export function LayersPanel({ state, core }: { state: EditorState; core: EditorC
     if (!dragging || !drop) return;
     e.preventDefault();
     const index = dropIndex(siblings, dragging, drop.id, drop.edge);
-    if (index !== null) move(dragging, index);
+    if (index !== null) move(dragging, index, siblings.length);
     setDragging(null);
     setDrop(null);
   };
@@ -103,6 +110,7 @@ export function LayersPanel({ state, core }: { state: EditorState; core: EditorC
       const row = (
         <li
           key={id}
+          aria-level={depth + 1}
           draggable={editing !== id}
           onDragStart={(e) => {
             e.dataTransfer.setData(DRAG_TYPE, id);
@@ -122,7 +130,7 @@ export function LayersPanel({ state, core }: { state: EditorState; core: EditorC
           {isGroup ? (
             <button
               type="button"
-              aria-label={`${folded ? "Expand" : "Collapse"} ${name}`}
+              aria-label={`Layers in ${name}`}
               aria-expanded={!folded}
               onClick={() =>
                 setCollapsed((current) => {
@@ -150,13 +158,17 @@ export function LayersPanel({ state, core }: { state: EditorState; core: EditorC
             className={cn("flex h-full min-w-0 flex-1 items-center gap-2.5 rounded-lg pl-1 text-left text-[13px]", !n.visible && "text-muted", editing === id && "hidden")}
           >
             <Icon aria-hidden className="size-4 flex-none text-muted" strokeWidth={1.75} />
-            <span className={cn("truncate", selected && "font-medium")}>{name}</span>
+            <span className={cn("truncate", selected && "font-medium")}>
+              {name}
+              {!n.visible && <span className="sr-only"> (hidden)</span>}
+            </span>
           </button>
           {editing === id && (
             <div className="flex h-full min-w-0 flex-1 items-center gap-2.5 pl-1">
               <Icon aria-hidden className="size-4 flex-none text-muted" strokeWidth={1.75} />
               <RenameInput
-                name={n.name}
+                // An unnamed layer starts from the name the panel shows for it.
+                name={name}
                 onDone={(value) => {
                   focusAfter.current = id;
                   // A refusal (locked layer, empty name) leaves a notice and keeps the field open.
@@ -170,8 +182,10 @@ export function LayersPanel({ state, core }: { state: EditorState; core: EditorC
                   setEditing(null);
                 }}
                 onBlurAway={(value) => {
-                  renameLayer(core, id, value);
+                  // A refused name keeps the field open, as Enter does, so the typed text is not lost.
+                  if (!renameLayer(core, id, value)) return false;
                   setEditing(null);
+                  return true;
                 }}
               />
             </div>
@@ -181,7 +195,7 @@ export function LayersPanel({ state, core }: { state: EditorState; core: EditorC
             aria-label={n.lock === "free" ? `Lock ${name}` : `Unlock ${name}`}
             title={n.lock === "free" ? "Lock layer" : n.lock === "locked" ? "Locked. Click to unlock." : "Layout locked by the template. Click to unlock."}
             onClick={() => void toggleLockOfLayer(core, id)}
-            className={cn("flex size-7 items-center justify-center rounded-md text-muted hover:text-text", n.lock === "free" && "opacity-0 group-hover:opacity-100 focus-visible:opacity-100")}
+            className={cn("flex size-7 items-center justify-center rounded-xl text-muted hover:text-text", n.lock === "free" && "opacity-0 group-hover:opacity-100 focus-visible:opacity-100")}
           >
             {n.lock === "free" ? <LockOpen aria-hidden className="size-3.5" /> : <Lock aria-hidden className={cn("size-3.5", n.lock === "content-only" && "opacity-60")} />}
           </button>
@@ -189,7 +203,7 @@ export function LayersPanel({ state, core }: { state: EditorState; core: EditorC
             type="button"
             aria-label={n.visible ? `Hide ${name}` : `Show ${name}`}
             onClick={() => core.dispatch({ type: "update", id, patch: { visible: !n.visible } })}
-            className={cn("flex size-7 items-center justify-center rounded-md text-muted hover:text-text", n.visible && "opacity-0 group-hover:opacity-100 focus-visible:opacity-100")}
+            className={cn("flex size-7 items-center justify-center rounded-xl text-muted hover:text-text", n.visible &&"opacity-0 group-hover:opacity-100 focus-visible:opacity-100")}
           >
             {n.visible ? <Eye aria-hidden className="size-4" /> : <EyeOff aria-hidden className="size-4" />}
           </button>
@@ -208,7 +222,7 @@ export function LayersPanel({ state, core }: { state: EditorState; core: EditorC
       onDragLeave={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget as globalThis.Node | null)) setDrop(null);
       }}
-      className="flex flex-col gap-0.5 overflow-y-auto px-2 pb-4"
+      className="flex flex-col gap-0.5 overflow-y-auto px-2 pt-1 pb-4"
     >
       {rows(doc.root, 0)}
     </ul>
@@ -228,7 +242,7 @@ function RenameInput({
   name: string;
   onDone: (value: string) => boolean;
   onCancel: () => void;
-  onBlurAway: (value: string) => void;
+  onBlurAway: (value: string) => boolean;
 }) {
   const [draft, setDraft] = useState(name);
   const input = useRef<HTMLInputElement>(null);
@@ -248,7 +262,9 @@ function RenameInput({
       onChange={(e) => setDraft(e.target.value)}
       onBlur={() => {
         // Enter and Escape already ended the edit; the field going away must not save a second time.
-        if (!finished.current) onBlurAway(draft);
+        if (finished.current) return;
+        if (onBlurAway(draft)) finished.current = true;
+        // Refused: the field stays open with the text (the notice says why), without pulling focus back.
       }}
       onKeyDown={(e) => {
         // While an input method is composing, Enter and Escape belong to it.

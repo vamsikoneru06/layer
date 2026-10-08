@@ -476,12 +476,26 @@ describe("planMoveLayer", () => {
 
   it("refuses a move that changes nothing", () => {
     const doc = flat();
-    expect(reason(planMoveLayer(doc, "b", 1, "design"))).toBe("Already there.");
-    expect(reason(planMoveLayer(doc, "d", 99, "design"))).toBe("Already there.");
+    expect(reason(planMoveLayer(doc, "b", 1, "design"))).toBe("Already in that position.");
+    expect(reason(planMoveLayer(doc, "d", 99, "design"))).toBe("Already in that position.");
   });
 
   it("refuses an unknown layer", () => {
     expect(reason(planMoveLayer(flat(), "zzz", 0, "design"))).toBe("Select a layer first.");
+  });
+
+  it("refuses an index that is not a finite number, and cuts a fractional one to a whole position", () => {
+    const doc = flat();
+    for (const bad of [NaN, Infinity, -Infinity]) expect(reason(planMoveLayer(doc, "a", bad, "design"))).toBe("That position isn't valid.");
+    expect(run(doc, planMoveLayer(doc, "a", 2.7, "design")).root).toEqual(["b", "c", "a", "d"]);
+    expect(run(doc, planMoveLayer(doc, "d", 0.9, "design")).root).toEqual(["d", "a", "b", "c"]);
+    expect(reason(planMoveLayer(doc, "b", 1.5, "design"))).toBe("Already in that position.");
+  });
+
+  it("refuses a layer that exists but sits in no sibling list", () => {
+    const doc = docWith([rect("a", {}), rect("b", {})]);
+    const orphan = { ...doc, nodes: { ...doc.nodes, o: rect("o", {}) } };
+    expect(reason(planMoveLayer(orphan, "o", 0, "design"))).toBe("Select a layer first.");
   });
 
   it("moves inside its own group only", () => {
@@ -489,7 +503,7 @@ describe("planMoveLayer", () => {
     const next = run(doc, planMoveLayer(doc, "x", 2, "design"));
     expect((next.nodes.g as { children: string[] }).children).toEqual(["y", "z", "x"]);
     expect(next.root).toEqual(["g", "a"]);
-    expect(reason(planMoveLayer(doc, "x", 0, "design"))).toBe("Already there.");
+    expect(reason(planMoveLayer(doc, "x", 0, "design"))).toBe("Already in that position.");
   });
 
   it("is the one reorder command with the layer selected afterwards", () => {

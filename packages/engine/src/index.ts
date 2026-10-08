@@ -9,7 +9,7 @@ export { hitTest, nodesInBox, worldBounds } from "./hit-test";
 export { drawOrder, parentOf, topLevelOf, worldMatrix } from "./scene";
 export { layoutText, type Measure, type TextLayout } from "./text";
 export { fontRequests } from "./fonts";
-export { createNode, insertLayer, newNodeId, type InsertKind } from "./insert";
+export { createNode, insertLayer, insertShape, newNodeId, type InsertKind, type ShapeSpec } from "./insert";
 export { resizeDoc, type ResizeTarget, type ResizeWarning } from "./resize";
 export { clampContent, fillPhotos, frameAt, newPhotoFrame, photoTargets, placePhoto, removePhoto, swapPhotos, zoomPhoto } from "./photos";
 export { CLIPBOARD_PREFIX, planDuplicate } from "./clipboard";
@@ -45,6 +45,6 @@ export { checkExport, exportPng, EXPORT_MAX_SIDE, PHOTOS_NOT_READY, referencedIm
 export { drawNode, renderDoc, renderScene, fontString, type ImageState, type LoadedImage, type RenderOptions } from "./render";
 export { renderOverlay, GUIDE_COLOR, type OverlayState } from "./overlay";
 export { selectionFrame, handlePositions, handleAt, type Handle, type SelectionFrame } from "./handles";
-export { createSnapper, type Guide, type Snapper } from "./snapping";
+export { createSnapper, DEFAULT_SNAP, type Guide, type SnapOptions, type Snapper } from "./snapping";
 export { fitViewport, toScreen, toWorld, zoomAt, ZOOM_MAX, ZOOM_MIN, type Viewport } from "./viewport";
 export * from "./math";

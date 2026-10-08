@@ -198,7 +198,7 @@ describe("moveLayer, renameLayer and toggleLockOfLayer", () => {
   it("says why a move changed nothing", () => {
     const core = setup();
     expect(moveLayer(core, "a", 0)).toBe(false);
-    expect(core.getState().notice).toBe("Already there.");
+    expect(core.getState().notice).toBe("Already in that position.");
     core.select(["b"]);
     toggleLockOfLayer(core, "a");
     expect(moveLayer(core, "a", 2)).toBe(false);
@@ -253,5 +253,37 @@ describe("moveLayer, renameLayer and toggleLockOfLayer", () => {
     expect(core.getState().selection).toEqual(["b", "c"]);
     expect(toggleLockOfLayer(core, "a")).toBe(true);
     expect(core.doc.nodes.a!.lock).toBe("free");
+  });
+
+  it("refuses a name with a line break and changes nothing", () => {
+    const core = setup();
+    expect(renameLayer(core, "a", "Sky\nBlue")).toBe(false);
+    expect(core.getState().notice).toBe("Names can't contain line breaks.");
+    expect(core.doc.nodes.a!.name).toBe("a");
+    expect(core.getState().canUndo).toBe(false);
+  });
+
+  it("frees a content-only layer when its lock is toggled", () => {
+    const core = new EditorCore(docWith([{ ...rect("a", {}), lock: "content-only" }]));
+    expect(toggleLockOfLayer(core, "a")).toBe(true);
+    expect(core.doc.nodes.a!.lock).toBe("free");
+  });
+
+  it("refuses a lock toggle for a layer that does not exist", () => {
+    const core = setup();
+    expect(toggleLockOfLayer(core, "nope")).toBe(false);
+    expect(core.getState().notice).toBe("Select a layer first.");
+    expect(core.getState().canUndo).toBe(false);
+  });
+
+  it("undoes a lock toggle in one step", () => {
+    const core = setup();
+    core.select(["b"]);
+    expect(toggleLockOfLayer(core, "a")).toBe(true);
+    expect(core.doc.nodes.a!.lock).toBe("locked");
+    expect(core.getState().selection).toEqual(["b"]);
+    core.undo();
+    expect(core.doc.nodes.a!.lock).toBe("free");
+    expect(core.getState().canUndo).toBe(false);
   });
 });

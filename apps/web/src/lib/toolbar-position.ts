@@ -20,9 +20,10 @@ const clampStart = (value: number, size: number, room: number, margin: number) =
  * Where the floating toolbar goes, in the canvas's own pixels. `points` are the selection frame's handles
  * (the rotate handle included), so the toolbar clears all of them: above by `gap`, centred on the frame.
  * With no room above it goes below; with room in neither place it stays at the top, over the selection.
- * Always kept `margin` inside the view.
+ * Always kept `margin` inside the view, on every branch. Returns null when there are no points.
  */
-export function placeToolbar(points: readonly Point[], toolbar: Size, view: Size, o: { gap?: number; margin?: number } = {}): { x: number; y: number; side: "above" | "below" } {
+export function placeToolbar(points: readonly Point[], toolbar: Size, view: Size, o: { gap?: number; margin?: number } = {}): { x: number; y: number; side: "above" | "below" } | null {
+  if (points.length === 0) return null;
   const gap = o.gap ?? 10;
   const margin = o.margin ?? 8;
   const minX = Math.min(...points.map((p) => p.x));
@@ -30,12 +31,13 @@ export function placeToolbar(points: readonly Point[], toolbar: Size, view: Size
   const minY = Math.min(...points.map((p) => p.y));
   const maxY = Math.max(...points.map((p) => p.y));
   const x = clampStart((minX + maxX) / 2 - toolbar.width / 2, toolbar.width, view.width, margin);
+  const y = (value: number) => clampStart(value, toolbar.height, view.height, margin);
 
   const above = minY - gap - toolbar.height;
-  if (above >= margin) return { x, y: above, side: "above" };
+  if (above >= margin) return { x, y: y(above), side: "above" };
   const below = maxY + gap;
-  if (below + toolbar.height <= view.height - margin) return { x, y: below, side: "below" };
-  return { x, y: clampStart(above, toolbar.height, view.height, margin), side: "above" };
+  if (below + toolbar.height <= view.height - margin) return { x, y: y(below), side: "below" };
+  return { x, y: y(above), side: "above" };
 }
 
 /** Where a popover opened from `anchor` goes, in window pixels: centred under it, above when there is no room below, inside the window. */

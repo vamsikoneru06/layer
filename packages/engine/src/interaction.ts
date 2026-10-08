@@ -127,7 +127,7 @@ export function createInteraction(core: EditorCore): Interaction {
     const corners = d.ids.flatMap((id) => boxCorners(doc.nodes[id]!.width, doc.nodes[id]!.height, worldMatrix(doc, id)));
     core.beginTransaction();
     core.setChrome({ dragging: true, hover: null });
-    return { kind: "move", at: d.at, ids: d.ids, starts, box: aabb(corners), snapper: createSnapper(doc, new Set(d.ids)) };
+    return { kind: "move", at: d.at, ids: d.ids, starts, box: aabb(corners), snapper: createSnapper(doc, new Set(d.ids), core.snapOptions) };
   }
 
   function moveTo(d: Extract<Drag, { kind: "move" }>, e: PointerInput): void {
@@ -232,7 +232,7 @@ export function createInteraction(core: EditorCore): Interaction {
           drag = { kind: "rotate", id, start, centre, fromAngle: (Math.atan2(p.y - centre.y, p.x - centre.x) * 180) / Math.PI };
         } else {
           const axisAligned = Math.abs(start.world[1]) < 1e-9 && Math.abs(start.world[2]) < 1e-9;
-          drag = { kind: "resize", handle, id, start, snapper: axisAligned ? createSnapper(s.doc, new Set([id])) : null };
+          drag = { kind: "resize", handle, id, start, snapper: axisAligned ? createSnapper(s.doc, new Set([id]), core.snapOptions) : null };
         }
         return;
       }
