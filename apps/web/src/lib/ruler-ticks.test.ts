@@ -27,7 +27,7 @@ describe("ruler ticks", () => {
     const { major } = rulerTicks({ start: 0, length: 1000, zoom: 0.25, pan: 0 });
     expect(major).toHaveLength(9);
     expect(major[1]).toEqual({ at: 500, screen: 125, label: "500" });
-    expect(major[8].screen).toBe(1000);
+    expect(major[8]!.screen).toBe(1000);
   });
 
   it("zoom 4: majors every 20 design px, and minors every 16 screen px", () => {
@@ -64,7 +64,7 @@ describe("ruler ticks", () => {
     for (const zoom of [0.05, 0.1, 0.25, 0.5, 1, 2, 4, 8]) {
       const { major } = rulerTicks({ start: 0, length: 1200, zoom, pan: 17.5 });
       expect(major.length).toBeGreaterThan(1);
-      for (let i = 1; i < major.length; i++) expect(major[i].screen - major[i - 1].screen).toBeGreaterThanOrEqual(60);
+      for (let i = 1; i < major.length; i++) expect(major[i]!.screen - major[i - 1]!.screen).toBeGreaterThanOrEqual(60);
       for (const t of major) expect(t.label).toMatch(/^-?\d+$/);
     }
   });
