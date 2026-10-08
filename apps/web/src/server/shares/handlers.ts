@@ -11,6 +11,7 @@ import { listActiveShareLinks, revokeShareLink } from "./repository";
 import { createShare, viewShare } from "./service";
 
 const writeLimit = { name: "userWrite", rule: RATE_LIMITS.userWrite, by: "user" } as const;
+const readLimit = { name: "userRead", rule: RATE_LIMITS.userRead, by: "user" } as const;
 
 export function shareHandlers(deps: Deps, storage: ObjectStorage | null) {
   const ctx = { db: deps.db, now: deps.now };
@@ -20,7 +21,7 @@ export function shareHandlers(deps: Deps, storage: ObjectStorage | null) {
       return Response.json({ id: link.id, token, url: `${deps.config.appOrigin}/s/${token}`, createdAt: link.createdAt.toISOString() }, { status: 201 });
     }),
 
-    list: endpoint(deps, { auth: "user" }, async ({ user, params }) => {
+    list: endpoint(deps, { auth: "user", rateLimit: readLimit }, async ({ user, params }) => {
       const designId = parseId(params.id);
       if ((await getDesignVersion(deps.db, user.id, designId)) === undefined) throw notFound();
       const links = await listActiveShareLinks(deps.db, designId);
