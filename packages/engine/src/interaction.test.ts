@@ -78,6 +78,26 @@ describe("moving", () => {
     expect(core.getState().guides).toEqual([]);
   });
 
+  it("snaps to guides when objects snapping is off, and to the artboard edge by default", () => {
+    // Layer "a" spans x 150 to 250. Dragging it 30 px left puts its left edge at 120, 3 px from a guide at 123.
+    const guided = setup();
+    guided.core.setSnapOptions({ objects: false, guides: { x: [123], y: [] } });
+    guided.ui.pointerDown(guided.p(200, 200));
+    guided.ui.pointerMove(guided.p(170, 200));
+    expect(guided.node("a").transform.x).toBe(173);
+    expect(guided.core.getState().guides).toEqual([expect.objectContaining({ axis: "x", at: 123 })]);
+    guided.ui.pointerUp(guided.p(170, 200));
+
+    // Dragging it 147 px left puts its left edge at 3, next to the artboard edge (0): only default snapping takes it there.
+    const off = setup();
+    off.core.setSnapOptions({ objects: false, guides: { x: [], y: [] } });
+    off.drag([200, 200], [53, 200]);
+    expect(off.node("a").transform.x).toBe(53);
+    const on = setup();
+    on.drag([200, 200], [53, 200]);
+    expect(on.node("a").transform.x).toBe(50);
+  });
+
   it("refuses to move layout-locked layers and says why", () => {
     const { core, drag, node } = setup([{ ...rect("co", { x: 200, y: 200 }), lock: "content-only" }]);
     drag([200, 200], [300, 300]);

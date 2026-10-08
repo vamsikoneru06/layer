@@ -20,6 +20,15 @@ interface Target {
   to: number;
 }
 
+/** Which targets a drag snaps to. Guides are positions on the artboard, in design px. */
+export interface SnapOptions {
+  /** Artboard edges and centre, and other layers' edges and centres. */
+  objects: boolean;
+  guides: { x: number[]; y: number[] };
+}
+
+export const DEFAULT_SNAP: SnapOptions = { objects: true, guides: { x: [], y: [] } };
+
 export interface Snapper {
   /** How far to shift `box` so one of its edges or its centre lands on a target, per axis. */
   snapBox(box: Box, threshold: number): { dx: number; dy: number; guides: Guide[] };
@@ -43,19 +52,23 @@ function nearest(targets: Target[], value: number): Target | null {
 }
 
 /**
- * Targets are the artboard's edges and centre plus every other visible layer's bounds, built once
- * when a drag starts. Thresholds are in artboard units (6 screen px ÷ zoom).
+ * Targets are the artboard's edges and centre plus every other visible layer's bounds (when `objects`
+ * is on), and the guides, built once when a drag starts. Thresholds are in artboard units (6 screen px ÷ zoom).
  */
-export function createSnapper(doc: Doc, exclude: ReadonlySet<NodeId>): Snapper {
+export function createSnapper(doc: Doc, exclude: ReadonlySet<NodeId>, options: SnapOptions = DEFAULT_SNAP): Snapper {
   const { width, height } = doc.artboard;
-  const xs: Target[] = [0, width / 2, width].map((at) => ({ at, from: 0, to: height }));
-  const ys: Target[] = [0, height / 2, height].map((at) => ({ at, from: 0, to: width }));
-  for (const id of drawOrder(doc)) {
-    if (exclude.has(id)) continue;
-    const b = worldBounds(doc, id);
-    if (!b) continue;
-    for (const at of [b.minX, (b.minX + b.maxX) / 2, b.maxX]) xs.push({ at, from: b.minY, to: b.maxY });
-    for (const at of [b.minY, (b.minY + b.maxY) / 2, b.maxY]) ys.push({ at, from: b.minX, to: b.maxX });
+  const xs: Target[] = options.objects ? [0, width / 2, width].map((at) => ({ at, from: 0, to: height })) : [];
+  const ys: Target[] = options.objects ? [0, height / 2, height].map((at) => ({ at, from: 0, to: width })) : [];
+  for (const at of options.guides.x) xs.push({ at, from: 0, to: height });
+  for (const at of options.guides.y) ys.push({ at, from: 0, to: width });
+  if (options.objects) {
+    for (const id of drawOrder(doc)) {
+      if (exclude.has(id)) continue;
+      const b = worldBounds(doc, id);
+      if (!b) continue;
+      for (const at of [b.minX, (b.minX + b.maxX) / 2, b.maxX]) xs.push({ at, from: b.minY, to: b.maxY });
+      for (const at of [b.minY, (b.minY + b.maxY) / 2, b.maxY]) ys.push({ at, from: b.minX, to: b.maxX });
+    }
   }
   xs.sort((a, b) => a.at - b.at);
   ys.sort((a, b) => a.at - b.at);

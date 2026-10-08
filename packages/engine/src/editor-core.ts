@@ -3,7 +3,7 @@ import type { Command } from "./commands";
 import { History } from "./history";
 import type { Box } from "./math";
 import { checkPolicy, LOCKED, type EditMode } from "./policy";
-import type { Guide } from "./snapping";
+import { DEFAULT_SNAP, type Guide, type SnapOptions } from "./snapping";
 import { limitText } from "./text";
 import type { Viewport } from "./viewport";
 
@@ -38,6 +38,8 @@ export class EditorCore {
   #state: EditorState;
   #listeners = new Set<() => void>();
   #txRefused = false;
+  /** View setting, not document state: not in the undo history, read when a drag starts. */
+  #snapOptions: SnapOptions = DEFAULT_SNAP;
 
   constructor(doc: Doc, o: { mode?: EditMode } = {}) {
     this.mode = o.mode ?? "design";
@@ -55,6 +57,15 @@ export class EditorCore {
 
   get doc(): Doc {
     return this.history.doc;
+  }
+
+  get snapOptions(): SnapOptions {
+    return this.#snapOptions;
+  }
+
+  /** Takes effect the next time a drag starts; does not publish a state change. */
+  setSnapOptions(next: SnapOptions): void {
+    this.#snapOptions = next;
   }
 
   /** Applies one command as one undo step. Returns false (and sets a notice) when a lock refuses it. */

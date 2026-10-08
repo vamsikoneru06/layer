@@ -140,4 +140,20 @@ describe("EditorCore text editing", () => {
     const c = new EditorCore(docWith([{ ...text("locked", {}, "Fixed"), lock: "locked" }]), { mode: "template" });
     expect(c.startTextEdit("locked")).toBe(true);
   });
+
+  it("keeps snap options outside the document and history, and publishes nothing when they change", () => {
+    const c = core();
+    expect(c.snapOptions).toEqual({ objects: true, guides: { x: [], y: [] } });
+    const doc = c.doc;
+    const state = c.getState();
+    let calls = 0;
+    c.subscribe(() => calls++);
+    const next = { objects: false, guides: { x: [123], y: [] } };
+    c.setSnapOptions(next);
+    expect(c.snapOptions).toBe(next);
+    expect(c.doc).toBe(doc);
+    expect(c.getState()).toBe(state);
+    expect(c.getState().canUndo).toBe(false);
+    expect(calls).toBe(0);
+  });
 });

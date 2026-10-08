@@ -43,6 +43,6 @@ export { checkExport, exportPng, EXPORT_MAX_SIDE, PHOTOS_NOT_READY, referencedIm
 export { drawNode, renderDoc, renderScene, fontString, type ImageState, type LoadedImage, type RenderOptions } from "./render";
 export { renderOverlay, GUIDE_COLOR, type OverlayState } from "./overlay";
 export { selectionFrame, handlePositions, handleAt, type Handle, type SelectionFrame } from "./handles";
-export { createSnapper, type Guide, type Snapper } from "./snapping";
+export { createSnapper, DEFAULT_SNAP, type Guide, type SnapOptions, type Snapper } from "./snapping";
 export { fitViewport, toScreen, toWorld, zoomAt, ZOOM_MAX, ZOOM_MIN, type Viewport } from "./viewport";
 export * from "./math";
