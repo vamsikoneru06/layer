@@ -91,6 +91,10 @@ corepack pnpm --filter @vash/web fonts:sync        # after changing the font all
 corepack pnpm --filter @vash/web templates:build   # after editing seed templates
 ```
 
+End-to-end journeys (Playwright, `apps/web/e2e`) start their own dev server on port 3123 and need an empty database
+they may migrate and seed. Run `corepack pnpm --filter @vash/web exec playwright install chromium` once, then
+`E2E_DATABASE_URL=postgres://... corepack pnpm --filter @vash/web e2e`. CI runs them in the `e2e` job.
+
 Local database without installing Postgres (in-memory, wiped when it stops):
 
 ```bash
