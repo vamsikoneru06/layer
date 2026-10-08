@@ -1,10 +1,10 @@
 "use client";
 
 import { LIMITS } from "@vash/schema";
-import { Download, Monitor, Moon, Sun, Trash2 } from "lucide-react";
+import { Bug, Download, Monitor, Moon, Sun, Trash2 } from "lucide-react";
 import { useId, useState, type FormEvent } from "react";
 import { useSession, useSetMe } from "@/components/app/session";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
 import { deleteMe, updateMe, type Me } from "@/lib/api";
@@ -239,6 +239,22 @@ function DangerSection({ email }: { email: string }) {
   );
 }
 
+function HelpSection() {
+  return (
+    <section className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-lg font-semibold tracking-[-0.02em]">Help</h2>
+        <p className="text-sm text-muted">Something not working the way it should? Tell us about it.</p>
+      </div>
+      <div>
+        <ButtonLink href="/report-a-bug?from=%2Fsettings" variant="secondary" icon={<Bug aria-hidden className="size-4" />}>
+          Report a bug
+        </ButtonLink>
+      </div>
+    </section>
+  );
+}
+
 function Divider() {
   return <div aria-hidden className="h-[.5px] bg-line" />;
 }
@@ -265,6 +281,8 @@ export function SettingsView() {
         <div className="flex max-w-[560px] flex-col gap-8">
           <AppearanceSection />
           <Divider />
+          <HelpSection />
+          <Divider />
           <p className="text-sm text-muted">Sign in to manage your account.</p>
         </div>
       </div>
@@ -281,6 +299,8 @@ export function SettingsView() {
         <AppearanceSection />
         <Divider />
         <DataSection />
+        <Divider />
+        <HelpSection />
         <Divider />
         <DangerSection email={me.email} />
       </div>

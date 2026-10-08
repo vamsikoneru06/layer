@@ -1,5 +1,5 @@
 import { and, asc, eq, inArray, or, sql } from "drizzle-orm";
-import { assets, auditLog, designs, folders, storageDeletions, templates, user } from "../db/schema";
+import { assets, auditLog, bugReports, designs, folders, storageDeletions, templates, user } from "../db/schema";
 import { isUniqueViolation } from "../db/errors";
 import type { Db } from "../db/types";
 import { conflict, notFound, unprocessable } from "../http/problem";
@@ -90,7 +90,7 @@ export const EXPORT_PAGE_SIZE = 20;
  */
 export async function* exportAccount(db: Db, userId: string, now: Date): AsyncGenerator<string> {
   const profile = await getProfile(db, userId);
-  const [folderRows, assetRows, templateRows] = await Promise.all([
+  const [folderRows, assetRows, templateRows, bugReportRows] = await Promise.all([
     db.select({ id: folders.id, name: folders.name, createdAt: folders.createdAt }).from(folders).where(eq(folders.ownerId, userId)).orderBy(asc(folders.createdAt)),
     db
       .select({ id: assets.id, kind: assets.kind, visibility: assets.visibility, mime: assets.mime, bytes: assets.bytes, width: assets.width, height: assets.height, createdAt: assets.createdAt })
@@ -100,8 +100,20 @@ export async function* exportAccount(db: Db, userId: string, now: Date): AsyncGe
       .select({ id: templates.id, title: templates.title, description: templates.description, category: templates.category, tags: templates.tags, status: templates.status, currentVersion: templates.currentVersion, createdAt: templates.createdAt })
       .from(templates)
       .where(eq(templates.authorId, userId)),
+    db
+      .select({ id: bugReports.id, summary: bugReports.summary, expected: bugReports.expected, steps: bugReports.steps, page: bugReports.page, userAgent: bugReports.userAgent, status: bugReports.status, createdAt: bugReports.createdAt })
+      .from(bugReports)
+      .where(eq(bugReports.reporterId, userId))
+      .orderBy(asc(bugReports.createdAt)),
   ]);
-  const head = { exportedAt: now.toISOString(), profile: toProfile(profile), folders: folderRows, assets: assetRows, templates: templateRows };
+  const head = {
+    exportedAt: now.toISOString(),
+    profile: toProfile(profile),
+    folders: folderRows,
+    assets: assetRows,
+    templates: templateRows,
+    bugReports: bugReportRows,
+  };
   yield `${JSON.stringify(head).slice(0, -1)},"designs":[`;
 
   let after: { createdAt: Date; id: string } | undefined;

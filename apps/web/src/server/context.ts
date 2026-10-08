@@ -1,6 +1,7 @@
 import "server-only";
 import { adminHandlers } from "./admin/handlers";
 import { assetHandlers } from "./assets/handlers";
+import { bugReportHandlers } from "./bugs/handlers";
 import { createAuth, createAuthRoute } from "./auth/auth";
 import { createAuthenticator } from "./auth/current-user";
 import { consoleMailer, gmailMailer, resendMailer } from "./auth/mailer";
@@ -48,6 +49,7 @@ function build() {
     shares: shareHandlers(deps, storage),
     users: userHandlers(deps),
     admin: adminHandlers(deps),
+    bugReports: bugReportHandlers(deps),
     assets: assetHandlers(deps, storage),
     cron: cronHandlers(deps, storage, config.cronSecret, config.sentryDsn ? cronMonitor("cleanup", CLEANUP_SCHEDULE) : undefined),
     seo: seoHandlers(deps),

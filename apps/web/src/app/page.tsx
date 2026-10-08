@@ -52,6 +52,9 @@ export default function Landing() {
         <Link href="/privacy" className="hover:text-text">
           Privacy
         </Link>
+        <Link href="/report-a-bug?from=%2F" className="hover:text-text">
+          Report a bug
+        </Link>
       </footer>
     </main>
   );

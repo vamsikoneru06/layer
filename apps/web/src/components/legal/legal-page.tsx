@@ -23,6 +23,9 @@ export function LegalPage({ title, updated, children }: { title: string; updated
         <Link href="/privacy" className="hover:text-text">
           Privacy
         </Link>
+        <Link href="/report-a-bug" className="hover:text-text">
+          Report a bug
+        </Link>
       </footer>
     </main>
   );

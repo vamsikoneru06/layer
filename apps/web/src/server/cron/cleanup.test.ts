@@ -5,7 +5,7 @@ import { testDeps } from "../../../tests/support/deps";
 import { createAsset, createUser } from "../../../tests/support/factories";
 import { call } from "../../../tests/support/invoke";
 import { memoryStorage } from "../../../tests/support/storage";
-import { assets, rateLimits, session, storageDeletions, verification } from "../db/schema";
+import { assets, bugReports, rateLimits, session, storageDeletions, verification } from "../db/schema";
 import { CLEANUP_SCHEDULE } from "./cleanup";
 import { cronHandlers } from "./handlers";
 import vercelJson from "../../../vercel.json";
@@ -52,6 +52,13 @@ describe("GET /api/cron/cleanup", () => {
       { id: "s-old", token: "t-old", userId: owner.id, expiresAt: hoursAgo(1) },
       { id: "s-live", token: "t-live", userId: owner.id, expiresAt: new Date(NOW.getTime() + 60_000) },
     ]);
+    const [, keptBug] = await t.db
+      .insert(bugReports)
+      .values([
+        { summary: "old", createdAt: hoursAgo(181 * 24) },
+        { summary: "recent", createdAt: hoursAgo(179 * 24) },
+      ])
+      .returning({ id: bugReports.id });
 
     const h = cronHandlers(testDeps(t.db, { now: () => NOW }), storage, SECRET);
     const first = await call(h.cleanup, { headers: { authorization: `Bearer ${SECRET}` } });
@@ -61,6 +68,7 @@ describe("GET /api/cron/cleanup", () => {
       rateLimitWindowsDeleted: 1,
       verificationsDeleted: 1,
       sessionsDeleted: 1,
+      bugReportsDeleted: 1,
       storageDeleted: 1,
       storageFailed: 0,
     });
@@ -68,6 +76,7 @@ describe("GET /api/cron/cleanup", () => {
     expect(storage.has("private", "staging/later")).toBe(true);
     const left = (await t.db.select({ id: assets.id }).from(assets)).map((a) => a.id);
     expect(left).toEqual(expect.arrayContaining([fresh.id, oldReady.id]));
+    expect(await t.db.select({ id: bugReports.id }).from(bugReports)).toEqual([keptBug]);
     expect(left).not.toContain(stale.id);
     expect(await t.db.select().from(rateLimits).where(eq(rateLimits.key, "recent"))).toHaveLength(1);
     expect(await t.db.select().from(verification).where(eq(verification.id, "v-live"))).toHaveLength(1);
