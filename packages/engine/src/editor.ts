@@ -191,7 +191,10 @@ export function createEditor(o: EditorOptions): Editor {
   // Double-clicking text (even inside a group) starts typing into it.
   const onDoubleClick = (e: MouseEvent) => {
     const hit = hitTest(core.doc, toWorld(core.getState().viewport, input(e)));
-    if (hit && core.doc.nodes[hit]?.type === "text") core.startTextEdit(hit);
+    const type = hit ? core.doc.nodes[hit]?.type : undefined;
+    if (type === "text") core.startTextEdit(hit!);
+    // Double-clicking a photo lets you move and zoom it inside its frame.
+    else if (type === "frame") core.startCrop(hit!);
   };
   const onWheel = (e: WheelEvent) => {
     e.preventDefault();
@@ -214,6 +217,11 @@ export function createEditor(o: EditorOptions): Editor {
     if (e.key === " ") {
       ui.setSpace(true);
       invalidate();
+      e.preventDefault();
+      return;
+    }
+    if (core.getState().cropping && (e.key === "Enter" || e.key === "Escape")) {
+      core.endCrop();
       e.preventDefault();
       return;
     }

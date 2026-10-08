@@ -14,7 +14,7 @@ export { CLIPBOARD_PREFIX, planDuplicate } from "./clipboard";
 export { planGroup, planUngroup } from "./structure";
 export { INVALID_CHANGE, copySelection, cutSelection, duplicateSelection, groupSelection, pasteText, runPlan, ungroupSelection } from "./edit-ops";
 export { topLevelSelection, type Plan } from "./selection-utils";
-export { clampContent, fillPhotos, frameAt, newPhotoFrame, photoTargets, placePhoto, removePhoto, zoomPhoto } from "./photos";
+export { clampContent, fillPhotos, frameAt, newPhotoFrame, photoTargets, placePhoto, removePhoto, swapPhotos, zoomPhoto } from "./photos";
 export { createFilterRenderer, FILTER_KEYS, FILTER_PRESETS, isNeutral, presetFilters, type FilterFn, type FilterValues } from "./filters";
 export { textEditBox, type TextEditBox } from "./text-edit";
 export { checkExport, exportPng, EXPORT_MAX_SIDE, PHOTOS_NOT_READY, referencedImages, type ExportCheck, type ExportOptions } from "./export";
