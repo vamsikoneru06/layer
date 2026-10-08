@@ -90,7 +90,8 @@ export const getDesign = (id: string) => request<Design>(`/api/designs/${id}`);
 
 /** Saves a new version; resolves to the version the server assigned. Rejects with status 409 on a conflict. */
 export async function saveDesign(id: string, doc: Doc, version: number): Promise<number> {
-  return (await request<Design>(`/api/designs/${id}`, { method: "PUT", json: { doc, version } })).version;
+  // The server answers without the document (often hundreds of KB) when asked; autosave only needs the version.
+  return (await request<{ version: number }>(`/api/designs/${id}`, { method: "PUT", json: { doc, version }, headers: { prefer: "return=minimal" } })).version;
 }
 
 /** "Keep mine as a copy" after a conflict. */

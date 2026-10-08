@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { relations, sql, type SQL } from "drizzle-orm";
 import { boolean, check, customType, date, index, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uuid, type AnyPgColumn } from "drizzle-orm/pg-core";
 import type { Doc } from "@vash/schema";
 
@@ -94,6 +94,10 @@ export const twoFactor = pgTable(
   },
   (t) => [index("two_factor_user_idx").on(t.userId)],
 );
+
+/** Lets Better Auth read a session and its user in one joined query (`advanced.database.joins`). */
+export const sessionRelations = relations(session, ({ one }) => ({ user: one(user, { fields: [session.userId], references: [user.id] }) }));
+export const userRelations = relations(user, ({ many }) => ({ sessions: many(session) }));
 
 export const authSchema = { user, session, account, verification, twoFactor };
 
@@ -205,6 +209,10 @@ export const designs = pgTable(
     folderId: uuid("folder_id").references(() => folders.id, { onDelete: "set null" }),
     title: text("title").notNull(),
     doc: jsonb("doc").$type<Doc>().notNull(),
+    // Kept by Postgres on every write, so design lists read them without loading whole documents (up to 1 MB each).
+    format: text("format").generatedAlwaysAs((): SQL => sql`${designs.doc} -> 'meta' ->> 'format'`),
+    width: integer("width").generatedAlwaysAs((): SQL => sql`round((${designs.doc} -> 'artboard' ->> 'width')::numeric)::int`),
+    height: integer("height").generatedAlwaysAs((): SQL => sql`round((${designs.doc} -> 'artboard' ->> 'height')::numeric)::int`),
     version: integer("version").notNull().default(1),
     sourceTemplateId: uuid("source_template_id").references(() => templates.id, { onDelete: "set null" }),
     sourceTemplateVersion: integer("source_template_version"),

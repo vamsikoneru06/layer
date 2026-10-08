@@ -64,6 +64,13 @@
       "when": 1791425600000,
       "tag": "0008_row_level_security",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791442784055,
+      "tag": "0009_design_card_columns",
+      "breakpoints": true
     }
   ]
 }

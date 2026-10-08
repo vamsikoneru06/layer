@@ -107,6 +107,14 @@ export function createAuth({ db, config, mailer, now }: AuthDeps) {
       ? { google: { clientId: config.google.clientId, clientSecret: config.google.clientSecret } }
       : {},
     session: { expiresIn: 30 * DAY_SECONDS, updateAge: DAY_SECONDS },
+    // Read-only to Better Auth (`input: false`: no sign-up or update body can set them), so the session it loads
+    // already carries the role and handle and the request needs no second user lookup.
+    user: {
+      additionalFields: {
+        role: { type: "string", required: false, input: false },
+        handle: { type: "string", required: false, input: false },
+      },
+    },
     disabledPaths: DISABLED_PATHS,
     rateLimit: {
       enabled: true,
@@ -117,6 +125,8 @@ export function createAuth({ db, config, mailer, now }: AuthDeps) {
     },
     advanced: {
       ...authCookieOptions(config),
+      // One joined query for session + user on every signed-in request, instead of two.
+      database: { joins: true },
       // Without a trusted proxy the forwarded header is attacker-controlled; our own hook below
       // still limits per client using a shared bucket.
       ipAddress: config.trustProxy ? { ipAddressHeaders: ["x-forwarded-for"] } : { disableIpTracking: true },

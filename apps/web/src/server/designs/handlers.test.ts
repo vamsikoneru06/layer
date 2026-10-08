@@ -144,7 +144,26 @@ describe("autosave (PUT)", () => {
     const alice = await createUser(t.db);
     const d = await newDesign(alice);
     const res = await call(h.save, { method: "PUT", as: alice, params: { id: d.id }, body: { doc: emptyDoc("Renamed in editor"), version: 1 } });
-    expect(res.body).toMatchObject({ version: 2, title: "Renamed in editor" });
+    expect(res.body).toMatchObject({ version: 2, title: "Renamed in editor", doc: { meta: { title: "Renamed in editor" } } });
+  });
+
+  it("leaves the document out of the answer when the client prefers a minimal one", async () => {
+    const alice = await createUser(t.db);
+    const d = await newDesign(alice);
+    const res = await call(h.save, { method: "PUT", as: alice, params: { id: d.id }, headers: { prefer: "return=minimal" }, body: { doc: emptyDoc("Quick"), version: 1 } });
+    expect(res.status).toBe(200);
+    expect(res.headers.get("preference-applied")).toBe("return=minimal");
+    expect(res.body).toMatchObject({ id: d.id, version: 2, title: "Quick" });
+    expect(res.body).not.toHaveProperty("doc");
+    const stored = await call(h.get, { as: alice, params: { id: d.id } });
+    expect(stored.body.doc.meta.title).toBe("Quick");
+  });
+
+  it("returns 404 for a missing design even when the document is invalid", async () => {
+    const alice = await createUser(t.db);
+    const missing = "6f1c2b7e-0000-4000-8000-000000000000";
+    expect((await call(h.save, { method: "PUT", as: alice, params: { id: missing }, body: { doc: {}, version: 1 } })).status).toBe(404);
+    expect((await call(h.save, { method: "PUT", as: alice, params: { id: missing }, body: { doc: emptyDoc(), version: 1 } })).status).toBe(404);
   });
 
   it("answers 409 with the current version when stale", async () => {

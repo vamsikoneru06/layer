@@ -8,15 +8,14 @@ import type { CurrentUser } from "../deps";
 import { insertDesign, type DesignRow } from "../designs/repository";
 import { notFound } from "../http/problem";
 import { insertWithinQuota } from "../quotas";
-import { getTemplateCard, getTemplateVersion } from "./repository";
+import { getTemplateWithDoc } from "./repository";
 import { canSee } from "./view";
 
 /** Spec §8.2: copies the current version into a new design; a signed-in use counts once per user per template per UTC day. */
 export async function useTemplate(ctx: { db: Db; now: () => Date }, viewer: CurrentUser, templateId: string): Promise<DesignRow> {
-  const card = await getTemplateCard(ctx.db, templateId);
-  if (!card || !canSee(card, viewer, ctx.now())) throw notFound();
-  const version = await getTemplateVersion(ctx.db, templateId, card.currentVersion);
-  if (!version) throw notFound();
+  const card = await getTemplateWithDoc(ctx.db, templateId);
+  if (!card || !canSee(card, viewer, ctx.now()) || !card.doc) throw notFound();
+  const version = { version: card.currentVersion, doc: card.doc };
   // Stored versions may predate a schema migration; parseDoc brings them up to date.
   const parsed = parseDoc(version.doc, { kind: "template" });
   if (!parsed.ok) throw new Error(`template ${templateId} version ${version.version} no longer validates`);
