@@ -28,6 +28,11 @@
   --gc-p: radial-gradient(90% 70% at 25% 0%, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0) 60%), linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.28)), rgba(29, 29, 31, 0.05);
   --glass-backdrop: blur(14px) saturate(160%) brightness(1.25);
   --gc-s: radial-gradient(90% 70% at 25% 0%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0) 60%), linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.22));
+  /* Editor light table: the stage is lit from the middle; panels float on it as glass. */
+  --stage: radial-gradient(85% 80% at 46% 46%, #ffffff, #ececef 45%, #d6d6db 85%);
+  --stage-dot: rgba(0, 0, 0, 0.075);
+  --island: rgba(255, 255, 255, 0.74);
+  --island-sh: 0 0 0 0.5px rgba(0, 0, 0, 0.09), inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 3px rgba(0, 0, 0, 0.05), 0 12px 32px rgba(0, 0, 0, 0.08);
   --gcsh-p: inset 1px 1px 0 rgba(255, 255, 255, 0.95), inset -1px -1px 0 rgba(0, 0, 0, 0.07), inset 0 -10px 14px -12px rgba(0, 0, 0, 0.16), 0 0 0 0.5px rgba(0, 0, 0, 0.16), 0 2px 6px rgba(0, 0, 0, 0.08), 0 10px 26px rgba(0, 0, 0, 0.1);
   --gcsh-p-h: inset 1px 1px 0 #fff, inset -1px -1px 0 rgba(0, 0, 0, 0.08), inset 0 -10px 14px -12px rgba(0, 0, 0, 0.18), 0 0 0 0.5px rgba(0, 0, 0, 0.2), 0 4px 10px rgba(0, 0, 0, 0.1), 0 16px 34px rgba(0, 0, 0, 0.14), 0 0 0 4px rgba(0, 0, 0, 0.04);
   --gcsh-s: inset 1px 1px 0 rgba(255, 255, 255, 0.9), inset -1px -1px 0 rgba(0, 0, 0, 0.05), inset 0 -10px 14px -12px rgba(0, 0, 0, 0.1), 0 0 0 0.5px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.05), 0 6px 18px rgba(0, 0, 0, 0.06);
@@ -72,6 +77,10 @@
     --gc-p: radial-gradient(90% 70% at 25% 0%, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0) 60%), linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04)), rgba(255, 255, 255, 0.05);
     --glass-backdrop: blur(14px) saturate(160%) brightness(0.72);
     --gc-s: radial-gradient(90% 70% at 25% 0%, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 60%), linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+    --stage: radial-gradient(85% 80% at 46% 46%, #404046, #232326 45%, #0d0d0e 85%);
+    --stage-dot: rgba(255, 255, 255, 0.075);
+    --island: rgba(30, 30, 32, 0.74);
+    --island-sh: 0 0 0 0.5px rgba(255, 255, 255, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 1px 3px rgba(0, 0, 0, 0.4), 0 14px 40px rgba(0, 0, 0, 0.5);
     --gcsh-p: inset 1px 1px 0 rgba(255, 255, 255, 0.4), inset -1px -1px 0 rgba(0, 0, 0, 0.45), inset 0 -10px 14px -12px rgba(255, 255, 255, 0.22), 0 0 0 0.5px rgba(255, 255, 255, 0.18), 0 8px 26px rgba(0, 0, 0, 0.55);
     --gcsh-p-h: inset 1px 1px 0 rgba(255, 255, 255, 0.55), inset -1px -1px 0 rgba(0, 0, 0, 0.5), inset 0 -10px 14px -12px rgba(255, 255, 255, 0.3), 0 0 0 0.5px rgba(255, 255, 255, 0.26), 0 12px 32px rgba(0, 0, 0, 0.65), 0 0 0 4px rgba(255, 255, 255, 0.06);
     --gcsh-s: inset 1px 1px 0 rgba(255, 255, 255, 0.28), inset -1px -1px 0 rgba(0, 0, 0, 0.4), inset 0 -10px 14px -12px rgba(255, 255, 255, 0.14), 0 0 0 0.5px rgba(255, 255, 255, 0.12);
@@ -112,6 +121,10 @@
   --gc-p: radial-gradient(90% 70% at 25% 0%, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0) 60%), linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04)), rgba(255, 255, 255, 0.05);
   --glass-backdrop: blur(14px) saturate(160%) brightness(0.72);
   --gc-s: radial-gradient(90% 70% at 25% 0%, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 60%), linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+  --stage: radial-gradient(85% 80% at 46% 46%, #404046, #232326 45%, #0d0d0e 85%);
+  --stage-dot: rgba(255, 255, 255, 0.075);
+  --island: rgba(30, 30, 32, 0.74);
+  --island-sh: 0 0 0 0.5px rgba(255, 255, 255, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 1px 3px rgba(0, 0, 0, 0.4), 0 14px 40px rgba(0, 0, 0, 0.5);
   --gcsh-p: inset 1px 1px 0 rgba(255, 255, 255, 0.4), inset -1px -1px 0 rgba(0, 0, 0, 0.45), inset 0 -10px 14px -12px rgba(255, 255, 255, 0.22), 0 0 0 0.5px rgba(255, 255, 255, 0.18), 0 8px 26px rgba(0, 0, 0, 0.55);
   --gcsh-p-h: inset 1px 1px 0 rgba(255, 255, 255, 0.55), inset -1px -1px 0 rgba(0, 0, 0, 0.5), inset 0 -10px 14px -12px rgba(255, 255, 255, 0.3), 0 0 0 0.5px rgba(255, 255, 255, 0.26), 0 12px 32px rgba(0, 0, 0, 0.65), 0 0 0 4px rgba(255, 255, 255, 0.06);
   --gcsh-s: inset 1px 1px 0 rgba(255, 255, 255, 0.28), inset -1px -1px 0 rgba(0, 0, 0, 0.4), inset 0 -10px 14px -12px rgba(255, 255, 255, 0.14), 0 0 0 0.5px rgba(255, 255, 255, 0.12);
@@ -396,5 +409,37 @@
   *::before,
   *::after {
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* The editor's stage: a light table with a faint cutting-mat grid. */
+.editor-stage {
+  background:
+    radial-gradient(var(--stage-dot) 1px, transparent 1.3px) 0 0 / 22px 22px,
+    var(--stage);
+}
+
+/* Panels and bars floating on the stage. */
+.editor-island {
+  border-radius: 18px;
+  background: var(--island);
+  backdrop-filter: blur(22px) saturate(150%);
+  box-shadow: var(--island-sh);
+}
+
+/* A design "develops" like a print when it opens: from washed out and soft to sharp, once. */
+@media (prefers-reduced-motion: no-preference) {
+  .editor-develop {
+    animation: develop 0.9s var(--ease) backwards;
+  }
+}
+@keyframes develop {
+  from {
+    opacity: 0.35;
+    filter: brightness(1.9) contrast(0.6) blur(5px);
+  }
+  to {
+    opacity: 1;
+    filter: none;
   }
 }

@@ -90,7 +90,7 @@ export function InsertRail({ editor }: { editor: Editor | null }) {
 
   return (
     <>
-      <nav aria-label="Add to design" className="flex w-[68px] flex-none flex-col gap-0.5 border-r-[.5px] border-line p-1.5">
+      <nav aria-label="Add to design" className="editor-island flex w-[68px] flex-none flex-col gap-0.5 p-1.5">
         {TABS.map(({ key, label, Icon }) => (
           <button
             key={key}
@@ -108,7 +108,7 @@ export function InsertRail({ editor }: { editor: Editor | null }) {
         ))}
       </nav>
       {open && (
-        <div className="flex w-[240px] flex-none flex-col gap-3 overflow-y-auto border-r-[.5px] border-line p-4">
+        <div className="editor-island flex w-[240px] flex-none flex-col gap-3 overflow-y-auto p-4">
           <Panel tab={open} editor={editor} add={(kind) => editor && insertLayer(editor.core, kind)} />
         </div>
       )}

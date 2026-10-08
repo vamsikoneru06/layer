@@ -234,9 +234,10 @@ export function renderDoc(ctx: Ctx, doc: Doc, base: Mat, o: RenderOptions, opts:
   if (opts.background !== false) {
     ctx.save();
     if (opts.shadow) {
-      ctx.shadowColor = "rgba(0,0,0,0.14)";
-      ctx.shadowBlur = 24 * o.dpr;
-      ctx.shadowOffsetY = 6 * o.dpr;
+      // A print lying on the light table: a wide, soft shadow that reads on light and dark stages.
+      ctx.shadowColor = "rgba(0,0,0,0.42)";
+      ctx.shadowBlur = 56 * o.dpr;
+      ctx.shadowOffsetY = 18 * o.dpr;
     }
     ctx.fillStyle = paint(ctx, background, width, height);
     // Gradients are built around the origin; draw the background centred, then move back.
