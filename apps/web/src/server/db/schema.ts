@@ -19,6 +19,8 @@ export const user = pgTable(
     image: text("image"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
+    // Better Auth's two-factor plugin (not settable from any request body).
+    twoFactorEnabled: boolean("two_factor_enabled").notNull().default(false),
     // VASH extensions. Deliberately NOT declared to Better Auth, so sign-up bodies can never set them.
     handle: text("handle").unique(),
     role: text("role", { enum: ["user", "admin"] }).notNull().default("user"),
@@ -39,6 +41,8 @@ export const session = pgTable(
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
     userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    // VASH: when this session last passed a two-factor code (admin tools need a recent one). Not declared to Better Auth.
+    twoFactorVerifiedAt: ts("two_factor_verified_at"),
   },
   (t) => [index("session_user_idx").on(t.userId)],
 );
@@ -76,7 +80,22 @@ export const verification = pgTable(
   (t) => [index("verification_identifier_idx").on(t.identifier)],
 );
 
-export const authSchema = { user, session, account, verification };
+/** Better Auth's two-factor plugin: the TOTP secret and backup codes, both encrypted with BETTER_AUTH_SECRET. */
+export const twoFactor = pgTable(
+  "two_factor",
+  {
+    id: text("id").primaryKey(),
+    secret: text("secret").notNull(),
+    backupCodes: text("backup_codes").notNull(),
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    verified: boolean("verified").notNull().default(true),
+    failedVerificationCount: integer("failed_verification_count").notNull().default(0),
+    lockedUntil: ts("locked_until"),
+  },
+  (t) => [index("two_factor_user_idx").on(t.userId)],
+);
+
+export const authSchema = { user, session, account, verification, twoFactor };
 
 // ── VASH domain ─────────────────────────────────────────────────────────────
 export const folders = pgTable(

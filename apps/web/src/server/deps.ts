@@ -7,6 +7,8 @@ export interface CurrentUser {
   email: string;
   role: "user" | "admin";
   handle: string | null;
+  /** Whether two-factor is set up, and when the current session last passed a code. */
+  twoFactor: { enabled: boolean; verifiedAt: Date | null };
 }
 
 export interface Deps {
