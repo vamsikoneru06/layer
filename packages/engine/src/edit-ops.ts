@@ -51,12 +51,13 @@ export const moveLayer = (core: EditorCore, id: NodeId, index: number): boolean 
 /** The lock toggle for one layer, whatever is selected; the selection stays as it was. */
 export const toggleLockOfLayer = (core: EditorCore, id: NodeId): boolean => runKeepingSelection(core, planToggleLock(core.doc, [id], core.mode));
 
-/** Renames a layer (one undo step). The name is trimmed; empty and over-long names are refused with a notice. */
+/** Renames a layer (one undo step). The name is trimmed; empty, over-long and multi-line names are refused with a notice. */
 export function renameLayer(core: EditorCore, id: NodeId, name: string): boolean {
   const trimmed = name.trim();
   if (!core.doc.nodes[id]) return runKeepingSelection(core, refuse("Select a layer first."));
   if (trimmed === "") return runKeepingSelection(core, refuse("A layer needs a name."));
   if (trimmed.length > LIMITS.nameChars) return runKeepingSelection(core, refuse(`Names can be up to ${LIMITS.nameChars} characters.`));
+  if (/[\r\n]/.test(trimmed)) return runKeepingSelection(core, refuse("Names can't contain line breaks."));
   if (trimmed === core.doc.nodes[id]!.name) return true;
   return runKeepingSelection(core, checked(core.doc, { type: "update", id, patch: { name: trimmed } }, core.mode, []));
 }

@@ -5,7 +5,7 @@ import { useId, type ReactNode, type Ref } from "react";
  * `disabled` switches the button off for good. `unavailable` is for a button that is off right now for a
  * reason worth reading: it looks disabled and does nothing, but stays focusable (`aria-disabled`) and the
  * reason is announced after its name, so keyboard and screen-reader users get it too. A button that opens
- * a popover passes `popup`, and `expanded` while it is open.
+ * a popover passes `popup`, and `expanded` while it is open. `controls` is the id of that popover, while it is open.
  */
 export function IconButton({
   label,
@@ -15,6 +15,7 @@ export function IconButton({
   unavailable,
   popup,
   expanded,
+  controls,
   ref,
   children,
 }: {
@@ -25,6 +26,7 @@ export function IconButton({
   unavailable?: string;
   popup?: "dialog" | "menu";
   expanded?: boolean;
+  controls?: string;
   ref?: Ref<HTMLButtonElement>;
   children: ReactNode;
 }) {
@@ -36,6 +38,7 @@ export function IconButton({
       aria-label={label}
       aria-haspopup={popup}
       aria-expanded={popup ? !!expanded : undefined}
+      aria-controls={controls}
       title={title}
       aria-disabled={unavailable ? true : undefined}
       aria-describedby={unavailable ? reasonId : undefined}

@@ -343,6 +343,7 @@ export function Slider({
   step = 0.01,
   onChange,
   disabled,
+  valueText = (v) => `${Math.round(v * 100)}%`,
 }: {
   label: string;
   value: number;
@@ -351,6 +352,8 @@ export function Slider({
   step?: number;
   onChange: (v: number, final: boolean) => void;
   disabled?: boolean;
+  /** What screen readers announce for the value. Defaults to the percent shown on the slider. */
+  valueText?: (value: number) => string;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const latest = useRef(onChange);
@@ -375,6 +378,7 @@ export function Slider({
         ref={input}
         type="range"
         aria-label={label}
+        aria-valuetext={valueText(value)}
         min={min}
         max={max}
         step={step}

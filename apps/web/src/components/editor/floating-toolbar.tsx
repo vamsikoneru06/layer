@@ -3,7 +3,7 @@
 import { checkPolicy, handlePositions, selectionFrame, topLevelSelection, type Command, type EditorCore, type EditorState } from "@vash/engine";
 import type { NodeId } from "@vash/schema";
 import { Blend, ClipboardPaste, Copy, Ellipsis, Layers, Lock, LockOpen, Paintbrush, Trash2 } from "lucide-react";
-import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { placePopover, placeToolbar } from "@/lib/toolbar-position";
 import { ContextMenu } from "./context-menu";
@@ -88,6 +88,8 @@ function ToolbarBody({
   const triggers = { transparency: useRef<HTMLButtonElement>(null), arrange: useRef<HTMLButtonElement>(null) };
   const more = useRef<HTMLButtonElement>(null);
   const moreWasOpen = useRef(false);
+  const idBase = useId();
+  const ids = { transparency: `${idBase}-transparency`, arrange: `${idBase}-arrange`, more: `${idBase}-more` };
 
   // Measured after each render: the toolbar's size is only known once it exists, and placement needs it.
   useLayoutEffect(() => {
@@ -95,14 +97,18 @@ function ToolbarBody({
     if (el) setSize((s) => (s && s.width === el.offsetWidth && s.height === el.offsetHeight ? s : { width: el.offsetWidth, height: el.offsetHeight }));
   });
   const place = size ? placeToolbar(points, size, view) : { x: 0, y: 0 };
+  // Null only when there are no handles to place against: then there is nothing to put the toolbar next to.
+  if (!place) return null;
 
   const targets = opacityTargets(state);
-  const button = (id: ActionId, icon: ReactNode, label = actions[id].label) => (
-    <IconButton label={label} title={actionTitle(actions[id], mac)} onClick={actions[id].run} unavailable={actions[id].disabled}>
+  // Delete removes the selection, and with it this toolbar. Focus then goes to the canvas, which stays mounted.
+  const acts: Actions = { ...actions, delete: { ...actions.delete, run: () => (actions.delete.run(), focusCanvas()) } };
+  const button = (id: ActionId, icon: ReactNode, label = acts[id].label) => (
+    <IconButton label={label} title={actionTitle(acts[id], mac)} onClick={acts[id].run} unavailable={acts[id].disabled}>
       {icon}
     </IconButton>
   );
-  const lockLabel = actions.toggleLock.label;
+  const lockLabel = acts.toggleLock.label;
 
   const close = (returnFocus: boolean) => {
     if (open && returnFocus) triggers[open].current?.focus();
@@ -145,7 +151,7 @@ function ToolbarBody({
         role="toolbar"
         aria-label="Layer tools"
         onKeyDown={onKeyDown}
-        className="absolute z-20 flex items-center gap-0.5 rounded-xl bg-bg/90 p-1 shadow-[0_0_0_.5px_var(--line),0_8px_24px_rgba(0,0,0,.16)] backdrop-blur-xl"
+        className="absolute z-20 flex items-center gap-0.5 rounded-xl border-[.5px] border-line bg-bg/90 p-1 backdrop-blur-xl"
         style={{ left: place.x, top: place.y, visibility: size ? undefined : "hidden" }}
       >
         {button("duplicate", <Copy aria-hidden />)}
@@ -160,11 +166,20 @@ function ToolbarBody({
           unavailable={targets.reason}
           popup="dialog"
           expanded={open === "transparency"}
+          controls={open === "transparency" ? ids.transparency : undefined}
         >
           <Blend aria-hidden />
         </IconButton>
         {button("toggleLock", lockLabel === "Unlock" ? <LockOpen aria-hidden /> : <Lock aria-hidden />)}
-        <IconButton ref={triggers.arrange} label="Arrange" title="Arrange" onClick={() => toggle("arrange")} popup="dialog" expanded={open === "arrange"}>
+        <IconButton
+          ref={triggers.arrange}
+          label="Arrange"
+          title="Arrange"
+          onClick={() => toggle("arrange")}
+          popup="dialog"
+          expanded={open === "arrange"}
+          controls={open === "arrange" ? ids.arrange : undefined}
+        >
           <Layers aria-hidden />
         </IconButton>
         <Divider />
@@ -178,9 +193,10 @@ function ToolbarBody({
         >
           <IconButton
             ref={more}
-            label="More"
+            label="More layer actions"
             popup="menu"
             expanded={moreAt !== null}
+            controls={moreAt ? ids.more : undefined}
             onClick={() => {
               if (moreWasOpen.current) return;
               const r = more.current!.getBoundingClientRect();
@@ -192,19 +208,19 @@ function ToolbarBody({
           </IconButton>
         </span>
         {open === "transparency" && (
-          <Popover label="Transparency" anchor={triggers.transparency.current} onClose={() => close(false)}>
+          <Popover id={ids.transparency} label="Transparency" anchor={triggers.transparency.current} onClose={close}>
             <div className="w-[220px] p-2">
-              <Slider label="Opacity" value={opacity} min={0} max={1} step={0.01} onChange={setOpacity} />
+              <Slider label="Transparency" value={opacity} min={0} max={1} step={0.01} onChange={setOpacity} />
             </div>
           </Popover>
         )}
         {open === "arrange" && (
-          <Popover label="Arrange" anchor={triggers.arrange.current} onClose={() => close(false)}>
+          <Popover id={ids.arrange} label="Arrange" anchor={triggers.arrange.current} onClose={close}>
             <div className="flex flex-col gap-1 p-1">
               {ARRANGE_ROWS.filter((row) => row.name === "Align" || row.name === "Order").map((row) => (
                 <div key={row.name} role="group" aria-label={row.name} className="flex gap-1">
                   {row.buttons.map(({ id, icon }) => (
-                    <IconButton key={id} label={actions[id].label} title={actionTitle(actions[id], mac)} onClick={actions[id].run} unavailable={actions[id].disabled}>
+                    <IconButton key={id} label={acts[id].label} title={actionTitle(acts[id], mac)} onClick={acts[id].run} unavailable={acts[id].disabled}>
                       {icon}
                     </IconButton>
                   ))}
@@ -216,8 +232,9 @@ function ToolbarBody({
       </div>
 
       <ContextMenu
+        id={ids.more}
         at={moreAt}
-        items={toMenuItems(actions, CONTEXT_LAYOUTS.node, mac)}
+        items={toMenuItems(acts, CONTEXT_LAYOUTS.node, mac)}
         onClose={() => {
           // Closed from the keyboard or by choosing an item: focus goes back to the button, not to the page.
           if (document.activeElement?.closest("[role=menu]")) more.current?.focus();
@@ -230,8 +247,23 @@ function ToolbarBody({
 
 const Divider = () => <div aria-hidden className="mx-0.5 h-5 w-px bg-line" />;
 
-/** A small panel under (or above) its button. It sits in the page body so the canvas edge never clips it. An outside press or Tab away closes it. */
-function Popover({ label, anchor, onClose, children }: { label: string; anchor: HTMLElement | null; onClose: () => void; children: ReactNode }) {
+/**
+ * A small panel under (or above) its button. It sits in the page body so the canvas edge never clips it. An outside press or Tab away
+ * closes it. `onClose` gets `returnFocus`: true only when focus was inside the panel and must go back to the trigger.
+ */
+function Popover({
+  id,
+  label,
+  anchor,
+  onClose,
+  children,
+}: {
+  id: string;
+  label: string;
+  anchor: HTMLElement | null;
+  onClose: (returnFocus: boolean) => void;
+  children: ReactNode;
+}) {
   const panel = useRef<HTMLDivElement>(null);
   const latestClose = useRef(onClose);
   latestClose.current = onClose;
@@ -249,9 +281,9 @@ function Popover({ label, anchor, onClose, children }: { label: string; anchor: 
     panel.current?.querySelector<HTMLElement>("input, button")?.focus();
     const away = (e: PointerEvent) => {
       const target = e.target as Node;
-      if (!panel.current?.contains(target) && !anchor?.contains(target)) latestClose.current();
+      if (!panel.current?.contains(target) && !anchor?.contains(target)) latestClose.current(false);
     };
-    const resize = () => latestClose.current();
+    const resize = () => latestClose.current(panel.current?.contains(document.activeElement) ?? false);
     document.addEventListener("pointerdown", away);
     window.addEventListener("resize", resize);
     return () => {
@@ -263,14 +295,15 @@ function Popover({ label, anchor, onClose, children }: { label: string; anchor: 
   return createPortal(
     <div
       ref={panel}
+      id={id}
       role="dialog"
       aria-label={label}
-      className="fixed z-50 rounded-2xl bg-bg p-1.5 shadow-[0_0_0_.5px_var(--line),0_12px_32px_rgba(0,0,0,.16)]"
+      className="fixed z-50 rounded-xl border-[.5px] border-line bg-bg p-1.5"
       style={{ left: 0, top: 0 }}
       onBlur={(e) => {
         // Tab moved focus out of the panel (and not onto its own button).
         const next = e.relatedTarget as Node | null;
-        if (next && !panel.current?.contains(next) && !anchor?.contains(next)) latestClose.current();
+        if (next && !panel.current?.contains(next) && !anchor?.contains(next)) latestClose.current(false);
       }}
     >
       {children}

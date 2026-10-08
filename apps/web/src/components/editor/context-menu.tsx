@@ -6,7 +6,7 @@ import { clampMenuPosition } from "@/lib/menu-position";
 import { cn } from "@/lib/utils";
 
 /** A menu at the pointer (viewport pixels). Escape, an outside click or resizing closes it. */
-export function ContextMenu({ at, items, onClose }: { at: { x: number; y: number } | null; items: MenuItem[]; onClose: () => void }) {
+export function ContextMenu({ at, items, onClose, id }: { at: { x: number; y: number } | null; items: MenuItem[]; onClose: () => void; id?: string }) {
   const list = useRef<HTMLDivElement>(null);
 
   // Opened where the pointer is, then nudged back on screen once its size is known.
@@ -39,6 +39,7 @@ export function ContextMenu({ at, items, onClose }: { at: { x: number; y: number
   return (
     <div
       ref={list}
+      id={id}
       role="menu"
       aria-label="Layer actions"
       className={cn("fixed z-50 max-h-[calc(100svh-16px)] overflow-y-auto", MENU_PANEL)}
