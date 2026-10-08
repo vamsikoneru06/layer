@@ -63,6 +63,9 @@ function TemplatePreview({ t }: { t: TemplateItem }) {
   );
 }
 
+/** Jobs that only restate the size ("Invitation · Invitations"); their cards show the size alone. */
+const SAME_AS_SIZE: Readonly<Record<string, string>> = { invitations: "invitation", thumbnails: "yt-thumbnail" };
+
 function TemplateCard({ t }: { t: TemplateItem }) {
   return (
     <Link href={`/templates/${t.id}`} className="group flex flex-col gap-2.5 rounded-[16px] outline-offset-4">
@@ -72,7 +75,8 @@ function TemplateCard({ t }: { t: TemplateItem }) {
       <div className="flex flex-col gap-0.5 px-1">
         <span className="truncate text-sm font-medium">{t.title}</span>
         <span className="text-[13px] text-muted">
-          {formatLabel(t.format)} · {categoryLabel(t.category)}
+          {formatLabel(t.format)}
+          {SAME_AS_SIZE[t.category] !== t.format && ` · ${categoryLabel(t.category)}`}
         </span>
       </div>
     </Link>
@@ -149,7 +153,7 @@ export function TemplatesView() {
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <h1 className="text-[clamp(30px,5vw,40px)] leading-[1.02] font-bold tracking-[-0.035em]">Templates</h1>
         <div className="flex flex-wrap items-center gap-3">
-          <label className="glass-secondary flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-xl px-4 text-sm text-muted focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-text sm:w-60 sm:flex-none">
+          <label className="glass-secondary flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-xl px-4 text-sm text-muted focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-text max-sm:basis-full sm:w-60 sm:flex-none">
             <Search aria-hidden className="size-4 flex-none" />
             <input value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search templates" placeholder="Search" className="min-w-0 flex-1 bg-transparent text-text outline-none placeholder:text-muted" />
           </label>
