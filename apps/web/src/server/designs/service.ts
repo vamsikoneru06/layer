@@ -98,10 +98,16 @@ export async function updateDesignMeta(
   ownerId: string,
   id: string,
   patch: { title?: string; folderId?: string | null },
-): Promise<repo.DesignRow> {
-  if ((await repo.getDesignVersion(ctx.db, ownerId, id)) === undefined) throw notFound();
-  await assertFolder(ctx.db, ownerId, patch.folderId);
-  const row = await writingFolder(repo.updateDesignMeta(ctx.db, ownerId, id, patch, ctx.now()));
+  opts: { withDoc: boolean } = { withDoc: true },
+): Promise<Omit<repo.DesignRow, "doc"> & { doc?: Doc }> {
+  // A move checks the design and the folder at once; someone else's design still answers 404 before a bad folder's
+  // 422. A rename needs no check: the owner-scoped update finds nothing for someone else's design.
+  if (patch.folderId) {
+    const [version, folderOk] = await Promise.all([repo.getDesignVersion(ctx.db, ownerId, id), folderExists(ctx.db, ownerId, patch.folderId)]);
+    if (version === undefined) throw notFound();
+    if (!folderOk) throw folderMissing();
+  }
+  const row = await writingFolder(repo.updateDesignMeta(ctx.db, ownerId, id, patch, ctx.now(), opts));
   if (!row) throw notFound();
   return row;
 }

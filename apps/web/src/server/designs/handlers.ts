@@ -72,7 +72,11 @@ export function designHandlers(deps: Deps) {
     patch: endpoint(deps, { auth: "user", rateLimit: writeLimit }, async ({ req, user, params }) => {
       const id = parseId(params.id);
       const body = await readJson(req, PatchBody);
-      return Response.json(toDesignJson(await service.updateDesignMeta(ctx, user.id, id, body)));
+      if (prefersMinimal(req)) {
+        const row = await service.updateDesignMeta(ctx, user.id, id, body, { withDoc: false });
+        return Response.json(summary(row), { headers: { "preference-applied": "return=minimal" } });
+      }
+      return Response.json(toDesignJson((await service.updateDesignMeta(ctx, user.id, id, body)) as repo.DesignRow));
     }),
 
     remove: endpoint(deps, { auth: "user", rateLimit: writeLimit }, async ({ user, params }) => {

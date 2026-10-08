@@ -27,16 +27,19 @@ export async function runCleanup(db: Db, storage: ObjectStorage | null, now: Dat
     if (stale.length > 0) await tx.insert(storageDeletions).values(stale.map((a) => objectDeletion(a, now)));
     return stale.length;
   });
-  const windows = await db
-    .delete(rateLimits)
-    .where(lt(rateLimits.windowStart, new Date(now.getTime() - CLEANUP.rateLimitRetentionMs)))
-    .returning({ key: rateLimits.key });
-  const verifications = await db.delete(verification).where(lt(verification.expiresAt, now)).returning({ id: verification.id });
-  const sessions = await db.delete(session).where(lt(session.expiresAt, now)).returning({ id: session.id });
-  const bugs = await db
-    .delete(bugReports)
-    .where(lt(bugReports.createdAt, new Date(now.getTime() - CLEANUP.bugReportRetentionMs)))
-    .returning({ id: bugReports.id });
+  // Independent tables, so the four purges run at once.
+  const [windows, verifications, sessions, bugs] = await Promise.all([
+    db
+      .delete(rateLimits)
+      .where(lt(rateLimits.windowStart, new Date(now.getTime() - CLEANUP.rateLimitRetentionMs)))
+      .returning({ key: rateLimits.key }),
+    db.delete(verification).where(lt(verification.expiresAt, now)).returning({ id: verification.id }),
+    db.delete(session).where(lt(session.expiresAt, now)).returning({ id: session.id }),
+    db
+      .delete(bugReports)
+      .where(lt(bugReports.createdAt, new Date(now.getTime() - CLEANUP.bugReportRetentionMs)))
+      .returning({ id: bugReports.id }),
+  ]);
   const outbox = storage ? await drainStorageDeletions(db, storage, now) : { deleted: 0, failed: 0 };
   return {
     pendingUploadsPurged,

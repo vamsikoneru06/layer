@@ -236,6 +236,26 @@ describe("metadata, delete, duplicate", () => {
     expect((await call(h.patch, { method: "PATCH", as: alice, params: { id: d.id }, body: { folderId: null } })).body.folderId).toBeNull();
   });
 
+  it("answers 404 before a bad folder's 422 for someone else's design", async () => {
+    const alice = await createUser(t.db);
+    const bob = await createUser(t.db);
+    const d = await newDesign(alice);
+    const his = await createFolder(t.db, bob.id);
+    expect((await call(h.patch, { method: "PATCH", as: bob, params: { id: d.id }, body: { folderId: randomUUID() } })).status).toBe(404);
+    expect((await call(h.patch, { method: "PATCH", as: bob, params: { id: d.id }, body: { folderId: his.id } })).status).toBe(404);
+    expect((await call(h.patch, { method: "PATCH", as: bob, params: { id: d.id }, body: { title: "Mine now" } })).status).toBe(404);
+  });
+
+  it("leaves the document out of a rename's answer when the client prefers a minimal one", async () => {
+    const alice = await createUser(t.db);
+    const d = await newDesign(alice);
+    const res = await call(h.patch, { method: "PATCH", as: alice, params: { id: d.id }, headers: { prefer: "return=minimal" }, body: { title: "Holi" } });
+    expect(res.headers.get("preference-applied")).toBe("return=minimal");
+    expect(res.body).toMatchObject({ id: d.id, title: "Holi", version: 2 });
+    expect(res.body).not.toHaveProperty("doc");
+    expect((await call(h.get, { as: alice, params: { id: d.id } })).body.doc.meta.title).toBe("Holi");
+  });
+
   it("deletes and duplicates only the caller's designs", async () => {
     const alice = await createUser(t.db);
     const bob = await createUser(t.db);
