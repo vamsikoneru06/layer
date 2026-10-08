@@ -1,6 +1,7 @@
 import { CATEGORIES, LIMITS } from "@vash/schema";
 import { z } from "zod";
 import { expiredSessionCookies } from "../auth/cookies";
+import { twoFactorStatus } from "../auth/two-factor";
 import type { Deps } from "../deps";
 import { readJson } from "../http/body";
 import { endpoint } from "../http/endpoint";
@@ -35,11 +36,13 @@ const DeleteMe = z.object({ confirm: z.string().trim().max(320) }).strict();
 
 export function meHandlers(deps: Deps) {
   return {
-    get: endpoint(deps, { auth: "user" }, async ({ user }) => Response.json(toProfile(await getProfile(deps.db, user.id)))),
+    get: endpoint(deps, { auth: "user" }, async ({ user }) =>
+      Response.json({ ...toProfile(await getProfile(deps.db, user.id)), twoFactor: twoFactorStatus(user, deps.now()) }),
+    ),
 
     patch: endpoint(deps, { auth: "user", rateLimit: writeLimit }, async ({ req, user }) => {
       const patch = await readJson(req, PatchMe);
-      return Response.json(toProfile(await updateProfile(deps.db, user.id, patch, deps.now())));
+      return Response.json({ ...toProfile(await updateProfile(deps.db, user.id, patch, deps.now())), twoFactor: twoFactorStatus(user, deps.now()) });
     }),
 
     remove: endpoint(deps, { auth: "user", rateLimit: writeLimit }, async ({ req, user }) => {
