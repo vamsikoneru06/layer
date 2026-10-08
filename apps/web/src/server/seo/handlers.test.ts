@@ -30,6 +30,7 @@ describe("GET /sitemap.xml", () => {
     expect(res.headers.get("cache-control")).toContain("s-maxage");
     expect(res.body).toContain(`<loc>${origin}/</loc>`);
     expect(res.body).toContain(`<loc>${origin}/templates</loc>`);
+    expect(res.body).toContain(`<loc>${origin}/cookies</loc>`);
     expect(res.body).toContain(`<loc>${origin}/templates/${shown.id}</loc><lastmod>2026-10-01T00:00:00.000Z</lastmod>`);
     expect(res.body).not.toContain(hidden.id);
   });

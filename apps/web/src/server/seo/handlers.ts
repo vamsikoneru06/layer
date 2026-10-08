@@ -6,7 +6,7 @@ import { listPublishedTemplateUrls } from "../templates/repository";
 const publicRead = { name: "publicRead", rule: RATE_LIMITS.publicRead, by: "ip" } as const;
 
 /** Pages anyone can open without signing in. Account pages, the editor, /dev and the API stay out. */
-export const PUBLIC_PAGES = ["/", "/templates", "/terms", "/privacy"] as const;
+export const PUBLIC_PAGES = ["/", "/templates", "/terms", "/privacy", "/cookies"] as const;
 
 /** Paths crawlers should skip: signed-in screens, the editor, development pages and the API. */
 export const PRIVATE_PATHS = ["/api/", "/edit/", "/dev/", "/home", "/designs", "/media", "/settings", "/signin"] as const;
