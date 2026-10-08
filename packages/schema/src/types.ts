@@ -2,7 +2,8 @@
  * The VASH document format (schemaVersion 2).
  *
  * Rules that keep the format safe and predictable:
- * - Every key is required; "absent" is expressed as `null`.
+ * - Every key is required; "absent" is expressed as `null`. The optional keys (`shadow`, `alt`, `stroke.dash`)
+ *   may be omitted; designs and templates written before they existed stay valid.
  * - Layers live in a flat `nodes` map; `root` and `group.children` hold IDs.
  * - Assets are referenced by ID only. The document never contains a URL.
  * - Filters are parameters; pixels are never baked into the document.
@@ -31,6 +32,14 @@ export interface Transform {
   scaleY: number;
 }
 
+export interface Shadow {
+  color: Color;
+  /** Blur radius in document pixels. */
+  blur: number;
+  offsetX: number;
+  offsetY: number;
+}
+
 interface BaseNode {
   id: NodeId;
   name: string;
@@ -40,6 +49,10 @@ interface BaseNode {
   opacity: number;
   visible: boolean;
   lock: Lock;
+  /** Optional: omit or `null` for no shadow. */
+  shadow?: Shadow | null;
+  /** Optional: alt text for the node, plain text without control characters. */
+  alt?: string;
 }
 
 /** Path data is in unit-box coordinates (0..1 on both axes) and scaled to the node size. */
@@ -105,11 +118,14 @@ export type ShapeGeometry =
   | { kind: "polygon"; sides: number }
   | { kind: "path"; d: string };
 
+export type StrokeDash = "solid" | "dashed" | "dotted";
+
 export interface ShapeNode extends BaseNode {
   type: "shape";
   geometry: ShapeGeometry;
   fill: Fill | null;
-  stroke: { color: Color; width: number } | null;
+  /** `dash` is optional and defaults to solid. */
+  stroke: { color: Color; width: number; dash?: StrokeDash } | null;
 }
 
 export interface StickerNode extends BaseNode {

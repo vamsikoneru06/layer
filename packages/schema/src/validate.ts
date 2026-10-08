@@ -24,7 +24,8 @@ class Checker {
     return false;
   }
 
-  object(value: unknown, path: string, keys: readonly string[]): value is Obj {
+  /** `keys` are required; `optional` keys may also appear. Anything else is rejected. */
+  object(value: unknown, path: string, keys: readonly string[], optional: readonly string[] = []): value is Obj {
     if (typeof value !== "object" || value === null || Array.isArray(value)) {
       return this.fail(path, "expected object");
     }
@@ -33,7 +34,7 @@ class Checker {
       if (!Object.hasOwn(value, key)) ok = this.fail(join(path, key), "is required");
     }
     for (const key of Object.keys(value)) {
-      if (!keys.includes(key)) ok = this.fail(join(path, key), "is not allowed");
+      if (!keys.includes(key) && !optional.includes(key)) ok = this.fail(join(path, key), "is not allowed");
     }
     return ok;
   }
@@ -97,8 +98,34 @@ const NODE_KEYS: Record<string, readonly string[]> = {
   sticker: [...BASE_NODE_KEYS, "assetId"],
   group: [...BASE_NODE_KEYS, "children"],
 };
+/** Optional on every node type. Omitted means absent, like `null`. */
+const OPTIONAL_NODE_KEYS = ["shadow", "alt"] as const;
 const FILTER_SIGNED = ["brightness", "contrast", "saturation", "warmth", "tint", "highlights", "shadows"] as const;
 const FILTER_UNSIGNED = ["vignette", "grain", "blur", "sharpen"] as const;
+const STROKE_DASHES = ["solid", "dashed", "dotted"] as const;
+
+/** C0 and C1 control characters (tab and newline included). Written as a loop: a regex would trip no-control-regex. */
+function hasControlChar(s: string): boolean {
+  for (let i = 0; i < s.length; i++) {
+    const code = s.charCodeAt(i);
+    if (code < 0x20 || (code >= 0x7f && code <= 0x9f)) return true;
+  }
+  return false;
+}
+
+function checkShadow(c: Checker, v: unknown, path: string): void {
+  if (v === null) return;
+  if (!c.object(v, path, ["color", "blur", "offsetX", "offsetY"])) return;
+  c.color(v.color, join(path, "color"));
+  c.number(v.blur, join(path, "blur"), 0, LIMITS.shadowBlurMax);
+  c.number(v.offsetX, join(path, "offsetX"), -LIMITS.shadowOffsetMax, LIMITS.shadowOffsetMax);
+  c.number(v.offsetY, join(path, "offsetY"), -LIMITS.shadowOffsetMax, LIMITS.shadowOffsetMax);
+}
+
+function checkAlt(c: Checker, v: unknown, path: string): void {
+  if (!c.string(v, path, 0, LIMITS.altChars)) return;
+  if (hasControlChar(v)) c.fail(path, "must not contain control characters");
+}
 
 function checkFill(c: Checker, v: unknown, path: string): boolean {
   if (typeof v !== "object" || v === null) return c.fail(path, "expected fill object");
@@ -163,7 +190,7 @@ function checkNode(c: Checker, key: string, v: unknown, path: string): void {
     c.fail(join(path, "type"), "must be one of: frame, text, shape, sticker, group");
     return;
   }
-  if (!c.object(v, path, keys)) return;
+  if (!c.object(v, path, keys, OPTIONAL_NODE_KEYS)) return;
   if (c.id(v.id, join(path, "id")) && v.id !== key) c.fail(join(path, "id"), "must match its key in nodes");
   c.string(v.name, join(path, "name"), 0, LIMITS.nameChars);
   checkTransform(c, v.transform, join(path, "transform"));
@@ -172,6 +199,8 @@ function checkNode(c: Checker, key: string, v: unknown, path: string): void {
   c.number(v.opacity, join(path, "opacity"), 0, 1);
   c.boolean(v.visible, join(path, "visible"));
   c.oneOf(v.lock, join(path, "lock"), ["free", "content-only", "locked"] as const);
+  if (v.shadow !== undefined) checkShadow(c, v.shadow, join(path, "shadow"));
+  if (v.alt !== undefined) checkAlt(c, v.alt, join(path, "alt"));
 
   switch (type) {
     case "frame": {
@@ -237,9 +266,10 @@ function checkNode(c: Checker, key: string, v: unknown, path: string): void {
       c.nullable(v.fill, join(path, "fill"), (f, p) => checkFill(c, f, p));
       if (v.stroke !== null) {
         const sp = join(path, "stroke");
-        if (c.object(v.stroke, sp, ["color", "width"])) {
+        if (c.object(v.stroke, sp, ["color", "width"], ["dash"])) {
           c.color(v.stroke.color, join(sp, "color"));
           c.number(v.stroke.width, join(sp, "width"), 0, LIMITS.strokeWidthMax);
+          if (v.stroke.dash !== undefined) c.oneOf(v.stroke.dash, join(sp, "dash"), STROKE_DASHES);
         }
       }
       break;
