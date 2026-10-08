@@ -1,6 +1,6 @@
 {
-  "id": "195eebae-3076-4499-b83f-a7d278f1bb70",
-  "prevId": "67f9a16a-140b-42ce-b142-960e265e7788",
+  "id": "39d7afbe-ffd0-4a6d-86a2-25d9fcee33ac",
+  "prevId": "195eebae-3076-4499-b83f-a7d278f1bb70",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -101,24 +101,24 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "account_user_id_user_id_fk": {
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
+          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -245,9 +245,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "assets_template_idx": {
           "name": "assets_template_idx",
@@ -260,9 +260,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "assets_pending_idx": {
           "name": "assets_pending_idx",
@@ -281,47 +281,47 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "assets_owner_id_user_id_fk": {
           "name": "assets_owner_id_user_id_fk",
           "tableFrom": "assets",
+          "tableTo": "user",
           "columnsFrom": [
             "owner_id"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         },
         "assets_template_id_templates_id_fk": {
           "name": "assets_template_id_templates_id_fk",
           "tableFrom": "assets",
+          "tableTo": "templates",
           "columnsFrom": [
             "template_id"
           ],
-          "tableTo": "templates",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "assets_storage_key_unique": {
           "name": "assets_storage_key_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "storage_key"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -415,9 +415,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {},
@@ -461,6 +461,36 @@
           "type": "jsonb",
           "primaryKey": false,
           "notNull": true
+        },
+        "format": {
+          "name": "format",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "generated": {
+            "as": "\"designs\".\"doc\" -> 'meta' ->> 'format'",
+            "type": "stored"
+          }
+        },
+        "width": {
+          "name": "width",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "generated": {
+            "as": "round((\"designs\".\"doc\" -> 'artboard' ->> 'width')::numeric)::int",
+            "type": "stored"
+          }
+        },
+        "height": {
+          "name": "height",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "generated": {
+            "as": "round((\"designs\".\"doc\" -> 'artboard' ->> 'height')::numeric)::int",
+            "type": "stored"
+          }
         },
         "version": {
           "name": "version",
@@ -526,63 +556,63 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "designs_owner_id_user_id_fk": {
           "name": "designs_owner_id_user_id_fk",
           "tableFrom": "designs",
+          "tableTo": "user",
           "columnsFrom": [
             "owner_id"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         },
         "designs_folder_id_folders_id_fk": {
           "name": "designs_folder_id_folders_id_fk",
           "tableFrom": "designs",
+          "tableTo": "folders",
           "columnsFrom": [
             "folder_id"
           ],
-          "tableTo": "folders",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "set null"
+          "onDelete": "set null",
+          "onUpdate": "no action"
         },
         "designs_source_template_id_templates_id_fk": {
           "name": "designs_source_template_id_templates_id_fk",
           "tableFrom": "designs",
+          "tableTo": "templates",
           "columnsFrom": [
             "source_template_id"
           ],
-          "tableTo": "templates",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "set null"
+          "onDelete": "set null",
+          "onUpdate": "no action"
         },
         "designs_thumbnail_asset_id_assets_id_fk": {
           "name": "designs_thumbnail_asset_id_assets_id_fk",
           "tableFrom": "designs",
+          "tableTo": "assets",
           "columnsFrom": [
             "thumbnail_asset_id"
           ],
-          "tableTo": "assets",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "set null"
+          "onDelete": "set null",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -653,24 +683,24 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "folders_owner_id_user_id_fk": {
           "name": "folders_owner_id_user_id_fk",
           "tableFrom": "folders",
+          "tableTo": "user",
           "columnsFrom": [
             "owner_id"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -714,9 +744,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {},
@@ -821,61 +851,61 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "reports_template_id_templates_id_fk": {
           "name": "reports_template_id_templates_id_fk",
           "tableFrom": "reports",
+          "tableTo": "templates",
           "columnsFrom": [
             "template_id"
           ],
-          "tableTo": "templates",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         },
         "reports_reporter_id_user_id_fk": {
           "name": "reports_reporter_id_user_id_fk",
           "tableFrom": "reports",
+          "tableTo": "user",
           "columnsFrom": [
             "reporter_id"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         },
         "reports_resolved_by_user_id_fk": {
           "name": "reports_resolved_by_user_id_fk",
           "tableFrom": "reports",
+          "tableTo": "user",
           "columnsFrom": [
             "resolved_by"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "set null"
+          "onDelete": "set null",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "reports_template_reporter_unique": {
           "name": "reports_template_reporter_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "template_id",
             "reporter_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -958,34 +988,34 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "session_user_id_user_id_fk": {
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
+          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "session_token_unique": {
           "name": "session_token_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "token"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -1047,47 +1077,47 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "share_links_design_id_designs_id_fk": {
           "name": "share_links_design_id_designs_id_fk",
           "tableFrom": "share_links",
+          "tableTo": "designs",
           "columnsFrom": [
             "design_id"
           ],
-          "tableTo": "designs",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         },
         "share_links_created_by_user_id_fk": {
           "name": "share_links_created_by_user_id_fk",
           "tableFrom": "share_links",
+          "tableTo": "user",
           "columnsFrom": [
             "created_by"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "share_links_token_hash_unique": {
           "name": "share_links_token_hash_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "token_hash"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -1181,9 +1211,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "storage_deletions_owner_idx": {
           "name": "storage_deletions_owner_idx",
@@ -1196,9 +1226,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "storage_deletions_asset_idx": {
           "name": "storage_deletions_asset_idx",
@@ -1211,9 +1241,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {},
@@ -1319,28 +1349,28 @@
         "template_uses_template_id_templates_id_fk": {
           "name": "template_uses_template_id_templates_id_fk",
           "tableFrom": "template_uses",
+          "tableTo": "templates",
           "columnsFrom": [
             "template_id"
           ],
-          "tableTo": "templates",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         },
         "template_uses_user_id_user_id_fk": {
           "name": "template_uses_user_id_user_id_fk",
           "tableFrom": "template_uses",
+          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
@@ -1399,28 +1429,28 @@
         "template_versions_template_id_templates_id_fk": {
           "name": "template_versions_template_id_templates_id_fk",
           "tableFrom": "template_versions",
+          "tableTo": "templates",
           "columnsFrom": [
             "template_id"
           ],
-          "tableTo": "templates",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         },
         "template_versions_thumbnail_asset_id_assets_id_fk": {
           "name": "template_versions_thumbnail_asset_id_assets_id_fk",
           "tableFrom": "template_versions",
+          "tableTo": "assets",
           "columnsFrom": [
             "thumbnail_asset_id"
           ],
-          "tableTo": "assets",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "set null"
+          "onDelete": "set null",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
@@ -1554,15 +1584,15 @@
           "columns": [
             {
               "expression": "to_tsvector('simple', \"search_text\")",
-              "isExpression": true,
               "asc": true,
+              "isExpression": true,
               "nulls": "last"
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "gin",
-          "concurrently": false
+          "with": {}
         },
         "templates_gallery_idx": {
           "name": "templates_gallery_idx",
@@ -1587,9 +1617,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "templates_author_idx": {
           "name": "templates_author_idx",
@@ -1602,9 +1632,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "templates_popular_idx": {
           "name": "templates_popular_idx",
@@ -1629,24 +1659,24 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "templates_author_id_user_id_fk": {
           "name": "templates_author_id_user_id_fk",
           "tableFrom": "templates",
+          "tableTo": "user",
           "columnsFrom": [
             "author_id"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1742,17 +1772,17 @@
       "uniqueConstraints": {
         "user_email_unique": {
           "name": "user_email_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "email"
-          ],
-          "nullsNotDistinct": false
+          ]
         },
         "user_handle_unique": {
           "name": "user_handle_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "handle"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -1819,9 +1849,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {},
@@ -1834,10 +1864,10 @@
   },
   "enums": {},
   "schemas": {},
-  "views": {},
   "sequences": {},
   "roles": {},
   "policies": {},
+  "views": {},
   "_meta": {
     "columns": {},
     "schemas": {},

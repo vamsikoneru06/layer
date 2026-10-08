@@ -12,6 +12,7 @@ import { listReports, type ReportListRow } from "./repository";
 import { moderateTemplate, resolveReport } from "./service";
 
 const writeLimit = { name: "userWrite", rule: RATE_LIMITS.userWrite, by: "user" } as const;
+const readLimit = { name: "userRead", rule: RATE_LIMITS.userRead, by: "user" } as const;
 const ReportsQuery = pageQuery.extend({ status: z.enum(["open", "actioned", "dismissed"]).default("open") });
 const TemplatesQuery = pageQuery.extend({ status: z.enum(["published", "hidden"]).default("hidden"), featured: z.enum(["true"]).optional() });
 const ResolveBody = z.object({ status: z.enum(["actioned", "dismissed"]) }).strict();
@@ -30,7 +31,7 @@ const reportJson = (r: ReportListRow) => ({
 
 export function adminHandlers(deps: Deps) {
   return {
-    reports: endpoint(deps, { auth: "admin" }, async ({ req }) => {
+    reports: endpoint(deps, { auth: "admin", rateLimit: readLimit }, async ({ req }) => {
       const q = readQuery(req, ReportsQuery);
       const rows = await listReports(deps.db, { status: q.status, after: q.cursor ? decodeCursor(q.cursor) : undefined, limit: q.limit });
       return Response.json(toPage(rows, q.limit, (r) => ({ at: r.createdAt.toISOString(), id: r.id }), reportJson));
@@ -52,7 +53,7 @@ export function adminHandlers(deps: Deps) {
       return Response.json(toTemplateJson(card));
     }),
 
-    templates: endpoint(deps, { auth: "admin" }, async ({ req }) => {
+    templates: endpoint(deps, { auth: "admin", rateLimit: readLimit }, async ({ req }) => {
       const q = readQuery(req, TemplatesQuery);
       const rows = await listTemplatesByStatus(deps.db, { status: q.status, featured: q.featured === "true", after: q.cursor ? decodeCursor(q.cursor) : undefined, limit: q.limit });
       return Response.json(toPage(rows, q.limit, (r) => ({ at: r.createdAt.toISOString(), id: r.id }), toTemplateJson));

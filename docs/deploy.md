@@ -32,6 +32,9 @@ Do these in order. Keep every secret in a password manager; never paste one into
    Both end in `?sslmode=require`; change that to `?sslmode=verify-full` in both. The database driver already
    checks Neon's certificate fully either way, and `verify-full` says so without a warning in every log. The app refuses a direct Neon string in production, because each serverless
    instance opens its own connections and the direct endpoint runs out.
+3. Use the same database role (Neon's default `neondb_owner`) in both strings. Migration 0007 creates the
+   `vash_app` role that signed-in requests switch to for row-level security, and makes the migrating role a member.
+   If the app ever connects as a different role, run `GRANT vash_app TO <that role>;` or every signed-in request fails.
 
 ### 2. Supabase (photos)
 

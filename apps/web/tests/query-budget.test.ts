@@ -23,7 +23,8 @@ import { memoryStorage } from "./support/storage";
 /**
  * Database round trips per request, signed in with a real Better Auth session. In production each one is a
  * network round trip to Neon, so these are budgets: a change that adds a query to a hot path fails here.
- * Signed-in requests start with one query for the session and user; rate-limited ones add one write.
+ * Signed-in requests start with one query for the session and user; rate-limited ones (every signed-in read since
+ * #47) add one write.
  */
 let client: PGlite;
 let db: Db;
@@ -78,9 +79,9 @@ describe("database round trips per request", () => {
     const template = await createTemplate(db, { status: "published" });
 
     const budgets: [string, () => ReturnType<typeof measure>, number][] = [
-      ["GET /api/me", () => measure(me.get, "/api/me"), 2],
-      ["GET /api/designs", () => measure(designs.list, "/api/designs"), 2],
-      ["GET /api/designs/:id", () => measure(designs.get, `/api/designs/${id}`, {}, { id }), 2],
+      ["GET /api/me", () => measure(me.get, "/api/me"), 3],
+      ["GET /api/designs", () => measure(designs.list, "/api/designs"), 3],
+      ["GET /api/designs/:id", () => measure(designs.get, `/api/designs/${id}`, {}, { id }), 3],
       // Session, rate limit, then the compare-and-swap update alone.
       ["PUT /api/designs/:id", () => measure(designs.save, `/api/designs/${id}`, { method: "PUT", json: { doc, version: 1 }, headers: { prefer: "return=minimal" } }, { id }), 3],
       ["GET /api/templates", () => measure(templates.list, "/api/templates"), 2],
