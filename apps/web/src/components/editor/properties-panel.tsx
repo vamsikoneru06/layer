@@ -32,6 +32,8 @@ import { actionTitle, type Action, type ActionId } from "./editor-actions";
 import { FillField } from "./fill-field";
 import { FONT_FACES } from "./font-faces";
 import { IconButton } from "./icon-button";
+import { AltTextSection } from "./alt-text-section";
+import { ShadowSection } from "./shadow-section";
 
 const TYPE_LABEL: Record<Node["type"], string> = { frame: "Photo frame", text: "Text", shape: "Shape", sticker: "Sticker", group: "Group" };
 
@@ -219,6 +221,9 @@ function PanelBody({ state, core, actions, mac }: { state: EditorState; core: Ed
         </div>
       </Section>
 
+      <ShadowSection node={node} disabled={locked} update={update} />
+      {node.type !== "text" && <AltTextSection key={id} node={node} disabled={locked} update={update} />}
+
       {mode === "design" && !locked && (
         <Row label="Lock layer">
           <Switch label="Lock layer" checked={node.lock !== "free"} onChange={(on) => update({ lock: on ? "locked" : "free" })} />
@@ -290,6 +295,12 @@ function TextSection({ node, disabled, update }: { node: TextNode; disabled: boo
   );
 }
 
+const BORDER_STYLES = [
+  { value: "solid", label: "Solid" },
+  { value: "dashed", label: "Dashed" },
+  { value: "dotted", label: "Dotted" },
+] as const;
+
 function ShapeSection({ node, disabled, update }: { node: ShapeNode; disabled: boolean; update: Update }) {
   const g = node.geometry;
   return (
@@ -325,6 +336,11 @@ function ShapeSection({ node, disabled, update }: { node: ShapeNode; disabled: b
           </button>
         </div>
       )}
+      <Row label="Border style">
+        <div className="w-[180px]">
+          <Segmented name="Border style" value={node.stroke?.dash ?? "solid"} options={BORDER_STYLES} disabled={disabled || !node.stroke} onChange={(dash) => update({ stroke: { ...node.stroke!, dash } })} />
+        </div>
+      </Row>
       {g.kind === "rect" && (
         <NumberField
           label="◜"

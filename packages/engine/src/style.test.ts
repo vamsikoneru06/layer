@@ -20,23 +20,24 @@ const sticker = (id: string): Node => {
 describe("STYLE_FIELDS", () => {
   it("pins the style fields of every node type", () => {
     expect(STYLE_FIELDS).toEqual({
-      frame: ["opacity", "filters"],
-      text: ["opacity", "font", "size", "color", "align", "lineHeight", "letterSpacing", "fit"],
-      shape: ["opacity", "fill", "stroke"],
-      sticker: ["opacity"],
-      group: ["opacity"],
+      frame: ["opacity", "shadow", "filters"],
+      text: ["opacity", "shadow", "font", "size", "color", "align", "lineHeight", "letterSpacing", "fit"],
+      shape: ["opacity", "shadow", "fill", "stroke"],
+      sticker: ["opacity", "shadow"],
+      group: ["opacity", "shadow"],
     });
   });
 
   it("accounts for every field of every node type, so a new schema field has to be classified", () => {
     const notStyle: Record<NodeType, string[]> = {
-      frame: ["id", "type", "name", "transform", "width", "height", "visible", "lock", "shape", "content", "placeholder"],
-      text: ["id", "type", "name", "transform", "width", "height", "visible", "lock", "content", "maxChars"],
-      shape: ["id", "type", "name", "transform", "width", "height", "visible", "lock", "geometry"],
-      sticker: ["id", "type", "name", "transform", "width", "height", "visible", "lock", "assetId"],
-      group: ["id", "type", "name", "transform", "width", "height", "visible", "lock", "children"],
+      frame: ["id", "type", "name", "transform", "width", "height", "visible", "lock", "alt", "shape", "content", "placeholder"],
+      text: ["id", "type", "name", "transform", "width", "height", "visible", "lock", "alt", "content", "maxChars"],
+      shape: ["id", "type", "name", "transform", "width", "height", "visible", "lock", "alt", "geometry"],
+      sticker: ["id", "type", "name", "transform", "width", "height", "visible", "lock", "alt", "assetId"],
+      group: ["id", "type", "name", "transform", "width", "height", "visible", "lock", "alt", "children"],
     };
-    const samples: Node[] = [frame("f", {}), text("t", {}), rect("s", {}), sticker("k"), group("g", {}, [])];
+    // Every optional key is present on the samples, so the test sees all of them.
+    const samples: Node[] = [frame("f", {}), text("t", {}), rect("s", {}), sticker("k"), group("g", {}, [])].map((n) => ({ ...n, shadow: null, alt: "Alt text" }));
     for (const node of samples) {
       const style = STYLE_FIELDS[node.type] as readonly string[];
       expect([...Object.keys(node)].sort(), node.type).toEqual([...style, ...notStyle[node.type]].sort());
@@ -48,8 +49,21 @@ describe("styleOf", () => {
   it("captures the style fields and the type, as a copy", () => {
     const source = { ...rect("a", {}), opacity: 0.4, stroke: { color: "#00FF00", width: 6 } };
     const style = styleOf(source);
-    expect(style).toEqual({ type: "shape", fields: { opacity: 0.4, fill: { type: "solid", color: "#FF0000" }, stroke: { color: "#00FF00", width: 6 } } });
+    expect(style).toEqual({ type: "shape", fields: { opacity: 0.4, shadow: null, fill: { type: "solid", color: "#FF0000" }, stroke: { color: "#00FF00", width: 6 } } });
     expect(style.fields.stroke).not.toBe(source.stroke);
+  });
+
+  it("carries the shadow as a copy, and never the alt text", () => {
+    const shadow = { color: "#00000080", blur: 12, offsetX: 4, offsetY: -8 };
+    const source = { ...rect("a", {}), shadow, alt: "A red square" };
+    const style = styleOf(source);
+    expect(style.fields.shadow).toEqual(shadow);
+    expect(style.fields.shadow).not.toBe(shadow);
+    expect(JSON.stringify(style)).not.toContain("A red square");
+  });
+
+  it("copies a missing shadow as null", () => {
+    expect(styleOf(rect("a", {})).fields.shadow).toBeNull();
   });
 
   it("leaves out identity, geometry and content", () => {
@@ -65,7 +79,7 @@ describe("planPasteStyle", () => {
   it("pastes onto layers of the same type and keeps their identity, size and geometry", () => {
     const doc = docWith([redRect, ellipse("e", { x: 400 }, 80, 30), rect("r", { x: 700 })]);
     const next = run(doc, planPasteStyle(doc, ["e", "r"], "design", styleOf(redRect)));
-    expect(next.nodes.e).toEqual({ ...doc.nodes.e, opacity: 0.5, fill: redRect.fill, stroke: redRect.stroke });
+    expect(next.nodes.e).toEqual({ ...doc.nodes.e, opacity: 0.5, fill: redRect.fill, stroke: redRect.stroke, shadow: null });
     expect(next.nodes.e).toMatchObject({ geometry: { kind: "ellipse" }, width: 80, height: 30, name: "e" });
     expect(next.nodes.src).toBe(doc.nodes.src);
     expect(validateDoc(next)).toMatchObject({ ok: true });

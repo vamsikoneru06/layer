@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { recordingContext } from "./recording-ctx";
-import { renderScene, type ImageState } from "./render";
+import { renderDoc, renderScene, type ImageState } from "./render";
 import { docWith, frame, group, rect, text } from "./test-docs";
 
 const measure = (s: string, _f: unknown, size: number) => s.length * size * 0.5;
@@ -72,5 +72,99 @@ describe("renderScene", () => {
       ["aa", -12],
       ["bb", 26],
     ]);
+  });
+});
+
+describe("renderDoc shadows and stroke dashes", () => {
+  const opts = { measure, image: noImages, dpr: 1 };
+  const identity = [1, 0, 0, 1, 0, 0] as const;
+  const shadow = { color: "#00000080", blur: 10, offsetX: 4, offsetY: -8 };
+  const shadowOps = (calls: Array<{ op: string; args: unknown[] }>) => calls.filter((c) => c.op.startsWith("set:shadow")).map((c) => [c.op, c.args[0]]);
+
+  it("sets the shadow before a node is painted, and resets it after", () => {
+    const { ctx, calls } = recordingContext();
+    renderDoc(ctx, docWith([{ ...rect("a", {}), shadow }]), identity, opts, { background: false });
+    expect(shadowOps(calls)).toEqual([
+      ["set:shadowColor", shadow.color],
+      ["set:shadowBlur", 10],
+      ["set:shadowOffsetX", 4],
+      ["set:shadowOffsetY", -8],
+      ["set:shadowColor", "transparent"],
+      ["set:shadowBlur", 0],
+      ["set:shadowOffsetX", 0],
+      ["set:shadowOffsetY", 0],
+    ]);
+    const paint = calls.findIndex((c) => c.op === "fill");
+    expect(calls.findIndex((c) => c.op === "set:shadowColor" && c.args[0] === shadow.color)).toBeLessThan(paint);
+    expect(calls.findIndex((c, i) => i > paint && c.op === "set:shadowColor" && c.args[0] === "transparent")).toBeGreaterThan(paint);
+  });
+
+  it("scales the shadow's blur and offsets by the device scale, so it holds at every zoom", () => {
+    const { ctx, calls } = recordingContext();
+    renderDoc(ctx, docWith([{ ...rect("a", {}), shadow }]), [2, 0, 0, 2, 0, 0], opts, { background: false });
+    expect(calls).toContainEqual({ op: "set:shadowBlur", args: [20] });
+    expect(calls).toContainEqual({ op: "set:shadowOffsetX", args: [8] });
+    expect(calls).toContainEqual({ op: "set:shadowOffsetY", args: [-16] });
+  });
+
+  it("casts a frame's shadow from its outline drawn off the canvas, so the photo clip cannot hide it", () => {
+    const { ctx, calls } = recordingContext();
+    renderDoc(ctx, docWith([{ ...frame("f", {}, 200, 100), shadow }]), [2, 0, 0, 2, 0, 0], opts, { background: false });
+    const far = 100_000 / 2;
+    // The outline moves `far` frame units right (2 * far device px), and the shadow offset points back.
+    expect(calls).toContainEqual({ op: "translate", args: [far, 0] });
+    expect(calls).toContainEqual({ op: "set:shadowOffsetX", args: [4 * 2 - 2 * far] });
+    expect(calls).toContainEqual({ op: "set:shadowOffsetY", args: [-8 * 2] });
+    expect(calls).toContainEqual({ op: "set:shadowBlur", args: [20] });
+    const castAt = calls.findIndex((c) => c.op === "fill");
+    expect(castAt).toBeGreaterThan(-1);
+    // The frame's own photo clip comes after the cast.
+    expect(calls.findIndex((c, i) => i > castAt && c.op === "clip")).toBeGreaterThan(castAt);
+  });
+
+  it("sets no shadow when a node has none or null", () => {
+    const { ctx, calls } = recordingContext();
+    renderDoc(ctx, docWith([rect("a", {}), { ...rect("b", { x: 200 }), shadow: null }]), identity, opts, { background: false });
+    expect(shadowOps(calls)).toEqual([]);
+  });
+
+  it("gives a group's shadow to each child without a shadow of its own", () => {
+    const groupShadow = { ...shadow, color: "#FF000080" };
+    const childShadow = { ...shadow, color: "#0000FF80" };
+    const doc = docWith([{ ...group("g", {}, ["a", "b"]), shadow: groupShadow }], [rect("a", {}), { ...rect("b", { x: 200 }), shadow: childShadow }]);
+    const { ctx, calls } = recordingContext();
+    renderDoc(ctx, doc, identity, opts, { background: false });
+    const colors = calls.filter((c) => c.op === "set:shadowColor" && c.args[0] !== "transparent").map((c) => c.args[0]);
+    expect(colors).toEqual([groupShadow.color, childShadow.color]);
+  });
+
+  it("draws dashed strokes with dashes of 3 and 2 stroke widths, then resets the dash", () => {
+    const { ctx, calls } = recordingContext();
+    const n = { ...rect("a", {}), stroke: { color: "#000000", width: 2, dash: "dashed" as const } };
+    renderDoc(ctx, docWith([n]), identity, opts, { background: false });
+    expect(calls.filter((c) => c.op === "setLineDash" || c.op === "set:lineCap").map((c) => [c.op, c.args[0]])).toEqual([
+      ["setLineDash", [6, 4]],
+      ["setLineDash", []],
+      ["set:lineCap", "butt"],
+    ]);
+  });
+
+  it("draws dotted strokes as round dots of zero length, then resets the cap and dash", () => {
+    const { ctx, calls } = recordingContext();
+    const n = { ...rect("a", {}), stroke: { color: "#000000", width: 2, dash: "dotted" as const } };
+    renderDoc(ctx, docWith([n]), identity, opts, { background: false });
+    expect(calls.filter((c) => c.op === "setLineDash" || c.op === "set:lineCap").map((c) => [c.op, c.args[0]])).toEqual([
+      ["setLineDash", [0, 4]],
+      ["set:lineCap", "round"],
+      ["setLineDash", []],
+      ["set:lineCap", "butt"],
+    ]);
+  });
+
+  it("leaves solid and missing dashes as plain strokes", () => {
+    const { ctx, calls } = recordingContext();
+    const solid = { ...rect("a", {}), stroke: { color: "#000000", width: 2 } };
+    renderDoc(ctx, docWith([solid]), identity, opts, { background: false });
+    expect(calls.some((c) => c.op === "setLineDash" || c.op === "set:lineCap")).toBe(false);
   });
 });

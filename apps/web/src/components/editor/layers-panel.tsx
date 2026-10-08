@@ -152,6 +152,7 @@ export function LayersPanel({ state, core }: { state: EditorState; core: EditorC
             aria-pressed={selected}
             title="Double-click or press F2 to rename"
             aria-keyshortcuts="F2 Alt+ArrowUp Alt+ArrowDown"
+            aria-describedby={n.alt ? `layer-alt-${id}` : undefined}
             onClick={(e) => select(id, e)}
             onDoubleClick={() => setEditing(id)}
             onKeyDown={(e) => onRowKeyDown(e, id, ids)}
@@ -163,6 +164,11 @@ export function LayersPanel({ state, core }: { state: EditorState; core: EditorC
               {!n.visible && <span className="sr-only"> (hidden)</span>}
             </span>
           </button>
+          {n.alt && (
+            <span id={`layer-alt-${id}`} className="sr-only">
+              {n.alt}
+            </span>
+          )}
           {editing === id && (
             <div className="flex h-full min-w-0 flex-1 items-center gap-2.5 pl-1">
               <Icon aria-hidden className="size-4 flex-none text-muted" strokeWidth={1.75} />

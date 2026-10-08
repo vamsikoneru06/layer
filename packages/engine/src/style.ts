@@ -7,8 +7,8 @@ type NodeOf<T extends NodeType> = Extract<Node, { type: T }>;
 
 /**
  * The fields "Copy style" carries, per node type. Left out everywhere: identity (id, type, name), lock
- * and visible (state, not look), and geometry (transform, width, height), which belong to the layer
- * rather than its look. Also left out, per type:
+ * and visible (state, not look), geometry (transform, width, height), which belong to the layer
+ * rather than its look, and `alt` (screen-reader text is content, not style). Also left out, per type:
  * - frame: `content` (the photo and its crop), `shape` (the mask is the frame's form, like its size)
  *   and `placeholder` (a marker for an empty slot, not a look).
  * - text: `content`, and `maxChars`, which limits what can be typed: pasting a limit below the
@@ -18,11 +18,11 @@ type NodeOf<T extends NodeType> = Extract<Node, { type: T }>;
  * - group: `children`.
  */
 export const STYLE_FIELDS: { readonly [T in NodeType]: readonly (keyof NodeOf<T>)[] } = {
-  frame: ["opacity", "filters"],
-  text: ["opacity", "font", "size", "color", "align", "lineHeight", "letterSpacing", "fit"],
-  shape: ["opacity", "fill", "stroke"],
-  sticker: ["opacity"],
-  group: ["opacity"],
+  frame: ["opacity", "shadow", "filters"],
+  text: ["opacity", "shadow", "font", "size", "color", "align", "lineHeight", "letterSpacing", "fit"],
+  shape: ["opacity", "shadow", "fill", "stroke"],
+  sticker: ["opacity", "shadow"],
+  group: ["opacity", "shadow"],
 };
 
 /** A copied style: the node type it came from and a snapshot of its style fields. */
@@ -35,7 +35,7 @@ export interface Style {
 export function styleOf(node: Node): Style {
   const source = node as unknown as Record<string, unknown>;
   const fields: Record<string, unknown> = {};
-  for (const key of STYLE_FIELDS[node.type] as readonly string[]) fields[key] = structuredClone(source[key]);
+  for (const key of STYLE_FIELDS[node.type] as readonly string[]) fields[key] = structuredClone(source[key] ?? null);
   return { type: node.type, fields };
 }
 

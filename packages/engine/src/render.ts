@@ -1,4 +1,4 @@
-import type { Doc, Fill, FrameNode, Node, ShapeNode, StickerNode, TextNode } from "@vash/schema";
+import type { Doc, Fill, FrameNode, Node, Shadow, ShapeNode, StickerNode, TextNode } from "@vash/schema";
 import { isNeutral, type FilterFn } from "./filters";
 import { multiply, type Mat } from "./math";
 import { drawOrder, parentOf, worldMatrix } from "./scene";
@@ -98,11 +98,60 @@ function drawShape(ctx: Ctx, n: ShapeNode): void {
     else ctx.fill();
   }
   if (n.stroke && n.stroke.width > 0) {
-    ctx.strokeStyle = n.stroke.color;
-    ctx.lineWidth = n.stroke.width;
+    const { color, width, dash = "solid" } = n.stroke;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    // Dash lengths are in node units, like the stroke width, so they scale with the node.
+    if (dash !== "solid") {
+      ctx.setLineDash(dash === "dashed" ? [3 * width, 2 * width] : [0, 2 * width]);
+      if (dash === "dotted") ctx.lineCap = "round";
+    }
     if (path) ctx.stroke(path);
     else ctx.stroke();
+    if (dash !== "solid") {
+      ctx.setLineDash([]);
+      ctx.lineCap = "butt";
+    }
   }
+}
+
+/**
+ * Canvas shadows are in device pixels and ignore the transform, so the document-pixel values are scaled by
+ * the node's device scale (`scale`), which keeps a shadow the same at every zoom and in exports.
+ */
+function setShadow(ctx: Ctx, sh: Shadow, scale: number): void {
+  ctx.shadowColor = sh.color;
+  ctx.shadowBlur = sh.blur * scale;
+  ctx.shadowOffsetX = sh.offsetX * scale;
+  ctx.shadowOffsetY = sh.offsetY * scale;
+}
+
+/**
+ * Paints only the shadow of a frame's outline: the outline itself is drawn far outside the canvas and the shadow
+ * offset points back at where the frame really is, so a transparent photo never shows a filled shape behind it.
+ * `m` is the frame's device matrix; the far shift is in the frame's own units, so it is mapped through `m`.
+ */
+function castShadow(ctx: Ctx, n: FrameNode, sh: Shadow, m: Mat): void {
+  const scale = Math.hypot(m[0], m[1]) || 1;
+  const far = 100_000 / scale;
+  ctx.save();
+  ctx.shadowColor = sh.color;
+  ctx.shadowBlur = sh.blur * scale;
+  ctx.shadowOffsetX = sh.offsetX * scale - m[0] * far;
+  ctx.shadowOffsetY = sh.offsetY * scale - m[1] * far;
+  ctx.translate(far, 0);
+  ctx.fillStyle = "#000";
+  const path = trace(ctx, n.shape, n.width, n.height);
+  if (path) ctx.fill(path);
+  else ctx.fill();
+  ctx.restore();
+}
+
+function clearShadow(ctx: Ctx): void {
+  ctx.shadowColor = "transparent";
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
 }
 
 function drawPlaceholder(ctx: Ctx, w: number, h: number, label: string): void {
@@ -225,6 +274,18 @@ function effectiveOpacity(doc: Doc, id: string): number {
 }
 
 /**
+ * The node's shadow, or the nearest enclosing group's. A group paints nothing itself, so its shadow is
+ * applied to each child that has none of its own (not to the group's drawing as a whole).
+ */
+function effectiveShadow(doc: Doc, id: string): Shadow | null {
+  for (let at: string | null = id; at; at = parentOf(doc, at)) {
+    const shadow = doc.nodes[at]?.shadow;
+    if (shadow) return shadow;
+  }
+  return null;
+}
+
+/**
  * Paints the artboard and its layers. `base` maps artboard units to device pixels
  * (viewport × dpr on screen; a plain scale for export).
  */
@@ -252,9 +313,16 @@ export function renderDoc(ctx: Ctx, doc: Doc, base: Mat, o: RenderOptions, opts:
   for (const id of drawOrder(doc)) {
     const node = doc.nodes[id];
     if (!node || id === o.hidden) continue;
-    ctx.setTransform(...multiply(base, worldMatrix(doc, id)));
+    const m = multiply(base, worldMatrix(doc, id));
+    ctx.setTransform(...m);
     ctx.globalAlpha = effectiveOpacity(doc, id);
+    // A group paints nothing, so its shadow reaches its children. A frame clips its photo, which would hide its
+    // own shadow, so the frame's outline casts the shadow first (castShadow) and the photo is drawn without one.
+    const shadow = node.type === "group" ? null : effectiveShadow(doc, id);
+    if (shadow && node.type === "frame") castShadow(ctx, node, shadow, m);
+    else if (shadow) setShadow(ctx, shadow, Math.hypot(m[0], m[1]));
     drawNode(ctx, node, o);
+    if (shadow && node.type !== "frame") clearShadow(ctx);
   }
   ctx.restore();
   ctx.globalAlpha = 1;
