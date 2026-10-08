@@ -56,6 +56,9 @@ export default function Landing() {
           <Link href="/cookies" className="hover:text-text">
             Cookies
           </Link>
+          <Link href="/report-a-bug?from=%2F" className="hover:text-text">
+            Report a bug
+          </Link>
         </span>
       </footer>
     </main>

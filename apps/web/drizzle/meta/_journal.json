@@ -71,6 +71,13 @@
       "when": 1791442784055,
       "tag": "0009_design_card_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791442919083,
+      "tag": "0010_bug_reports",
+      "breakpoints": true
     }
   ]
 }

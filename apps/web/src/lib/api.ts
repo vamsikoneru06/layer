@@ -290,3 +290,9 @@ export async function importStockPhoto(photo: StockPhoto): Promise<Photo> {
   const blob = await res.blob();
   return uploadPhoto(new File([blob], `pexels-${photo.id}.${blob.type === "image/png" ? "png" : "jpg"}`, { type: blob.type }));
 }
+
+export type BugReportInput = { summary: string; expected: string; steps: string; page: string };
+
+export function sendBugReport(report: BugReportInput): Promise<{ id: string }> {
+  return request<{ id: string }>("/api/bug-reports", { method: "POST", json: report });
+}

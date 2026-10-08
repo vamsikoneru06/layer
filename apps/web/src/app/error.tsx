@@ -1,12 +1,14 @@
 "use client";
 
-import { RotateCcw, TriangleAlert } from "lucide-react";
+import { Bug, RotateCcw, TriangleAlert } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { StatusScreen } from "@/components/ui/status-screen";
 import { reportClientError } from "@/lib/monitoring/client";
 
 export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  const pathname = usePathname();
   useEffect(() => reportClientError(error), [error]);
   return (
     <StatusScreen
@@ -24,6 +26,9 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
       </Button>
       <ButtonLink href="/" variant="secondary">
         Go to the home page
+      </ButtonLink>
+      <ButtonLink href={`/report-a-bug?from=${encodeURIComponent(pathname)}`} variant="secondary" icon={<Bug className="size-4" />}>
+        Report a bug
       </ButtonLink>
     </StatusScreen>
   );

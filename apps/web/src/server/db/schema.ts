@@ -244,6 +244,30 @@ export const reports = pgTable(
   ],
 );
 
+/** Bug reports from the /report-a-bug form. Guests send them too (no reporter); deleted with the account and after CLEANUP.bugReportRetentionMs. */
+export const bugReports = pgTable(
+  "bug_reports",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    reporterId: text("reporter_id").references(() => user.id, { onDelete: "cascade" }),
+    summary: text("summary").notNull(),
+    expected: text("expected").notNull().default(""),
+    steps: text("steps").notNull().default(""),
+    /** The path the reporter came from, with no query string, fragment or share token. */
+    page: text("page").notNull().default(""),
+    userAgent: text("user_agent").notNull().default(""),
+    status: text("status", { enum: ["open", "fixed", "dismissed"] }).notNull().default("open"),
+    resolvedBy: text("resolved_by").references(() => user.id, { onDelete: "set null" }),
+    resolvedAt: ts("resolved_at"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("bug_reports_queue_idx").on(t.status, t.createdAt, t.id),
+    index("bug_reports_reporter_idx").on(t.reporterId),
+    check("bug_reports_status_check", sql`${t.status} in ('open', 'fixed', 'dismissed')`),
+  ],
+);
+
 export const shareLinks = pgTable(
   "share_links",
   {

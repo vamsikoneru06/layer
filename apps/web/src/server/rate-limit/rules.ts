@@ -25,4 +25,6 @@ export const RATE_LIMITS = {
   // Pexels allows the whole app 200 searches an hour, so one person can't use them all (results are cached too).
   stockSearch: { windowSeconds: 3_600, max: 60 },
   stockImage: { windowSeconds: 3_600, max: 600 },
+  // The /report-a-bug form: per account, or per IP for guests.
+  bugReport: { windowSeconds: 3_600, max: 10 },
 } as const satisfies Record<string, RateLimitRule>;

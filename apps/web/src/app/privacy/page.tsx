@@ -47,6 +47,12 @@ export default function PrivacyPage() {
         <li>
           <strong>Reports:</strong> if you report a template, we keep the report and your account id so we can review it.
         </li>
+        <li>
+          <strong>Bug reports:</strong> if you use <Link href="/report-a-bug">Report a bug</Link>, we keep what you write, the page you
+          came from (without anything after a &ldquo;?&rdquo; and with share codes removed), and your browser&apos;s name and version. If
+          you&apos;re signed in, the report is linked to your account so we can email you about it. We don&apos;t keep your IP address with
+          it. We use bug reports only to find and fix problems.
+        </li>
       </ul>
       <p>
         We use this data only to provide VASH, keep it secure, and meet legal obligations. You give consent when you create an account,
@@ -107,6 +113,7 @@ export default function PrivacyPage() {
         <li>Two-step verification key and backup codes: until you turn it off or delete your account.</li>
         <li>Abuse-limit counters: up to two days.</li>
         <li>Error reports: up to 90 days, then Sentry deletes them.</li>
+        <li>Bug reports: 180 days, or until you delete your account if that&apos;s sooner.</li>
         <li>Encrypted database backups: 7 days.</li>
         <li>
           After you delete your account: your data is removed at once and photo files are deleted from storage shortly after. We keep a

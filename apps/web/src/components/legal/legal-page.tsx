@@ -26,6 +26,9 @@ export function LegalPage({ title, updated, children }: { title: string; updated
         <Link href="/cookies" className="hover:text-text">
           Cookies
         </Link>
+        <Link href="/report-a-bug" className="hover:text-text">
+          Report a bug
+        </Link>
       </footer>
     </main>
   );
