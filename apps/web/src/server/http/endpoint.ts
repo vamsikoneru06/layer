@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { assertAdminStepUp } from "../auth/two-factor";
+import { runAsUser } from "../db/user-scope";
 import type { CurrentUser, Deps } from "../deps";
 import { consume, type RateLimitRule } from "../rate-limit/limiter";
 import { clientIp, rateLimitSubject } from "./client-ip";
@@ -47,12 +49,16 @@ export function endpoint<A extends AuthMode>(
       if ((options.auth === "user" || options.auth === "admin") && !user) {
         throw new HttpError(401, "Unauthorized", "Sign in to continue.");
       }
-      if (options.auth === "admin" && user?.role !== "admin") {
-        throw new HttpError(403, "Forbidden", "This action requires an administrator.");
+      if (options.auth === "admin") {
+        if (user?.role !== "admin") throw new HttpError(403, "Forbidden", "This action requires an administrator.");
+        assertAdminStepUp(user, deps.now());
       }
       if (options.rateLimit) await enforceRateLimit(deps, req, options.rateLimit, user);
 
-      const res = await fn({ req, params: await ctx.params, user: user as UserFor<A>, requestId });
+      const params = await ctx.params;
+      const run = () => fn({ req, params, user: user as UserFor<A>, requestId });
+      // A signed-in user's statements run under row-level security, so a missed owner filter still can't leak rows.
+      const res = await (user ? runAsUser(user.id, run) : run());
       res.headers.set("x-request-id", requestId);
       if (!res.headers.has("cache-control")) res.headers.set("cache-control", "no-store");
       done(res.status);

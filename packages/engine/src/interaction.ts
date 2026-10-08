@@ -1,9 +1,10 @@
-import type { NodeId, Transform } from "@vash/schema";
+import type { FrameContent, NodeId, Transform } from "@vash/schema";
 import type { Command } from "./commands";
 import type { EditorCore } from "./editor-core";
 import { handleAt, HANDLE_DIRECTIONS, selectionFrame, type Handle, type ResizeHandle } from "./handles";
 import { hitTest, nodesInBox } from "./hit-test";
 import { aabb, apply, boxCorners, invert, rotation as rotationMat, type Box, type Mat, type Point } from "./math";
+import { frameAt, inFrame, swapPhotos, zoomPhoto } from "./photos";
 import { parentOf, topLevelOf, worldMatrix } from "./scene";
 import { createSnapper, type Guide, type Snapper } from "./snapping";
 import { toWorld, zoomAt } from "./viewport";
@@ -58,7 +59,12 @@ type Drag =
   | { kind: "resize"; handle: ResizeHandle; id: NodeId; start: Start; snapper: Snapper | null }
   | { kind: "rotate"; id: NodeId; start: Start; centre: Point; fromAngle: number }
   | { kind: "marquee"; from: Point; base: NodeId[] }
-  | { kind: "pan"; last: Point };
+  | { kind: "pan"; last: Point }
+  /** Crop mode: moving the photo inside its frame (`linear` maps world deltas into the frame). */
+  | { kind: "photo"; id: NodeId; at: Point; start: FrameContent; linear: Mat };
+
+/** How long scrolling must pause before a crop-mode zoom is committed as one undo step. */
+const WHEEL_COMMIT_MS = 400;
 
 const CURSORS: Record<ResizeHandle, string> = { n: "ns-resize", s: "ns-resize", e: "ew-resize", w: "ew-resize", nw: "nwse-resize", se: "nwse-resize", ne: "nesw-resize", sw: "nesw-resize" };
 
@@ -66,9 +72,38 @@ export function createInteraction(core: EditorCore): Interaction {
   let drag: Drag | null = null;
   let space = false;
   let hoverHandle: Handle | null = null;
+  let hoverPhoto = false;
+  let wheelTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** Commits a crop-mode scroll zoom still waiting for the scroll to pause. */
+  function flushWheel(): void {
+    if (!wheelTimer) return;
+    clearTimeout(wheelTimer);
+    wheelTimer = null;
+    if (core.history.inTransaction) core.commitTransaction();
+  }
+
+  function beginPhotoDrag(id: NodeId, at: Point): void {
+    const node = core.doc.nodes[id];
+    if (node?.type !== "frame" || !node.content) return;
+    const w = worldMatrix(core.doc, id);
+    core.beginTransaction();
+    drag = { kind: "photo", id, at, start: node.content, linear: invert([w[0], w[1], w[2], w[3], 0, 0]) ?? [1, 0, 0, 1, 0, 0] };
+  }
+
+  function photoTo(d: Extract<Drag, { kind: "photo" }>, e: PointerInput): void {
+    const p = world(e);
+    const delta = apply(d.linear, { x: p.x - d.at.x, y: p.y - d.at.y });
+    const cmd = zoomPhoto(core.doc, d.id, { offsetX: d.start.offsetX + delta.x, offsetY: d.start.offsetY + delta.y });
+    if (cmd && !core.preview(cmd)) return finish(false);
+    // Outline the frame the photo would be swapped into if dropped here.
+    const over = frameAt(core.doc, p);
+    const target = over && over !== d.id ? over : null;
+    if (core.getState().hover !== target) core.setChrome({ hover: target });
+  }
 
   const view = () => core.getState().viewport;
-  const world = (e: PointerInput) => toWorld(view(), e);
+  const world = (e: Point) => toWorld(view(), e);
 
   function startOf(id: NodeId): Start {
     const doc = core.doc;
@@ -163,7 +198,7 @@ export function createInteraction(core: EditorCore): Interaction {
   function finish(commit: boolean): void {
     const d = drag;
     drag = null;
-    if (d && (d.kind === "move" || d.kind === "resize" || d.kind === "rotate")) {
+    if (d && (d.kind === "move" || d.kind === "resize" || d.kind === "rotate" || d.kind === "photo")) {
       if (commit) core.commitTransaction();
       else core.cancelTransaction();
     }
@@ -177,8 +212,14 @@ export function createInteraction(core: EditorCore): Interaction {
         return;
       }
       if (e.button !== 0) return;
+      flushWheel();
       core.setChrome({ notice: null });
       const s = core.getState();
+      if (s.cropping) {
+        const p = world(e);
+        if (inFrame(s.doc, s.cropping, p)) return beginPhotoDrag(s.cropping, p);
+        core.endCrop();
+      }
       const handle = singleHandle(e);
       if (handle) {
         const id = s.selection[0]!;
@@ -214,8 +255,13 @@ export function createInteraction(core: EditorCore): Interaction {
     pointerMove(e) {
       const d = drag;
       if (!d) {
-        hoverHandle = singleHandle(e);
         const s = core.getState();
+        if (s.cropping) {
+          hoverPhoto = inFrame(s.doc, s.cropping, world(e));
+          hoverHandle = null;
+          return;
+        }
+        hoverHandle = singleHandle(e);
         const hit = hoverHandle ? null : hitTest(s.doc, world(e));
         const hover = hit ? topLevelOf(s.doc, hit) : null;
         if (hover !== s.hover) core.setChrome({ hover });
@@ -241,6 +287,8 @@ export function createInteraction(core: EditorCore): Interaction {
           return resizeTo(d, e);
         case "rotate":
           return rotateTo(d, e);
+        case "photo":
+          return photoTo(d, e);
         case "marquee": {
           const p = world(e);
           const box = { minX: Math.min(d.from.x, p.x), minY: Math.min(d.from.y, p.y), maxX: Math.max(d.from.x, p.x), maxY: Math.max(d.from.y, p.y) };
@@ -251,11 +299,36 @@ export function createInteraction(core: EditorCore): Interaction {
       }
     },
 
-    pointerUp() {
+    pointerUp(e) {
+      const d = drag;
+      if (d?.kind === "photo") {
+        // Dropped on another frame: swap the two photos instead of moving this one.
+        const over = frameAt(core.doc, world(e));
+        if (over && over !== d.id) {
+          drag = null;
+          core.cancelTransaction();
+          core.setChrome({ hover: null });
+          const swap = swapPhotos(core.doc, d.id, over);
+          if (swap && core.dispatch(swap)) core.select([over]);
+          return;
+        }
+      }
       finish(true);
     },
 
     wheel(e) {
+      const s = core.getState();
+      const id = s.cropping;
+      const node = id ? s.doc.nodes[id] : undefined;
+      if (id && node?.type === "frame" && node.content && !drag && inFrame(s.doc, id, world(e))) {
+        // Scrolling over the photo zooms it; one pause in scrolling = one undo step.
+        if (!core.history.inTransaction) core.beginTransaction();
+        const cmd = zoomPhoto(core.doc, id, { scale: node.content.scale * Math.exp(-e.deltaY * 0.01) });
+        if (cmd) core.preview(cmd);
+        if (wheelTimer) clearTimeout(wheelTimer);
+        wheelTimer = setTimeout(flushWheel, WHEEL_COMMIT_MS);
+        return;
+      }
       const v = view();
       if (e.zoom) core.setChrome({ viewport: zoomAt(v, e, v.zoom * Math.exp(-e.deltaY * 0.01)) });
       else core.setChrome({ viewport: { ...v, panX: v.panX - e.deltaX, panY: v.panY - e.deltaY } });
@@ -266,11 +339,14 @@ export function createInteraction(core: EditorCore): Interaction {
     },
 
     cancel() {
+      flushWheel();
       finish(false);
     },
 
     cursor() {
       if (drag?.kind === "pan" || space) return drag?.kind === "pan" ? "grabbing" : "grab";
+      if (drag?.kind === "photo") return "grabbing";
+      if (core.getState().cropping && hoverPhoto) return "grab";
       const h = drag?.kind === "resize" ? drag.handle : drag?.kind === "rotate" ? "rotate" : hoverHandle;
       if (h === "rotate") return "crosshair";
       if (h) return CURSORS[h];

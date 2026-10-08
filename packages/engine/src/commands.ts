@@ -1,4 +1,4 @@
-import type { Doc, Node, NodeId } from "@vash/schema";
+import type { AssetId, AssetRef, Doc, Node, NodeId } from "@vash/schema";
 
 /** Fields of one node type that an update may change (identity, type and group membership are fixed). */
 export type NodePatch = Node extends infer N ? (N extends Node ? Partial<Omit<N, "id" | "type" | "children">> : never) : never;
@@ -14,6 +14,8 @@ export type Command =
   | { type: "reorder"; id: NodeId; index: number }
   /** Changes the artboard's size and/or background. */
   | { type: "artboard"; patch: Partial<Doc["artboard"]> }
+  /** Adds or replaces (`ref`) or removes (`null`) an entry in the document's asset list. */
+  | { type: "asset"; id: AssetId; ref: AssetRef | null }
   | { type: "batch"; commands: Command[] };
 
 export interface Applied {
@@ -104,6 +106,14 @@ export function applyCommand(doc: Doc, cmd: Command): Applied {
       const previous: Record<string, unknown> = {};
       for (const key of Object.keys(cmd.patch)) previous[key] = doc.artboard[key as keyof Doc["artboard"]];
       return { doc: { ...doc, artboard: { ...doc.artboard, ...cmd.patch } }, inverse: { type: "artboard", patch: previous as Partial<Doc["artboard"]> } };
+    }
+
+    case "asset": {
+      const assets = { ...doc.assets };
+      const previous = Object.hasOwn(assets, cmd.id) ? assets[cmd.id]! : null;
+      if (cmd.ref) assets[cmd.id] = cmd.ref;
+      else delete assets[cmd.id];
+      return { doc: { ...doc, assets }, inverse: { type: "asset", id: cmd.id, ref: previous } };
     }
 
     case "batch": {

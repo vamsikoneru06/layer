@@ -1,6 +1,6 @@
 "use client";
 
-import { apply, checkPolicy, FILTER_PRESETS, isNeutral, presetFilters, rotation, type Command, type EditorCore, type EditorState, type FilterValues } from "@vash/engine";
+import { apply, checkPolicy, FILTER_PRESETS, isNeutral, presetFilters, removePhoto, rotation, zoomPhoto, type Command, type EditorCore, type EditorState, type FilterValues } from "@vash/engine";
 import { defaultFilters, FONT_FAMILIES, LIMITS, type FrameNode, type Node, type ShapeNode, type TextNode } from "@vash/schema";
 import { AlignCenter, AlignJustify, AlignLeft, AlignRight, Lock } from "lucide-react";
 import { useMemo } from "react";
@@ -113,6 +113,7 @@ function PanelBody({ state, core }: { state: EditorState; core: EditorCore }) {
 
       {node.type === "text" && <TextSection node={node} disabled={locked} update={update} artboard={doc.artboard} authoring={mode === "template"} />}
       {node.type === "shape" && <ShapeSection node={node} disabled={locked} update={update} />}
+      {node.type === "frame" && <PhotoSection node={node} disabled={locked} doc={doc} change={change} />}
       {node.type === "frame" && <FiltersSection node={node} disabled={locked} update={update} />}
 
       <Section title="Position & size">
@@ -342,6 +343,34 @@ const SLIDERS: readonly { key: keyof FilterValues; label: string; signed: boolea
   { key: "blur", label: "Blur", signed: false },
   { key: "sharpen", label: "Sharpen", signed: false },
 ];
+
+function PhotoSection({ node, disabled, doc, change }: { node: FrameNode; disabled: boolean; doc: EditorState["doc"]; change: (cmd: Command, final?: boolean) => void }) {
+  if (!node.content) {
+    return (
+      <Section title="Photo">
+        <p className="text-[12px] text-muted">Drop a photo onto this frame, or pick one in the Photos panel.</p>
+      </Section>
+    );
+  }
+  const zoom = (patch: Parameters<typeof zoomPhoto>[2], final = true) => {
+    const cmd = zoomPhoto(doc, node.id, patch);
+    if (cmd) change(cmd, final);
+  };
+  return (
+    <Section title="Photo">
+      <Slider label="Zoom" value={node.content.scale} min={1} max={4} disabled={disabled} onChange={(scale, final) => zoom({ scale }, final)} />
+      <p className="text-[12px] text-muted">Double-click the photo on the canvas to move it, or drag it onto another frame to swap.</p>
+      <div className="flex gap-2">
+        <Button variant="secondary" size="sm" disabled={disabled} onClick={() => zoom({ offsetX: 0, offsetY: 0 })}>
+          Centre photo
+        </Button>
+        <Button variant="secondary" size="sm" disabled={disabled} onClick={() => change(removePhoto(doc, node.id))}>
+          Remove photo
+        </Button>
+      </div>
+    </Section>
+  );
+}
 
 function FiltersSection({ node, disabled, update }: { node: FrameNode; disabled: boolean; update: Update }) {
   const f = node.filters;

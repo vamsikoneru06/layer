@@ -10,6 +10,7 @@ export { drawOrder, parentOf, topLevelOf, worldMatrix } from "./scene";
 export { layoutText, type Measure, type TextLayout } from "./text";
 export { fontRequests } from "./fonts";
 export { createNode, insertLayer, newNodeId, type InsertKind } from "./insert";
+export { clampContent, fillPhotos, frameAt, newPhotoFrame, photoTargets, placePhoto, removePhoto, swapPhotos, zoomPhoto } from "./photos";
 export { createFilterRenderer, FILTER_KEYS, FILTER_PRESETS, isNeutral, presetFilters, type FilterFn, type FilterValues } from "./filters";
 export { textEditBox, type TextEditBox } from "./text-edit";
 export { checkExport, exportPng, EXPORT_MAX_SIDE, PHOTOS_NOT_READY, referencedImages, type ExportCheck, type ExportOptions } from "./export";

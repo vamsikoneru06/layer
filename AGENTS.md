@@ -43,6 +43,9 @@ The look is "Liquid Glass" and monochrome: colour tokens in `apps/web/src/app/gl
 
 ### Security
 - Every API resource is owner-scoped; keep the cross-user tests passing (`apps/web/src/server/**`).
+- Row-level security backs that up: a signed-in request's queries run as `vash_app` (`server/db/user-scope.ts`,
+  migration 0007), and the tests run that way too. A new table holding user data needs a policy; a read of another
+  user's rows that a request is entitled to (a share link) goes in `outsideUserScope` and still filters itself.
 - CSP is strict (`apps/web/src/proxy.ts`, `server/security/headers.ts`): scripts need the per-request nonce,
   `img-src 'self' blob: data:` plus the storage origins, `font-src 'self'`. Self-host fonts and images; don't
   add third-party script, font or image hosts.
@@ -118,10 +121,10 @@ never log or report tokens, signed URLs or emails (`src/lib/monitoring/scrub.ts`
 
 ## What's next
 
-1. **Photos in the editor** (M2 Task 5, `docs/superpowers/plans/2026-09-27-p1-editor-m2.md`): resolve asset ids
-   to signed URLs, decode once with `createImageBitmap` (≤ 2048 px working copy), drop a file onto a frame to
-   upload and place it, Photos panel with the user's media and Pexels search (`PEXELS_API_KEY`, credit the
-   photographer). The storage backend exists (`apps/web/src/server/storage`, `server/assets`,
+1. **Photos in the editor**: uploading, the Photos panel, dropping onto frames and filling empty frames in
+   reading order, double-click to move and zoom a photo, and swapping by dragging onto another frame all work
+   (`packages/engine/src/photos.ts`, `interaction.ts`, `components/editor/photos-panel.tsx`). Still to do: Pexels
+   search (`PEXELS_API_KEY`, credit the photographer). The storage backend exists (`apps/web/src/server/storage`, `server/assets`,
    `docs/superpowers/plans/2026-09-26-storage-and-uploads.md`). In development uploads work without setup: with no `STORAGE_*` keys, photos are
    stored in the database (`src/server/storage/database.ts`, 50 MB per user). Production requires the Supabase keys
    (Vercel caps request bodies near 4.5 MB and the free database is 0.5 GB in total).

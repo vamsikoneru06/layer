@@ -1,6 +1,7 @@
 import type { Doc, NodeId } from "@vash/schema";
 import { handlePositions, HANDLE_DIRECTIONS, selectionFrame, type ResizeHandle } from "./handles";
 import { boxCorners, type Box, type Point } from "./math";
+import { photoExtent } from "./photos";
 import { worldMatrix } from "./scene";
 import type { Guide } from "./snapping";
 import { toScreen, type Viewport } from "./viewport";
@@ -15,6 +16,8 @@ export interface OverlayState {
   layoutLocked: boolean;
   /** Hide handles while a drag is in progress. */
   dragging: boolean;
+  /** Crop mode: no handles; the whole photo is outlined, dashed. */
+  cropping?: NodeId | null;
 }
 
 export const GUIDE_COLOR = "#FF3EA5";
@@ -68,7 +71,7 @@ export function renderOverlay(ctx: CanvasRenderingContext2D, doc: Doc, v: Viewpo
     const corners = boxCorners(frame.width, frame.height, frame.matrix).map((p) => toScreen(v, p));
     haloStroke(ctx, corners, true, INK, s.layoutLocked);
 
-    if (!s.layoutLocked && !s.dragging) {
+    if (!s.layoutLocked && !s.dragging && !s.cropping) {
       const h = handlePositions(frame, v);
       haloStroke(ctx, [h.n, h.rotate], false, INK);
       ctx.fillStyle = HALO;
@@ -85,6 +88,9 @@ export function renderOverlay(ctx: CanvasRenderingContext2D, doc: Doc, v: Viewpo
       }
     }
   }
+
+  const extent = s.cropping ? photoExtent(doc, s.cropping) : null;
+  if (extent) haloStroke(ctx, extent.map((p) => toScreen(v, p)), true, INK, true);
 
   for (const g of s.guides) {
     const [a, b] = g.axis === "x" ? [{ x: g.at, y: g.from }, { x: g.at, y: g.to }] : [{ x: g.from, y: g.at }, { x: g.to, y: g.at }];

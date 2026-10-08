@@ -4,6 +4,7 @@ import { insertLayer, type Editor, type InsertKind } from "@vash/engine";
 import { Image as ImageIcon, Shapes, Type, type LucideIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { PhotosPanel } from "./photos-panel";
 
 type Tab = "text" | "shapes" | "photos";
 
@@ -26,7 +27,7 @@ function Tile({ label, onClick, children }: { label: string; onClick: () => void
   );
 }
 
-function Panel({ tab, add }: { tab: Tab; add: (kind: InsertKind) => void }) {
+function Panel({ tab, add, editor }: { tab: Tab; add: (kind: InsertKind) => void; editor: Editor | null }) {
   if (tab === "text") {
     return (
       <>
@@ -67,18 +68,19 @@ function Panel({ tab, add }: { tab: Tab; add: (kind: InsertKind) => void }) {
     );
   }
   return (
-    <>
-      <h2 className="text-[15px] font-semibold">Photos</h2>
-      <p className="text-[12px] text-muted">A frame marks where a photo goes. Uploading your own photos is the next feature to arrive.</p>
-      <div className="grid grid-cols-2 gap-2">
-        <Tile label="Square frame" onClick={() => add("frame")}>
-          <rect x="8" y="8" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 3" />
-        </Tile>
-        <Tile label="Round frame" onClick={() => add("frame-circle")}>
-          <circle cx="24" cy="24" r="16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 3" />
-        </Tile>
-      </div>
-    </>
+    <PhotosPanel
+      editor={editor}
+      frameTiles={
+        <div className="grid grid-cols-2 gap-2">
+          <Tile label="Square frame" onClick={() => add("frame")}>
+            <rect x="8" y="8" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 3" />
+          </Tile>
+          <Tile label="Round frame" onClick={() => add("frame-circle")}>
+            <circle cx="24" cy="24" r="16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 3" />
+          </Tile>
+        </div>
+      }
+    />
   );
 }
 
@@ -107,7 +109,7 @@ export function InsertRail({ editor }: { editor: Editor | null }) {
       </nav>
       {open && (
         <div className="flex w-[240px] flex-none flex-col gap-3 overflow-y-auto border-r-[.5px] border-line p-4">
-          <Panel tab={open} add={(kind) => editor && insertLayer(editor.core, kind)} />
+          <Panel tab={open} editor={editor} add={(kind) => editor && insertLayer(editor.core, kind)} />
         </div>
       )}
     </>
