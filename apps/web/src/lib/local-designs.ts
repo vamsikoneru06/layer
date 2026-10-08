@@ -1,4 +1,4 @@
-import { createEmptyDoc, parseDoc, type Doc, type FormatKey } from "@vash/schema";
+import { createEmptyDoc, LIMITS, parseDoc, type Doc, type FormatKey } from "@vash/schema";
 
 /**
  * Designs made without an account live in this browser's IndexedDB until the person signs in, then move to
@@ -32,6 +32,18 @@ export function blankDoc(format: FormatKey, size?: { width: number; height: numb
 export function docFromTemplate(templateDoc: unknown): Doc | null {
   const parsed = parseDoc(templateDoc, { kind: "template" });
   return parsed.ok ? { ...parsed.doc, id: crypto.randomUUID(), kind: "design" } : null;
+}
+
+/** "Make a copy" for a design kept in this browser: a new local design titled like the server's copies. */
+export async function copyLocalDesign(store: LocalDesignStore, id: string, now = new Date()): Promise<LocalDesign> {
+  const source = await store.get(id);
+  if (!source) throw new Error("This design is no longer in this browser.");
+  let title = `Copy of ${source.doc.meta.title}`.slice(0, LIMITS.titleChars);
+  // Never end on half of a surrogate pair.
+  if (/[\ud800-\udbff]$/.test(title)) title = title.slice(0, -1);
+  const copy = newLocalDesign({ ...source.doc, id: crypto.randomUUID(), meta: { ...source.doc.meta, title } }, now);
+  await store.put(copy);
+  return copy;
 }
 
 /** Newest first, like the account's design list. */

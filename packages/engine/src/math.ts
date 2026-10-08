@@ -64,6 +64,21 @@ export function fromTransform(t: Transform): Mat {
   return multiply(multiply(translation(t.x, t.y), rotation(t.rotation)), scaling(t.scaleX, t.scaleY));
 }
 
+/**
+ * Splits a matrix of the form T·R·S back into a Transform. A matrix with shear has no such form, so
+ * check `matricesClose(fromTransform(decompose(m)), m)` before trusting the result.
+ */
+export function decompose(m: Mat): Transform {
+  const sx = Math.hypot(m[0], m[1]);
+  if (sx === 0) return { x: m[4], y: m[5], rotation: 0, scaleX: 0, scaleY: 0 };
+  return { x: m[4], y: m[5], rotation: (Math.atan2(m[1], m[0]) * 180) / Math.PI, scaleX: sx, scaleY: (m[0] * m[3] - m[1] * m[2]) / sx };
+}
+
+/** Are two matrices equal up to rounding? */
+export function matricesClose(a: Mat, b: Mat, epsilon = 1e-6): boolean {
+  return a.every((v, i) => Math.abs(v - b[i]!) <= epsilon * (1 + Math.abs(v)));
+}
+
 /** Corners (clockwise from top-left) of a box centred on the local origin, mapped by `m`. */
 export function boxCorners(width: number, height: number, m: Mat): [Point, Point, Point, Point] {
   const w = width / 2;
