@@ -9,6 +9,10 @@ export function authCookieOptions(config: AppConfig) {
   };
 }
 
+/** The session cookie's name as Better Auth sets it (it gains a __Secure- prefix in production). */
+export const sessionCookieName = (config: AppConfig): string =>
+  getCookies({ baseURL: config.appOrigin, advanced: authCookieOptions(config) }).sessionToken.name;
+
 /** Set-Cookie values that expire the session cookies, for responses outside Better Auth's own routes. */
 export function expiredSessionCookies(config: AppConfig): string[] {
   const { sessionToken, sessionData, dontRememberToken } = getCookies({ baseURL: config.appOrigin, advanced: authCookieOptions(config) });

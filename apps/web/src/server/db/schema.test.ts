@@ -54,7 +54,7 @@ describe("database schema", () => {
     const reporter = await createUser(t.db);
     const [tpl] = await t.db
       .insert(templates)
-      .values({ title: "T", category: "birthday", format: "ig-post", width: 1080, height: 1080 })
+      .values({ title: "T", category: "celebrations", format: "ig-post", width: 1080, height: 1080 })
       .returning();
     await t.db.insert(reports).values({ templateId: tpl!.id, reporterId: reporter.id, reason: "spam" });
     expect(

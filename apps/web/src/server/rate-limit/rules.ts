@@ -16,4 +16,10 @@ export const RATE_LIMITS = {
   accountExport: { windowSeconds: 3_600, max: 5 },
   // Every other signed-in write (rename, move, delete, folders, profile) shares one per-user budget.
   userWrite: { windowSeconds: 60, max: 300 },
+  // Every signed-in read of the user's own data (lists, a design, the profile) shares one per-user budget.
+  userRead: { windowSeconds: 60, max: 600 },
+  // Two-factor codes tried on a signed-in session, per user. Better Auth only counts attempts during its own sign-in step.
+  twoFactorVerify: { windowSeconds: 900, max: 5 },
+  // Browser error reports relayed to Sentry; keeps one visitor from spending the free monthly quota.
+  errorReport: { windowSeconds: 60, max: 30 },
 } as const satisfies Record<string, RateLimitRule>;

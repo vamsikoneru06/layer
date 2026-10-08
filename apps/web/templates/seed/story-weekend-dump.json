@@ -1,10 +1,10 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "story-weekend-dump",
   "kind": "template",
   "meta": {
     "title": "Weekend Photo Dump",
-    "category": "travel",
+    "category": "photo-posts",
     "tags": [
       "photo dump",
       "polaroid",

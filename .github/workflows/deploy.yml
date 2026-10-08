@@ -1,0 +1,150 @@
+name: Deploy
+
+# Production deploys run only from here (vercel.json turns off Vercel's own Git deploys), after CI passes on main.
+# Order: migrate, build, create the deployment without the domain, check its health, promote, seed templates.
+# A failure at any step leaves the current production deployment serving. Setup: docs/deploy.md.
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # Only CI runs for pushes to this repository's main branch (a fork's PR branch can also be called "main").
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment:
+      name: production
+      url: ${{ vars.APP_ORIGIN }}
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      SHA: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.event.workflow_run.head_sha }}
+    steps:
+      - name: Check setup
+        id: setup
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+          BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+          APP_ORIGIN: ${{ vars.APP_ORIGIN }}
+        run: |
+          missing=""
+          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID DATABASE_URL_UNPOOLED BYPASS APP_ORIGIN; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::notice title=Deploy skipped::Production isn't set up yet. Missing:$missing (see docs/deploy.md)."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skip if main has moved on
+        id: latest
+        if: steps.setup.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tip=$(gh api "repos/${GITHUB_REPOSITORY}/commits/main" --jq .sha)
+          if [ "$tip" != "$SHA" ]; then
+            echo "::notice title=Deploy skipped::$SHA is no longer the tip of main ($tip); the newer run deploys instead."
+            echo "go=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "go=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        if: steps.latest.outputs.go == 'true'
+        with:
+          ref: ${{ env.SHA }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+        if: steps.latest.outputs.go == 'true'
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        if: steps.latest.outputs.go == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Install
+        if: steps.latest.outputs.go == 'true'
+        run: |
+          pnpm install --frozen-lockfile
+          npm install --global vercel@62.2.0
+
+      # Migrations run before the new code is live, so each one must work with the code already serving (expand first,
+      # remove later). Direct (unpooled) connection: the pooler is for the app.
+      - name: Migrate the production database
+        if: steps.latest.outputs.go == 'true'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_UNPOOLED }}
+        run: pnpm db:migrate
+
+      - name: Build
+        if: steps.latest.outputs.go == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+          vercel build --prod --token="$VERCEL_TOKEN"
+
+      - name: Create the deployment (not live yet)
+        id: deploy
+        if: steps.latest.outputs.go == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          url=$(vercel deploy --prebuilt --prod --skip-domain --token="$VERCEL_TOKEN")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Check the new deployment's health
+        if: steps.latest.outputs.go == 'true'
+        env:
+          URL: ${{ steps.deploy.outputs.url }}
+          BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: |
+          for attempt in $(seq 1 12); do
+            if curl -fsS --max-time 15 -H "x-vercel-protection-bypass: $BYPASS" "$URL/api/health" > /dev/null; then
+              echo "Healthy on attempt $attempt."
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error title=Deploy stopped::The new deployment never reported healthy. Production still serves the previous one."
+          exit 1
+
+      - name: Promote to production
+        if: steps.latest.outputs.go == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          URL: ${{ steps.deploy.outputs.url }}
+        run: vercel promote "$URL" --yes --timeout=5m --token="$VERCEL_TOKEN"
+
+      - name: Check production
+        if: steps.latest.outputs.go == 'true'
+        env:
+          APP_ORIGIN: ${{ vars.APP_ORIGIN }}
+        run: curl -fsS --retry 5 --retry-delay 5 --retry-all-errors --max-time 15 "$APP_ORIGIN/api/health"
+
+      # After promotion, so templates never point at sample photos the serving deployment doesn't have. Idempotent.
+      - name: Load seed templates
+        if: steps.latest.outputs.go == 'true'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_UNPOOLED }}
+        run: pnpm db:seed
