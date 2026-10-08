@@ -24,6 +24,7 @@ const Dimension = z.number().int().min(1).max(service.UPLOAD_LIMITS.maxDimension
 const CompleteBody = z.object({ width: Dimension, height: Dimension }).strict();
 const ListQuery = pageQuery.extend({ kind: z.enum(["photo", "thumbnail", "sticker"]).optional() });
 const writeLimit = { name: "userWrite", rule: RATE_LIMITS.userWrite, by: "user" } as const;
+const readLimit = { name: "userRead", rule: RATE_LIMITS.userRead, by: "user" } as const;
 const ResolveBody = z.object({ ids: z.array(z.uuid()).min(1).max(LIMITS.assets) }).strict();
 
 export function assetHandlers(deps: Deps, storage: ObjectStorage | null) {
@@ -46,7 +47,7 @@ export function assetHandlers(deps: Deps, storage: ObjectStorage | null) {
       return Response.json(service.toAssetJson(await service.completeUpload(c, user.id, id, body)));
     }),
 
-    list: endpoint(deps, { auth: "user" }, async ({ req, user }) => {
+    list: endpoint(deps, { auth: "user", rateLimit: readLimit }, async ({ req, user }) => {
       const q = readQuery(req, ListQuery);
       const rows = await listReadyAssets(deps.db, user.id, { kind: q.kind, cursor: q.cursor ? decodeCursor(q.cursor) : undefined, limit: q.limit });
       return Response.json(toPage(rows, q.limit, (r) => ({ at: r.createdAt.toISOString(), id: r.id }), service.toAssetJson));

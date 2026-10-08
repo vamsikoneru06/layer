@@ -15,6 +15,7 @@ const RESERVED_HANDLES = new Set([
 ]);
 
 const writeLimit = { name: "userWrite", rule: RATE_LIMITS.userWrite, by: "user" } as const;
+const readLimit = { name: "userRead", rule: RATE_LIMITS.userRead, by: "user" } as const;
 
 const PatchMe = z
   .object({
@@ -36,7 +37,7 @@ const DeleteMe = z.object({ confirm: z.string().trim().max(320) }).strict();
 
 export function meHandlers(deps: Deps) {
   return {
-    get: endpoint(deps, { auth: "user" }, async ({ user }) =>
+    get: endpoint(deps, { auth: "user", rateLimit: readLimit }, async ({ user }) =>
       Response.json({ ...toProfile(await getProfile(deps.db, user.id)), twoFactor: twoFactorStatus(user, deps.now()) }),
     ),
 
