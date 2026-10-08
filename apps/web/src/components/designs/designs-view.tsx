@@ -1,5 +1,6 @@
 "use client";
 
+import { parseDoc, type Doc, type FormatKey } from "@vash/schema";
 import { ChevronDown, Copy, Ellipsis, Folder as FolderIcon, FolderInput, FolderOpen, LayoutGrid, Layers, List, PenLine, Plus, Search, SearchX, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -13,9 +14,11 @@ import { useDismissToast, useToast } from "@/components/ui/toast";
 import * as api from "@/lib/api";
 import type { DesignItem, Folder } from "@/lib/api";
 import { parseDraggedIds, sortDesigns, type SortKey } from "@/lib/designs";
+import type { SetMember } from "@/lib/make-set";
 import { cn } from "@/lib/utils";
 import { DesignCard, DesignRow, type CardActions } from "./design-card";
-import { LocalDesignsGrid, useLocalDesigns } from "./local-designs-grid";
+import { LocalDesignsGrid, saveSetLocally, useLocalDesigns } from "./local-designs-grid";
+import { MakeSetDialog, type SetSource } from "./make-set-dialog";
 
 const DRAG_TYPE = "application/x-vash-designs";
 const UNDO_MS = 5000;
@@ -32,6 +35,13 @@ function readView(): View {
 }
 
 /** Runs one API call per design and reports how many failed; the API has no batch endpoints. */
+/** The same validation (and upgrade of older documents) as the editor's: never resize a malformed document. */
+function openableDoc(raw: unknown): Doc {
+  const parsed = parseDoc(raw, { kind: "design" });
+  if (!parsed.ok) throw new Error("This design couldn’t be opened.");
+  return parsed.doc;
+}
+
 async function each<T>(items: T[], fn: (item: T) => Promise<unknown>): Promise<number> {
   const results = await Promise.allSettled(items.map(fn));
   return results.filter((r) => r.status === "rejected").length;
@@ -151,6 +161,7 @@ export function DesignsView() {
   const [anchor, setAnchor] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [moving, setMoving] = useState<string[] | null>(null);
+  const [setFrom, setSetFrom] = useState<{ design: DesignItem; source: SetSource } | null>(null);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [newFolder, setNewFolder] = useState<string | null>(null);
   const [renamingFolder, setRenamingFolder] = useState<string | null>(null);
@@ -250,6 +261,23 @@ export function DesignsView() {
     toast({ message: failed ? `${failed} couldn’t be duplicated. Try again.` : ids.length === 1 ? "Duplicated" : `Duplicated ${ids.length} designs` });
   }
 
+  /** Saves "Make other sizes" results next to the original, in its folder. Resolves to the sizes that failed. */
+  async function saveSet(original: DesignItem, members: SetMember[]): Promise<FormatKey[]> {
+    const made: DesignItem[] = [];
+    const failed: FormatKey[] = [];
+    await Promise.all(
+      members.map((m) =>
+        api.createDesignCopy(m.doc, original.folderId).then(
+          (item) => made.push(item),
+          () => failed.push(m.format),
+        ),
+      ),
+    );
+    if (made.length) setDesigns((prev) => [...made, ...(prev ?? [])]);
+    if (made.length && !failed.length) toast({ message: made.length === 1 ? "Made 1 design" : `Made ${made.length} designs` });
+    return failed;
+  }
+
   function remove(ids: string[]) {
     const titles = byId(ids).map((d) => d.title);
     setHidden((h) => new Set([...h, ...ids]));
@@ -316,6 +344,14 @@ export function DesignsView() {
     },
     rename,
     duplicate: (d) => duplicate([d.id]),
+    makeSet: (d) =>
+      setSetFrom({
+        design: d,
+        source: {
+          title: d.title,
+          load: async () => openableDoc((await api.getDesign(d.id)).doc),
+        },
+      }),
     move: (d) => setMoving([d.id]),
     remove: (d) => remove([d.id]),
     dragStart: (d, e: DragEvent) => {
@@ -567,6 +603,8 @@ export function DesignsView() {
         />
       )}
 
+      <MakeSetDialog source={setFrom?.source ?? null} onClose={() => setSetFrom(null)} save={(members) => saveSet(setFrom!.design, members)} />
+
       <MoveDialog
         key={moving?.join() ?? "closed"}
         open={moving !== null}
@@ -594,7 +632,9 @@ export function DesignsView() {
 
 /** Not signed in: the designs kept in this browser, until signing in moves them to the account. */
 function GuestDesigns() {
-  const { designs, error, remove } = useLocalDesigns();
+  const { designs, error, remove, added } = useLocalDesigns();
+  const toast = useToast();
+  const [setFrom, setSetFrom] = useState<SetSource | null>(null);
   if (error) return <p className="text-sm text-danger">{error}</p>;
   if (!designs) return null;
   if (designs.length === 0) {
@@ -620,7 +660,17 @@ function GuestDesigns() {
         </Link>{" "}
         to move them to your account.
       </p>
-      <LocalDesignsGrid designs={designs} onDelete={(id) => void remove(id)} />
+      <LocalDesignsGrid designs={designs} onDelete={(id) => void remove(id)} onMakeSet={(d) => setSetFrom({ title: d.doc.meta.title, load: async () => openableDoc(d.doc) })} />
+      <MakeSetDialog
+        source={setFrom}
+        onClose={() => setSetFrom(null)}
+        save={async (members) => {
+          const { saved, failed } = await saveSetLocally(members);
+          added(saved);
+          if (saved.length && !failed.length) toast({ message: saved.length === 1 ? "Made 1 design" : `Made ${saved.length} designs` });
+          return failed;
+        }}
+      />
     </div>
   );
 }

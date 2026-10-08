@@ -106,6 +106,10 @@ function toItem({ doc, ...d }: FullDesign): DesignItem {
   return { ...d, format: doc.meta.format, width: doc.artboard.width, height: doc.artboard.height };
 }
 
+/** A new design in the account from a document made here (e.g. another size of one), filed in `folderId`. */
+export const createDesignCopy = async (doc: Doc, folderId: string | null) =>
+  toItem(await request<FullDesign>("/api/designs", { method: "POST", json: folderId ? { doc, folderId } : { doc } }));
+
 export const duplicateDesign = async (id: string) => toItem(await request<FullDesign>(`/api/designs/${id}/duplicate`, { method: "POST" }));
 export const deleteDesign = (id: string, keepalive = false) => request<void>(`/api/designs/${id}`, { method: "DELETE", keepalive });
 

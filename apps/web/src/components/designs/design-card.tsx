@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, Ellipsis, FolderInput, PenLine, SquareArrowOutUpRight, Trash2 } from "lucide-react";
+import { Check, Copy, Ellipsis, FolderInput, PenLine, Proportions, SquareArrowOutUpRight, Trash2 } from "lucide-react";
 import { useEffect, useRef, type DragEvent, type MouseEvent } from "react";
 import { Menu, type MenuItem } from "@/components/ui/menu";
 import type { DesignItem } from "@/lib/api";
@@ -13,6 +13,8 @@ export type CardActions = {
   toggle: (d: DesignItem, e: MouseEvent) => void;
   rename: (d: DesignItem, title: string) => void;
   duplicate: (d: DesignItem) => void;
+  /** "Make other sizes": the same design as a post, story, thumbnail... */
+  makeSet: (d: DesignItem) => void;
   move: (d: DesignItem) => void;
   remove: (d: DesignItem) => void;
   dragStart: (d: DesignItem, e: DragEvent) => void;
@@ -35,6 +37,7 @@ function menuItems(d: DesignItem, a: CardActions, startRename: () => void): Menu
     { label: "Open", icon: <SquareArrowOutUpRight aria-hidden className={icon} />, onSelect: () => a.open(d) },
     { label: "Rename", icon: <PenLine aria-hidden className={icon} />, onSelect: startRename },
     { label: "Duplicate", icon: <Copy aria-hidden className={icon} />, onSelect: () => a.duplicate(d) },
+    { label: "Make other sizes…", icon: <Proportions aria-hidden className={icon} />, onSelect: () => a.makeSet(d) },
     { label: "Move to folder…", icon: <FolderInput aria-hidden className={icon} />, onSelect: () => a.move(d) },
     "separator",
     { label: "Delete", icon: <Trash2 aria-hidden className="size-4" />, onSelect: () => a.remove(d), danger: true },

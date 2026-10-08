@@ -10,6 +10,7 @@ export { drawOrder, parentOf, topLevelOf, worldMatrix } from "./scene";
 export { layoutText, type Measure, type TextLayout } from "./text";
 export { fontRequests } from "./fonts";
 export { createNode, insertLayer, newNodeId, type InsertKind } from "./insert";
+export { resizeDoc, type ResizeTarget, type ResizeWarning } from "./resize";
 export { clampContent, fillPhotos, frameAt, newPhotoFrame, photoTargets, placePhoto, removePhoto, swapPhotos, zoomPhoto } from "./photos";
 export { CLIPBOARD_PREFIX, planDuplicate } from "./clipboard";
 export { planGroup, planUngroup } from "./structure";
