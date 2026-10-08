@@ -19,6 +19,7 @@ import { EditorHeader } from "./editor-header";
 import { Segmented } from "./fields";
 import { InsertRail } from "./insert-rail";
 import { SaveToAccount } from "./save-to-account";
+import { usePhotoDrop } from "./use-photo-drop";
 import { LayersPanel } from "./layers-panel";
 import { MoveDialog } from "./move-dialog";
 import { PropertiesPanel } from "./properties-panel";
@@ -113,6 +114,8 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
       e.destroy();
     };
   }, [design, local]);
+
+  const photoDrop = usePhotoDrop(editor);
 
   // Refusals ("Layout locked by the template.") and other engine messages show as a toast, then clear.
   const notice = state?.notice ?? null;
@@ -304,7 +307,7 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
       <div className="flex min-h-0 flex-1">
         {!panelsHidden && <InsertRail editor={editor} />}
         <div className="relative flex min-w-0 flex-1 flex-col">
-          <div ref={container} className="relative min-h-0 flex-1 overflow-hidden bg-bg2">
+          <div ref={container} {...photoDrop} className="relative min-h-0 flex-1 overflow-hidden bg-bg2">
             <canvas ref={scene} className="absolute inset-0" aria-hidden />
             <canvas ref={overlay} className="absolute inset-0 touch-none" aria-label="Design canvas. Use the Layers panel to select layers with the keyboard." />
             {state && editor && <TextEditor editor={editor} state={state} />}

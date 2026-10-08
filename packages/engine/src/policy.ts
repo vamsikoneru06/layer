@@ -18,6 +18,7 @@ export function checkPolicy(doc: Doc, cmd: Command, mode: EditMode): PolicyResul
   switch (cmd.type) {
     case "insert":
     case "meta":
+    case "asset":
       return OK;
     case "artboard": {
       // Resizing would pull a template's locked layout apart; the background is always the user's.

@@ -1,0 +1,466 @@
+{
+  "schemaVersion": 2,
+  "id": "poster-new-collection",
+  "kind": "template",
+  "meta": {
+    "title": "New Collection Board",
+    "category": "sales",
+    "tags": [
+      "new collection",
+      "fashion",
+      "moodboard",
+      "shop"
+    ],
+    "format": "poster"
+  },
+  "artboard": {
+    "width": 1240,
+    "height": 1754,
+    "background": {
+      "type": "solid",
+      "color": "#EDE9E3"
+    }
+  },
+  "root": [
+    "title",
+    "photo1",
+    "photo2",
+    "photo3",
+    "swatch-1",
+    "swatch-2",
+    "swatch-3",
+    "swatch-4",
+    "colours",
+    "details",
+    "button",
+    "cta",
+    "handle"
+  ],
+  "nodes": {
+    "title": {
+      "id": "title",
+      "name": "Title",
+      "transform": {
+        "x": 620,
+        "y": 195,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1080,
+      "height": 230,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "New in: The Linen Edit",
+      "font": {
+        "family": "Playfair Display",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 110,
+      "color": "#1D1B18",
+      "align": "left",
+      "lineHeight": 1,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 40
+    },
+    "photo1": {
+      "id": "photo1",
+      "name": "Large photo",
+      "transform": {
+        "x": 340,
+        "y": 720,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 520,
+      "height": 760,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 16
+      },
+      "content": {
+        "assetId": "d49cd656-b305-8421-92b7-ab116466d1f8",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "photo2": {
+      "id": "photo2",
+      "name": "Photo",
+      "transform": {
+        "x": 900,
+        "y": 520,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 520,
+      "height": 360,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 16
+      },
+      "content": {
+        "assetId": "0195baba-d3a9-8fda-ba9c-5cbcc3adea26",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "photo3": {
+      "id": "photo3",
+      "name": "Photo",
+      "transform": {
+        "x": 900,
+        "y": 920,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 520,
+      "height": 360,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 16
+      },
+      "content": {
+        "assetId": "df02f526-6d93-81c5-8e3b-8bfb798ffab9",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "swatch-1": {
+      "id": "swatch-1",
+      "name": "Colour swatch",
+      "transform": {
+        "x": 115,
+        "y": 1185,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 70,
+      "height": 70,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#E8DCCB"
+      },
+      "stroke": null
+    },
+    "swatch-2": {
+      "id": "swatch-2",
+      "name": "Colour swatch",
+      "transform": {
+        "x": 205,
+        "y": 1185,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 70,
+      "height": 70,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#B9A88F"
+      },
+      "stroke": null
+    },
+    "swatch-3": {
+      "id": "swatch-3",
+      "name": "Colour swatch",
+      "transform": {
+        "x": 295,
+        "y": 1185,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 70,
+      "height": 70,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#6E6A5E"
+      },
+      "stroke": null
+    },
+    "swatch-4": {
+      "id": "swatch-4",
+      "name": "Colour swatch",
+      "transform": {
+        "x": 385,
+        "y": 1185,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 70,
+      "height": 70,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#2E2C29"
+      },
+      "stroke": null
+    },
+    "colours": {
+      "id": "colours",
+      "name": "Colours",
+      "transform": {
+        "x": 810,
+        "y": 1186,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 700,
+      "height": 48,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Oat · Sand · Olive · Ink",
+      "font": {
+        "family": "Inter",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 28,
+      "color": "#5A554C",
+      "align": "right",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 50
+    },
+    "details": {
+      "id": "details",
+      "name": "Details",
+      "transform": {
+        "x": 530,
+        "y": 1335,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 900,
+      "height": 110,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "In store and online from Friday. Sizes XS to XXL.",
+      "font": {
+        "family": "Inter",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 32,
+      "color": "#3B3833",
+      "align": "left",
+      "lineHeight": 1.4,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 100
+    },
+    "button": {
+      "id": "button",
+      "name": "Button",
+      "transform": {
+        "x": 300,
+        "y": 1508,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 440,
+      "height": 96,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 12
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#1D1B18"
+      },
+      "stroke": null
+    },
+    "cta": {
+      "id": "cta",
+      "name": "Button text",
+      "transform": {
+        "x": 300,
+        "y": 1508,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 440,
+      "height": 44,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "SHOP THE EDIT",
+      "font": {
+        "family": "Inter",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 28,
+      "color": "#F5F1EA",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 4,
+      "fit": "shrink",
+      "maxChars": 20
+    },
+    "handle": {
+      "id": "handle",
+      "name": "Handle",
+      "transform": {
+        "x": 990,
+        "y": 1510,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 340,
+      "height": 40,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "@yourshop",
+      "font": {
+        "family": "Inter",
+        "weight": 500,
+        "style": "normal"
+      },
+      "size": 28,
+      "color": "#5A554C",
+      "align": "right",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 24
+    }
+  },
+  "assets": {
+    "d49cd656-b305-8421-92b7-ab116466d1f8": {
+      "id": "d49cd656-b305-8421-92b7-ab116466d1f8",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 933,
+      "height": 1400
+    },
+    "0195baba-d3a9-8fda-ba9c-5cbcc3adea26": {
+      "id": "0195baba-d3a9-8fda-ba9c-5cbcc3adea26",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 933,
+      "height": 1400
+    },
+    "df02f526-6d93-81c5-8e3b-8bfb798ffab9": {
+      "id": "df02f526-6d93-81c5-8e3b-8bfb798ffab9",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 933,
+      "height": 1400
+    }
+  }
+}

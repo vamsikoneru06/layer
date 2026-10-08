@@ -115,15 +115,19 @@ describe("GET /api/templates/:id", () => {
     expect(res.body.doc).toMatchObject({ id: tpl.id, kind: "template" });
   });
 
-  it("shows a hidden template only to its author and admins", async () => {
+  it("shows a hidden template only to its author and admins with a recent two-factor code", async () => {
     const alice = await createUser(t.db, { handle: handle() });
     const bob = await createUser(t.db);
-    const admin = await createUser(t.db, { role: "admin" });
+    const admin = await createUser(t.db, { role: "admin", twoFactorEnabled: true });
+    const unenrolled = await createUser(t.db, { role: "admin" });
     const tpl = await createTemplate(t.db, { authorId: alice.id, status: "hidden" });
     expect((await call(h.get, { params: { id: tpl.id } })).status).toBe(404);
     expect((await call(h.get, { as: bob, params: { id: tpl.id } })).status).toBe(404);
     expect((await call(h.get, { as: alice, params: { id: tpl.id } })).body.status).toBe("hidden");
     expect((await call(h.get, { as: admin, params: { id: tpl.id } })).status).toBe(200);
+    expect((await call(h.get, { as: unenrolled, params: { id: tpl.id } })).status).toBe(404);
+    const stale = { "x-test-two-factor-at": new Date(Date.now() - 13 * 3_600_000).toISOString() };
+    expect((await call(h.get, { as: admin, params: { id: tpl.id }, headers: stale })).status).toBe(404);
   });
 
   it("answers 404 for unknown and malformed ids", async () => {

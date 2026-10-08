@@ -31,6 +31,9 @@ Do these in order. Keep every secret in a password manager; never paste one into
    - the **direct** one (pooling switched off), for migrations and backups.
    Both end in `?sslmode=require`. The app refuses a direct Neon string in production, because each serverless
    instance opens its own connections and the direct endpoint runs out.
+3. Use the same database role (Neon's default `neondb_owner`) in both strings. Migration 0007 creates the
+   `vash_app` role that signed-in requests switch to for row-level security, and makes the migrating role a member.
+   If the app ever connects as a different role, run `GRANT vash_app TO <that role>;` or every signed-in request fails.
 
 ### 2. Supabase (photos)
 
@@ -116,6 +119,9 @@ Repository Settings → Environments → New environment `production`:
    DATABASE_URL="<Neon direct string>" corepack pnpm admin:grant you@example.com
    ```
 
+   Admin tools stay locked until you set up two-step verification: sign in again, then within 10 minutes open
+   Settings → Two-step verification → Set up, with an authenticator app. Keep the backup codes somewhere safe. Each new
+   device needs a code, and one code unlocks admin tools on that device for 12 hours.
 3. Actions → **Backup** → Run workflow, and check it uploads an artifact.
 
 ### 8. UptimeRobot (is the site up?)

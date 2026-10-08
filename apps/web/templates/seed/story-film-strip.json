@@ -1,0 +1,385 @@
+{
+  "schemaVersion": 2,
+  "id": "story-film-strip",
+  "kind": "template",
+  "meta": {
+    "title": "Film Strip",
+    "category": "photo-posts",
+    "tags": [
+      "film strip",
+      "road trip",
+      "travel",
+      "retro"
+    ],
+    "format": "ig-story"
+  },
+  "artboard": {
+    "width": 1080,
+    "height": 1920,
+    "background": {
+      "type": "solid",
+      "color": "#E9E4DA"
+    }
+  },
+  "root": [
+    "strip",
+    "holes-left",
+    "holes-right",
+    "photo1",
+    "photo2",
+    "photo3",
+    "frame1",
+    "frame2",
+    "title",
+    "dates"
+  ],
+  "nodes": {
+    "strip": {
+      "id": "strip",
+      "name": "Film strip",
+      "transform": {
+        "x": 540,
+        "y": 880,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 600,
+      "height": 1520,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 8
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#161412"
+      },
+      "stroke": null
+    },
+    "holes-left": {
+      "id": "holes-left",
+      "name": "Sprocket holes",
+      "transform": {
+        "x": 270,
+        "y": 880,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 16,
+      "height": 1460,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "path",
+        "d": "M0 0 L1 0 L1 0.016 L0 0.016 Z M0 0.044 L1 0.044 L1 0.06 L0 0.06 Z M0 0.088 L1 0.088 L1 0.104 L0 0.104 Z M0 0.132 L1 0.132 L1 0.148 L0 0.148 Z M0 0.175 L1 0.175 L1 0.192 L0 0.192 Z M0 0.219 L1 0.219 L1 0.236 L0 0.236 Z M0 0.263 L1 0.263 L1 0.279 L0 0.279 Z M0 0.307 L1 0.307 L1 0.323 L0 0.323 Z M0 0.351 L1 0.351 L1 0.367 L0 0.367 Z M0 0.395 L1 0.395 L1 0.411 L0 0.411 Z M0 0.438 L1 0.438 L1 0.455 L0 0.455 Z M0 0.482 L1 0.482 L1 0.499 L0 0.499 Z M0 0.526 L1 0.526 L1 0.542 L0 0.542 Z M0 0.57 L1 0.57 L1 0.586 L0 0.586 Z M0 0.614 L1 0.614 L1 0.63 L0 0.63 Z M0 0.658 L1 0.658 L1 0.674 L0 0.674 Z M0 0.701 L1 0.701 L1 0.718 L0 0.718 Z M0 0.745 L1 0.745 L1 0.762 L0 0.762 Z M0 0.789 L1 0.789 L1 0.805 L0 0.805 Z M0 0.833 L1 0.833 L1 0.849 L0 0.849 Z M0 0.877 L1 0.877 L1 0.893 L0 0.893 Z M0 0.921 L1 0.921 L1 0.937 L0 0.937 Z M0 0.964 L1 0.964 L1 0.981 L0 0.981 Z"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#E9E4DA"
+      },
+      "stroke": null
+    },
+    "holes-right": {
+      "id": "holes-right",
+      "name": "Sprocket holes",
+      "transform": {
+        "x": 810,
+        "y": 880,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 16,
+      "height": 1460,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "path",
+        "d": "M0 0 L1 0 L1 0.016 L0 0.016 Z M0 0.044 L1 0.044 L1 0.06 L0 0.06 Z M0 0.088 L1 0.088 L1 0.104 L0 0.104 Z M0 0.132 L1 0.132 L1 0.148 L0 0.148 Z M0 0.175 L1 0.175 L1 0.192 L0 0.192 Z M0 0.219 L1 0.219 L1 0.236 L0 0.236 Z M0 0.263 L1 0.263 L1 0.279 L0 0.279 Z M0 0.307 L1 0.307 L1 0.323 L0 0.323 Z M0 0.351 L1 0.351 L1 0.367 L0 0.367 Z M0 0.395 L1 0.395 L1 0.411 L0 0.411 Z M0 0.438 L1 0.438 L1 0.455 L0 0.455 Z M0 0.482 L1 0.482 L1 0.499 L0 0.499 Z M0 0.526 L1 0.526 L1 0.542 L0 0.542 Z M0 0.57 L1 0.57 L1 0.586 L0 0.586 Z M0 0.614 L1 0.614 L1 0.63 L0 0.63 Z M0 0.658 L1 0.658 L1 0.674 L0 0.674 Z M0 0.701 L1 0.701 L1 0.718 L0 0.718 Z M0 0.745 L1 0.745 L1 0.762 L0 0.762 Z M0 0.789 L1 0.789 L1 0.805 L0 0.805 Z M0 0.833 L1 0.833 L1 0.849 L0 0.849 Z M0 0.877 L1 0.877 L1 0.893 L0 0.893 Z M0 0.921 L1 0.921 L1 0.937 L0 0.937 Z M0 0.964 L1 0.964 L1 0.981 L0 0.981 Z"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#E9E4DA"
+      },
+      "stroke": null
+    },
+    "photo1": {
+      "id": "photo1",
+      "name": "Photo",
+      "transform": {
+        "x": 540,
+        "y": 390,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 480,
+      "height": 440,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "content": {
+        "assetId": "63bcfe1b-03ba-8a04-bc05-4b73096670b6",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": "film",
+        "brightness": 0,
+        "contrast": -0.12,
+        "saturation": 0,
+        "warmth": 0.12,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0.2,
+        "vignette": 0.2,
+        "grain": 0.35,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "photo2": {
+      "id": "photo2",
+      "name": "Photo",
+      "transform": {
+        "x": 540,
+        "y": 870,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 480,
+      "height": 440,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "content": {
+        "assetId": "06bfee90-4b07-89d3-865b-5313cfcb7edf",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": "film",
+        "brightness": 0,
+        "contrast": -0.12,
+        "saturation": 0,
+        "warmth": 0.12,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0.2,
+        "vignette": 0.2,
+        "grain": 0.35,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "photo3": {
+      "id": "photo3",
+      "name": "Photo",
+      "transform": {
+        "x": 540,
+        "y": 1350,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 480,
+      "height": 440,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "content": {
+        "assetId": "766d9713-f9fc-85c2-bd09-a2f8688af6e8",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": "film",
+        "brightness": 0,
+        "contrast": -0.12,
+        "saturation": 0,
+        "warmth": 0.12,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0.2,
+        "vignette": 0.2,
+        "grain": 0.35,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "frame1": {
+      "id": "frame1",
+      "name": "Frame number",
+      "transform": {
+        "x": 350,
+        "y": 629,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 100,
+      "height": 30,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "24",
+      "font": {
+        "family": "Space Grotesk",
+        "weight": 600,
+        "style": "normal"
+      },
+      "size": 20,
+      "color": "#FF8A3D",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 6
+    },
+    "frame2": {
+      "id": "frame2",
+      "name": "Frame number",
+      "transform": {
+        "x": 350,
+        "y": 1109,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 100,
+      "height": 30,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "25A",
+      "font": {
+        "family": "Space Grotesk",
+        "weight": 600,
+        "style": "normal"
+      },
+      "size": 20,
+      "color": "#FF8A3D",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 6
+    },
+    "title": {
+      "id": "title",
+      "name": "Title",
+      "transform": {
+        "x": 540,
+        "y": 1730,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 900,
+      "height": 100,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "road trip, roll two",
+      "font": {
+        "family": "Caveat",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 84,
+      "color": "#2B2B2B",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 30
+    },
+    "dates": {
+      "id": "dates",
+      "name": "Dates",
+      "transform": {
+        "x": 540,
+        "y": 1812,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 500,
+      "height": 44,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "AUGUST 2026",
+      "font": {
+        "family": "Inter",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 26,
+      "color": "#6B6259",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 6,
+      "fit": "shrink",
+      "maxChars": 24
+    }
+  },
+  "assets": {
+    "63bcfe1b-03ba-8a04-bc05-4b73096670b6": {
+      "id": "63bcfe1b-03ba-8a04-bc05-4b73096670b6",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 1400,
+      "height": 933
+    },
+    "06bfee90-4b07-89d3-865b-5313cfcb7edf": {
+      "id": "06bfee90-4b07-89d3-865b-5313cfcb7edf",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 1400,
+      "height": 1400
+    },
+    "766d9713-f9fc-85c2-bd09-a2f8688af6e8": {
+      "id": "766d9713-f9fc-85c2-bd09-a2f8688af6e8",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 1400,
+      "height": 1400
+    }
+  }
+}
