@@ -1,0 +1,256 @@
+{
+  "schemaVersion": 2,
+  "id": "invite-garden-party",
+  "kind": "template",
+  "meta": {
+    "title": "Garden Party",
+    "category": "invitations",
+    "tags": [
+      "garden party",
+      "dinner",
+      "arch",
+      "botanical"
+    ],
+    "format": "invitation"
+  },
+  "artboard": {
+    "width": 1500,
+    "height": 2100,
+    "background": {
+      "type": "solid",
+      "color": "#F6F1E7"
+    }
+  },
+  "root": [
+    "leaf-1",
+    "leaf-2",
+    "photo",
+    "lead",
+    "title",
+    "details",
+    "rsvp"
+  ],
+  "nodes": {
+    "leaf-1": {
+      "id": "leaf-1",
+      "name": "Leaf",
+      "transform": {
+        "x": 355,
+        "y": 1117,
+        "rotation": -30,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 130,
+      "height": 54,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#8FA57A"
+      },
+      "stroke": null
+    },
+    "leaf-2": {
+      "id": "leaf-2",
+      "name": "Leaf",
+      "transform": {
+        "x": 1145,
+        "y": 1117,
+        "rotation": 30,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 130,
+      "height": 54,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#8FA57A"
+      },
+      "stroke": null
+    },
+    "photo": {
+      "id": "photo",
+      "name": "Arch photo",
+      "transform": {
+        "x": 750,
+        "y": 680,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 800,
+      "height": 1000,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "path",
+        "d": "M0 1 L0 0.5 A0.5 0.5 0 0 1 1 0.5 L1 1 Z"
+      },
+      "content": {
+        "assetId": "e2718ee9-44e2-84e3-96f8-cdd7ccc6e378",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": "warm",
+        "brightness": 0,
+        "contrast": 0.05,
+        "saturation": 0.1,
+        "warmth": 0.35,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "lead": {
+      "id": "lead",
+      "name": "Lead-in",
+      "transform": {
+        "x": 750,
+        "y": 1295,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1000,
+      "height": 110,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "you're invited to a",
+      "font": {
+        "family": "Dancing Script",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 84,
+      "color": "#6F7D5C",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 40
+    },
+    "title": {
+      "id": "title",
+      "name": "Title",
+      "transform": {
+        "x": 750,
+        "y": 1450,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1200,
+      "height": 200,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Garden Party",
+      "font": {
+        "family": "Playfair Display",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 150,
+      "color": "#2F3B2A",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 30
+    },
+    "details": {
+      "id": "details",
+      "name": "Details",
+      "transform": {
+        "x": 750,
+        "y": 1675,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1000,
+      "height": 150,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Saturday, 14 June · 5 PM\nThe Banyan Courtyard",
+      "font": {
+        "family": "Lora",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 46,
+      "color": "#4E5A47",
+      "align": "center",
+      "lineHeight": 1.4,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 90
+    },
+    "rsvp": {
+      "id": "rsvp",
+      "name": "RSVP",
+      "transform": {
+        "x": 750,
+        "y": 1848,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 600,
+      "height": 56,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "RSVP by 1 June",
+      "font": {
+        "family": "Inter",
+        "weight": 600,
+        "style": "normal"
+      },
+      "size": 34,
+      "color": "#6F7D5C",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 4,
+      "fit": "shrink",
+      "maxChars": 30
+    }
+  },
+  "assets": {
+    "e2718ee9-44e2-84e3-96f8-cdd7ccc6e378": {
+      "id": "e2718ee9-44e2-84e3-96f8-cdd7ccc6e378",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 1400,
+      "height": 933
+    }
+  }
+}

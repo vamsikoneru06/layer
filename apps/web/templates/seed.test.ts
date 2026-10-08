@@ -15,8 +15,8 @@ function parsed(file: string): Doc {
 }
 
 describe("seed templates", () => {
-  it("ships 36 templates, at least 6 per format", () => {
-    expect(files).toHaveLength(36);
+  it("ships 49 templates, at least 6 per format", () => {
+    expect(files).toHaveLength(49);
     const perFormat = new Map<string, number>();
     for (const file of files) {
       const format = parsed(file).meta.format;
