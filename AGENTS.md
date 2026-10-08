@@ -43,6 +43,9 @@ The look is "Liquid Glass" and monochrome: colour tokens in `apps/web/src/app/gl
 
 ### Security
 - Every API resource is owner-scoped; keep the cross-user tests passing (`apps/web/src/server/**`).
+- Row-level security backs that up: a signed-in request's queries run as `vash_app` (`server/db/user-scope.ts`,
+  migration 0007), and the tests run that way too. A new table holding user data needs a policy; a read of another
+  user's rows that a request is entitled to (a share link) goes in `outsideUserScope` and still filters itself.
 - CSP is strict (`apps/web/src/proxy.ts`, `server/security/headers.ts`): scripts need the per-request nonce,
   `img-src 'self' blob: data:` plus the storage origins, `font-src 'self'`. Self-host fonts and images; don't
   add third-party script, font or image hosts.
