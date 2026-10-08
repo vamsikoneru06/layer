@@ -16,6 +16,8 @@ export type Command =
   | { type: "artboard"; patch: Partial<Doc["artboard"]> }
   /** Adds or replaces (`ref`) or removes (`null`) an entry in the document's asset list. */
   | { type: "asset"; id: AssetId; ref: AssetRef | null }
+  /** Changes the design's title. */
+  | { type: "meta"; patch: Partial<Pick<Doc["meta"], "title">> }
   | { type: "batch"; commands: Command[] };
 
 export interface Applied {
@@ -114,6 +116,11 @@ export function applyCommand(doc: Doc, cmd: Command): Applied {
       if (cmd.ref) assets[cmd.id] = cmd.ref;
       else delete assets[cmd.id];
       return { doc: { ...doc, assets }, inverse: { type: "asset", id: cmd.id, ref: previous } };
+    }
+    case "meta": {
+      const { title } = cmd.patch;
+      if (title === undefined || title === doc.meta.title) return { doc, inverse: NOOP };
+      return { doc: { ...doc, meta: { ...doc.meta, title } }, inverse: { type: "meta", patch: { title: doc.meta.title } } };
     }
 
     case "batch": {

@@ -1,28 +1,33 @@
 "use client";
 
-import { createEditor, type Editor, type EditorState } from "@vash/engine";
+import { copiedStyleOf, createEditor, hitTest, toWorld, topLevelOf, type Editor, type EditorState } from "@vash/engine";
 import { parseDoc, type Doc } from "@vash/schema";
-import { ChevronDown, CloudAlert, CloudCheck, CloudOff, CloudUpload, Redo2, Undo2, ZoomIn, ZoomOut } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { Menu } from "@/components/ui/menu";
-import { getDesign, saveDesign, saveDesignAsCopy, type Design } from "@/lib/api";
-import { localDesigns } from "@/lib/local-designs";
+import { useToast } from "@/components/ui/toast";
+import { duplicateDesign, getDesign, saveDesign, saveDesignAsCopy, type Design } from "@/lib/api";
+import { copyLocalDesign, localDesigns } from "@/lib/local-designs";
 import { createAutosaver, type Autosaver, type SaveStatus } from "@/lib/autosave";
 import { createImageLoader } from "@/lib/images";
-import { cn } from "@/lib/utils";
-import { ExportPopover } from "./export-popover";
+import { BottomBar } from "./bottom-bar";
+import { DesignInfoDialog } from "./design-info-dialog";
+import { ContextMenu } from "./context-menu";
+import { buildActions, CONTEXT_LAYOUTS, toMenuItems, type ActionHost } from "./editor-actions";
+import { EditorHeader } from "./editor-header";
+import { FloatingToolbar } from "./floating-toolbar";
 import { Segmented } from "./fields";
 import { InsertRail } from "./insert-rail";
 import { SaveToAccount } from "./save-to-account";
 import { usePhotoDrop } from "./use-photo-drop";
 import { LayersPanel } from "./layers-panel";
+import { MoveDialog } from "./move-dialog";
 import { PropertiesPanel } from "./properties-panel";
+import { ShortcutsDialog } from "./shortcuts-dialog";
 import { TextEditor } from "./text-editor";
+import { useClipboard } from "./use-clipboard";
+import { useFullscreen } from "./use-fullscreen";
 // Self-hosted allowlisted fonts, loaded only on the editor route.
 import "./fonts.css";
 
@@ -30,61 +35,6 @@ const NO_EDITOR = { subscribe: () => () => {}, get: () => null };
 
 function useEditorState(editor: Editor | null): EditorState | null {
   return useSyncExternalStore(editor ? editor.subscribe : NO_EDITOR.subscribe, editor ? editor.getState : NO_EDITOR.get, NO_EDITOR.get);
-}
-
-function IconButton({ label, onClick, disabled, children }: { label: string; onClick: () => void; disabled?: boolean; children: ReactNode }) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      onClick={onClick}
-      disabled={disabled}
-      className="flex size-8 items-center justify-center rounded-lg text-text hover:bg-field disabled:opacity-35 disabled:hover:bg-transparent [&_svg]:size-[18px]"
-    >
-      {children}
-    </button>
-  );
-}
-
-const STATUS: Record<SaveStatus, { icon: ReactNode; label: string }> = {
-  saved: { icon: <CloudCheck aria-hidden />, label: "Saved" },
-  unsaved: { icon: <CloudUpload aria-hidden />, label: "Unsaved changes" },
-  saving: { icon: <CloudUpload aria-hidden />, label: "Saving…" },
-  offline: { icon: <CloudOff aria-hidden />, label: "Offline, retrying" },
-  retrying: { icon: <CloudAlert aria-hidden />, label: "Couldn’t save, retrying" },
-  "signed-out": { icon: <CloudAlert aria-hidden />, label: "Signed out, changes not saved" },
-  error: { icon: <CloudAlert aria-hidden />, label: "Couldn’t save" },
-  conflict: { icon: <CloudAlert aria-hidden />, label: "Changed elsewhere" },
-};
-
-const LINK = "font-medium text-text underline-offset-4 hover:underline";
-
-function SaveIndicator({ status, local, onRetry, onResolve }: { status: SaveStatus; local: boolean; onRetry: () => void; onResolve: () => void }) {
-  const s = local && status === "saved" ? { ...STATUS.saved, label: "Saved in this browser" } : STATUS[status];
-  const alarming = status === "error" || status === "conflict" || status === "signed-out";
-  return (
-    <span role="status" className={cn("flex items-center gap-1.5 text-[13px] text-muted [&_svg]:size-4", alarming && "text-danger")}>
-      {s.icon}
-      {s.label}
-      {status === "signed-out" && (
-        // A new tab, so this editor and its unsaved changes stay open; saving resumes on return.
-        <a href="/signin" target="_blank" rel="noopener" className={LINK}>
-          Sign in
-        </a>
-      )}
-      {(status === "error" || status === "signed-out" || status === "retrying") && (
-        <button type="button" onClick={onRetry} className={LINK}>
-          Retry
-        </button>
-      )}
-      {status === "conflict" && (
-        <button type="button" onClick={onResolve} className={LINK}>
-          Resolve
-        </button>
-      )}
-    </span>
-  );
 }
 
 /** Saves a design kept on this device; versions count up locally so the autosaver works the same. */
@@ -101,11 +51,26 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
   const saver = useRef<Autosaver<Doc> | null>(null);
   const [editor, setEditor] = useState<Editor | null>(null);
   const [status, setStatus] = useState<SaveStatus>("saved");
+  // Written where the status is produced, so async code that resumes after `flush()` sees it before React re-renders.
+  const statusRef = useRef<SaveStatus>("saved");
   const [panel, setPanel] = useState<"properties" | "layers">("properties");
   const [conflictOpen, setConflictOpen] = useState(true);
   const [conflictBusy, setConflictBusy] = useState(false);
   const [conflictError, setConflictError] = useState<string | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [renaming, setRenaming] = useState(false);
   const state = useEditorState(editor);
+  const toast = useToast();
+  const clipboard = useClipboard(editor);
+  const fullscreen = useFullscreen();
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [moveOpen, setMoveOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [menuAt, setMenuAt] = useState<{ x: number; y: number; onLayer: boolean } | null>(null);
+  const [panelsHidden, setPanelsHidden] = useState(false);
+  const [savedAt, setSavedAt] = useState(design.updatedAt);
+  const [folderId, setFolderId] = useState(design.folderId);
+  const mac = useMemo(() => typeof navigator !== "undefined" && navigator.platform.startsWith("Mac"), []);
 
   useEffect(() => {
     // Photos load in the background; the canvas redraws as each arrives.
@@ -113,7 +78,16 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
     const images = createImageLoader(() => e?.invalidate());
     e = createEditor({ container: container.current!, scene: scene.current!, overlay: overlay.current!, doc: design.doc, image: images.image, imagesReady: images.ready });
     setEditor(e);
-    const s = createAutosaver<Doc>({ version: design.version, delayMs: 1500, retryMs: 5000, save: local ? saveLocal(design.id) : (doc, v) => saveDesign(design.id, doc, v), onStatus: setStatus });
+    const s = createAutosaver<Doc>({
+      version: design.version,
+      delayMs: 1500,
+      retryMs: 5000,
+      save: local ? saveLocal(design.id) : (doc, v) => saveDesign(design.id, doc, v),
+      onStatus: (st) => {
+        statusRef.current = st;
+        setStatus(st);
+      },
+    });
     saver.current = s;
     let last = e.getState().doc;
     const off = e.subscribe(() => {
@@ -144,13 +118,13 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
 
   const photoDrop = usePhotoDrop(editor);
 
-  // Refusals ("Layout locked by template…") show briefly, then clear.
+  // Refusals ("This layer is locked. Unlock it to change it.") and other engine messages show as a toast, then clear.
   const notice = state?.notice ?? null;
   useEffect(() => {
     if (!notice || !editor) return;
-    const t = setTimeout(() => editor.core.setChrome({ notice: null }), 3500);
-    return () => clearTimeout(t);
-  }, [notice, editor]);
+    toast({ message: notice, duration: 3500 });
+    editor.core.setChrome({ notice: null });
+  }, [notice, editor, toast]);
 
   // A new conflict always shows the dialog again.
   useEffect(() => {
@@ -193,90 +167,220 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
       router.push(`/edit/${id}`);
     });
 
-  const zoom = state?.viewport.zoom ?? 1;
+  // When a save finishes, "Last saved" in Design info moves on.
+  const wasSaved = useRef(true);
+  useEffect(() => {
+    if (status === "saved" && !wasSaved.current) setSavedAt(new Date().toISOString());
+    wasSaved.current = status === "saved";
+  }, [status]);
+
+  const saveInProgress = () => statusRef.current === "saving" || statusRef.current === "unsaved";
+
+  /** Saves now. `flush` never throws and returns at once if a save is already running, so a leftover `dirty` needs the status to tell progress from failure. */
+  async function saveNow() {
+    const s = saver.current;
+    if (!s) return;
+    await s.flush();
+    const message = !s.dirty ? "All changes saved." : saveInProgress() ? "Saving your changes." : "Not saved yet. The status at the top shows why.";
+    toast({ message, duration: 3000 });
+  }
+
+  async function makeCopy() {
+    const s = saver.current;
+    try {
+      if (s?.dirty) await s.flush();
+      if (s?.dirty) {
+        toast({
+          message: saveInProgress()
+            ? "Your latest changes are still saving. Try again in a moment."
+            : "Your latest changes could not be saved, so the copy would miss them. Check the status at the top.",
+        });
+        return;
+      }
+      // A design kept in this browser is copied in this browser.
+      const copy = local ? await copyLocalDesign(localDesigns, design.id) : await duplicateDesign(design.id);
+      router.push(`/edit/${copy.id}`);
+    } catch (err) {
+      toast({ message: err instanceof Error ? err.message : "Couldn’t make a copy. Try again." });
+    }
+  }
+
+  // Ctrl+S saves and keeps the browser's Save dialog away.
+  const save = useRef(saveNow);
+  save.current = saveNow;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((mac ? e.metaKey : e.ctrlKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        void save.current();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mac]);
+
+  // Escape brings hidden panels back.
+  useEffect(() => {
+    if (!panelsHidden) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPanelsHidden(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [panelsHidden]);
+
+  // Right-click selects the layer under the pointer (unless it is already selected) and opens the menu.
+  useEffect(() => {
+    const el = overlay.current;
+    if (!el || !editor) return;
+    const onContext = (e: MouseEvent) => {
+      e.preventDefault();
+      editor.core.endTextEdit(true);
+      const rect = el.getBoundingClientRect();
+      const s = editor.getState();
+      const hit = hitTest(s.doc, toWorld(s.viewport, { x: e.clientX - rect.left, y: e.clientY - rect.top }));
+      if (hit) {
+        const top = topLevelOf(s.doc, hit);
+        if (!s.selection.includes(hit) && !s.selection.includes(top)) editor.core.select([top]);
+      } else {
+        editor.core.select([]);
+      }
+      setMenuAt({ x: e.clientX, y: e.clientY, onLayer: hit !== null });
+    };
+    el.addEventListener("contextmenu", onContext);
+    return () => el.removeEventListener("contextmenu", onContext);
+  }, [editor]);
+
+  // The canvas area changes size when panels hide or fullscreen starts: fit once the layout has settled.
+  useEffect(() => {
+    if (!editor) return;
+    const frame = requestAnimationFrame(() => requestAnimationFrame(() => editor.fit()));
+    return () => cancelAnimationFrame(frame);
+  }, [editor, panelsHidden, fullscreen.active]);
+
+  // The latest host. The actions below are memoised, so their host methods go through this ref and never run a stale closure.
+  const latestHost: Omit<ActionHost, "panelsHidden" | "canFullscreen" | "local"> = {
+    copy: () => void clipboard.copy(),
+    cut: () => void clipboard.cut(),
+    paste: () => void clipboard.paste(),
+    newDesign: () => router.push("/home#create"),
+    open: () => router.push("/designs"),
+    makeCopy: () => void makeCopy(),
+    rename: () => setRenaming(true),
+    moveToFolder: () => setMoveOpen(true),
+    designInfo: () => setInfoOpen(true),
+    save: () => void saveNow(),
+    download: () => setExportOpen(true),
+    zoomIn: () => editor?.zoomTo(editor.getState().viewport.zoom * 1.25),
+    zoomOut: () => editor?.zoomTo(editor.getState().viewport.zoom / 1.25),
+    fit: () => editor?.fit(),
+    fullscreen: () => void fullscreen.toggle().catch(() => toast({ message: "Fullscreen isn’t available right now." })),
+    togglePanels: () => setPanelsHidden((hidden) => !hidden),
+    shortcuts: () => setShortcutsOpen(true),
+  };
+  const hostRef = useRef(latestHost);
+  hostRef.current = latestHost;
+  const host = useMemo<ActionHost>(() => {
+    const call = (name: keyof typeof latestHost) => () => hostRef.current[name]();
+    return {
+      panelsHidden,
+      canFullscreen: fullscreen.supported,
+      local,
+      copy: call("copy"),
+      cut: call("cut"),
+      paste: call("paste"),
+      newDesign: call("newDesign"),
+      open: call("open"),
+      makeCopy: call("makeCopy"),
+      rename: call("rename"),
+      moveToFolder: call("moveToFolder"),
+      designInfo: call("designInfo"),
+      save: call("save"),
+      download: call("download"),
+      zoomIn: call("zoomIn"),
+      zoomOut: call("zoomOut"),
+      fit: call("fit"),
+      fullscreen: call("fullscreen"),
+      togglePanels: call("togglePanels"),
+      shortcuts: call("shortcuts"),
+    };
+  }, [panelsHidden, fullscreen.supported, local]);
+  // Hover, viewport and marquee changes rebuild the state but not these inputs, so they do not rebuild the actions.
+  const doc = state?.doc;
+  const selection = state?.selection;
+  const mode = state?.mode;
+  const canUndo = state?.canUndo;
+  const canRedo = state?.canRedo;
+  const zoomLevel = state?.viewport.zoom;
+  const copiedStyle = editor ? copiedStyleOf(editor.core) : null;
+  const actions = useMemo(
+    () =>
+      editor && doc && selection && mode && zoomLevel !== undefined
+        ? buildActions({ doc, selection, mode, canUndo: !!canUndo, canRedo: !!canRedo, viewport: { zoom: zoomLevel } }, editor.core, host)
+        : null,
+    [editor, doc, selection, mode, canUndo, canRedo, zoomLevel, copiedStyle, host],
+  );
+
+  const zoom = zoomLevel ?? 1;
   const artboard = state?.doc.artboard ?? design.doc.artboard;
 
   return (
     <main className="flex h-svh flex-col overflow-hidden bg-bg text-text">
-      <header className="flex h-14 flex-none items-center gap-3 border-b-[.5px] border-line px-3">
-        <Link href="/designs" aria-label="Back to your designs" className="flex-none rounded-md transition-opacity hover:opacity-75">
-          <Image src="/vash-logo.png" alt="" width={28} height={28} className="size-7 rounded-md" priority />
-        </Link>
-        <h1 className="max-w-[320px] truncate text-sm font-semibold">{state?.doc.meta.title ?? design.title}</h1>
-        <SaveIndicator status={status} local={local} onRetry={() => void saver.current?.flush()} onResolve={() => setConflictOpen(true)} />
-        <div className="flex-1" />
-        <IconButton label="Undo (Ctrl+Z)" onClick={() => editor?.core.undo()} disabled={!state?.canUndo}>
-          <Undo2 aria-hidden />
-        </IconButton>
-        <IconButton label="Redo (Ctrl+Shift+Z)" onClick={() => editor?.core.redo()} disabled={!state?.canRedo}>
-          <Redo2 aria-hidden />
-        </IconButton>
-        <Menu
-          items={[
-            { label: "Fit to screen", onSelect: () => editor?.fit() },
-            "separator",
-            ...[0.5, 1, 2].map((z) => ({ label: `${z * 100}%`, onSelect: () => editor?.zoomTo(z) })),
-          ]}
-          trigger={(props) => (
-            <button type="button" {...props} aria-label="Zoom" className="flex h-8 items-center gap-1 rounded-lg px-2.5 text-[13px] font-medium tabular-nums hover:bg-field">
-              {Math.round(zoom * 100)}%
-              <ChevronDown aria-hidden className="size-3.5 text-muted" />
-            </button>
-          )}
-        />
-        {local && <SaveToAccount id={design.id} saver={saver} />}
-        <ExportPopover editor={editor} doc={state?.doc ?? design.doc} />
-      </header>
+      <EditorHeader
+        editor={editor}
+        doc={state?.doc ?? design.doc}
+        canUndo={state?.canUndo ?? false}
+        canRedo={state?.canRedo ?? false}
+        status={status}
+        local={local}
+        onRetry={() => void saver.current?.flush()}
+        onResolve={() => setConflictOpen(true)}
+        exportOpen={exportOpen}
+        onExportOpenChange={setExportOpen}
+        renaming={renaming}
+        onRenamingChange={setRenaming}
+        actions={actions}
+        mac={mac}
+        saveToAccount={local ? <SaveToAccount id={design.id} saver={saver} /> : null}
+      />
 
       <div className="flex min-h-0 flex-1">
-        <InsertRail editor={editor} />
+        {!panelsHidden && <InsertRail editor={editor} />}
         <div className="relative flex min-w-0 flex-1 flex-col">
           <div ref={container} {...photoDrop} className="relative min-h-0 flex-1 overflow-hidden bg-bg2">
             <canvas ref={scene} className="absolute inset-0" aria-hidden />
-            <canvas ref={overlay} className="absolute inset-0 touch-none" aria-label="Design canvas. Use the Layers panel to select layers with the keyboard." />
+            <canvas ref={overlay} tabIndex={-1} className="absolute inset-0 touch-none outline-none" aria-label="Design canvas. Use the Layers panel to select layers with the keyboard." />
             {state && editor && <TextEditor editor={editor} state={state} />}
-            {notice && (
-              <div role="status" className="glass-primary pointer-events-none absolute top-4 left-1/2 max-w-[80%] -translate-x-1/2 rounded-xl px-4 py-2 text-[13px] text-white">
-                {notice}
-              </div>
+            {state && editor && actions && <FloatingToolbar core={editor.core} state={state} actions={actions} mac={mac} container={container} focusCanvas={() => overlay.current?.focus()} />}
+            {panelsHidden && (
+              <button type="button" onClick={() => setPanelsHidden(false)} className="glass-btn glass-secondary absolute top-3 right-3 h-8 rounded-lg px-3 text-[13px]">
+                <span className="glass-label">Show panels</span>
+              </button>
             )}
           </div>
-          <footer className="flex h-10 flex-none items-center gap-1 border-t-[.5px] border-line px-3 text-[13px] text-muted">
-            <IconButton label="Zoom out" onClick={() => editor?.zoomTo(zoom / 1.25)}>
-              <ZoomOut aria-hidden />
-            </IconButton>
-            <IconButton label="Zoom in" onClick={() => editor?.zoomTo(zoom * 1.25)}>
-              <ZoomIn aria-hidden />
-            </IconButton>
-            <span className="w-12 text-center tabular-nums">{Math.round(zoom * 100)}%</span>
-            <button type="button" onClick={() => editor?.fit()} className="h-7 rounded-md px-2 font-medium text-text hover:bg-field">
-              Fit
-            </button>
-            <div className="flex-1" />
-            <span className="tabular-nums">
-              {artboard.width} × {artboard.height}
-            </span>
-          </footer>
+          {!panelsHidden && <BottomBar editor={editor} zoom={zoom} size={artboard} actions={actions} />}
         </div>
-        <aside className="flex w-[288px] flex-none flex-col border-l-[.5px] border-line text-[13px]" aria-label="Design panel">
-          <div className="px-4 pt-3.5 pb-3">
-            <Segmented
-              name="Panel"
-              value={panel}
-              options={[
-                { value: "properties", label: "Properties" },
-                { value: "layers", label: "Layers" },
-              ]}
-              onChange={setPanel}
-            />
-          </div>
-          {state && editor && panel === "properties" && (
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
-              <PropertiesPanel state={state} core={editor.core} />
+        {!panelsHidden && (
+          <aside className="flex w-[288px] flex-none flex-col border-l-[.5px] border-line text-[13px]" aria-label="Design panel">
+            <div className="px-4 pt-3.5 pb-3">
+              <Segmented
+                name="Panel"
+                value={panel}
+                options={[
+                  { value: "properties", label: "Properties" },
+                  { value: "layers", label: "Layers" },
+                ]}
+                onChange={setPanel}
+              />
             </div>
-          )}
-          {state && editor && panel === "layers" && <LayersPanel state={state} core={editor.core} />}
-        </aside>
+            {state && editor && actions && panel === "properties" && (
+              <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+                <PropertiesPanel state={state} core={editor.core} actions={actions} mac={mac} />
+              </div>
+            )}
+            {state && editor && panel === "layers" && <LayersPanel state={state} core={editor.core} />}
+          </aside>
+        )}
       </div>
 
       <Dialog open={status === "conflict" && conflictOpen} onClose={() => setConflictOpen(false)} title="This design changed in another tab">
@@ -300,6 +404,26 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
           </Button>
         </div>
       </Dialog>
+
+      {actions && (
+        <ContextMenu
+          at={menuAt}
+          items={toMenuItems(actions, menuAt?.onLayer ? CONTEXT_LAYOUTS.node : CONTEXT_LAYOUTS.canvas, mac)}
+          onClose={() => setMenuAt(null)}
+        />
+      )}
+      {actions && <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} actions={actions} mac={mac} />}
+      <DesignInfoDialog open={infoOpen} onClose={() => setInfoOpen(false)} doc={state?.doc ?? design.doc} savedAt={savedAt} />
+      <MoveDialog
+        open={moveOpen}
+        onClose={() => setMoveOpen(false)}
+        designId={design.id}
+        folderId={folderId}
+        onMoved={(id, name) => {
+          setFolderId(id);
+          toast({ message: name ? `Moved to ${name}.` : "Removed from its folder." });
+        }}
+      />
     </main>
   );
 }

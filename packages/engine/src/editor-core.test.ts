@@ -18,6 +18,14 @@ describe("EditorCore", () => {
     expect(calls).toBe(1);
   });
 
+  it("keeps the same selection array while only chrome such as hover changes", () => {
+    const c = core();
+    c.select(["a"]);
+    const selection = c.getState().selection;
+    c.setChrome({ hover: "a" });
+    expect(c.getState().selection).toBe(selection);
+  });
+
   it("runs commands through the lock policy and reports refusals", () => {
     const c = core();
     expect(c.dispatch({ type: "delete", id: "locked" })).toBe(false);

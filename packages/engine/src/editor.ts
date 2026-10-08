@@ -9,7 +9,7 @@ import type { EditMode } from "./policy";
 import { renderScene, type ImageState } from "./render";
 import { hitTest } from "./hit-test";
 import { frameAt } from "./photos";
-import { handleKey } from "./shortcuts";
+import { handleKey, type KeyInput } from "./shortcuts";
 import type { Measure } from "./text";
 import { textEditBox, type TextEditBox } from "./text-edit";
 import { fitViewport, toWorld, zoomAt } from "./viewport";
@@ -56,8 +56,65 @@ function canvasMeasure(): Measure {
   };
 }
 
-const isTyping = (t: EventTarget | null) =>
-  t instanceof HTMLElement && (t.isContentEditable || t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT");
+/** The few element members the key guards read, so they run on plain objects in tests. */
+export interface KeyTarget {
+  isContentEditable?: boolean;
+  tagName?: string;
+  closest?: (selector: string) => unknown;
+}
+
+/** The members of a keydown event that make up a shortcut. */
+export interface KeyEventLike {
+  key: string;
+  code: string;
+  metaKey: boolean;
+  ctrlKey: boolean;
+  shiftKey: boolean;
+  altKey: boolean;
+}
+
+/**
+ * A key press as `handleKey` takes it. With Option held, macOS reports the character it types ("ç" for C),
+ * so there a letter comes from the physical key (`code`) to let Option shortcuts match. Other platforms
+ * keep `key`: on Windows and Linux Ctrl+Alt is AltGr, which types characters, and the physical key would
+ * also be wrong on Dvorak or Colemak layouts.
+ */
+export function keyInputOf(e: KeyEventLike, mac: boolean): KeyInput {
+  const letter = mac && e.altKey && !/^[a-z]$/i.test(e.key) ? /^Key([A-Z])$/.exec(e.code) : null;
+  return { key: letter ? letter[1]!.toLowerCase() : e.key, mod: mac ? e.metaKey : e.ctrlKey, shift: e.shiftKey, alt: e.altKey };
+}
+
+/** The element a mouse press last focused; anything inside it still counts as mouse-focused. */
+export interface PointerFocus {
+  contains(other: unknown): boolean;
+}
+
+const CONTROL = "button, a[href], [role=button], summary";
+
+/** Keys typed into a field, or pressed inside an open menu or dialog, belong to that field, menu or dialog. */
+export const isTyping = (t: KeyTarget | null) => {
+  if (!t || typeof t.closest !== "function") return false;
+  return !!t.isContentEditable || t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.closest("dialog") !== null || t.closest("[role=menu]") !== null;
+};
+
+/**
+ * Enter and Space on a button, link or summary that has keyboard focus activate it, so the canvas must
+ * not take them (Enter to edit text, Space to pan). Only for keyboard focus: after a mouse click focus
+ * stays on the clicked button, and the canvas shortcuts must keep working then. The editor tracks the
+ * mouse press itself (`pointerFocused`) because `:focus-visible` already reads true inside the first
+ * keydown after a click in Chromium.
+ */
+export function activatesFocusedControl(t: KeyTarget | null, key: string, pointerFocused: PointerFocus | null = null): boolean {
+  if ((key !== "Enter" && key !== " ") || !t || typeof t.closest !== "function") return false;
+  if (t.closest(CONTROL) === null) return false;
+  return !(pointerFocused && pointerFocused.contains(t));
+}
+
+/** Tab hands focus to the keyboard, so the mouse press no longer explains where focus is. */
+export const pointerFocusAfterKey = (p: PointerFocus | null, key: string): PointerFocus | null => (key === "Tab" ? null : p);
+
+/** Focus moving outside the pressed element is not the mouse press's doing either. */
+export const pointerFocusAfterFocusIn = (p: PointerFocus | null, target: unknown): PointerFocus | null => (p && p.contains(target) ? p : null);
 
 /**
  * Binds the engine to two stacked canvases: the design below, selection chrome above (which also
@@ -162,16 +219,27 @@ export function createEditor(o: EditorOptions): Editor {
     const r = o.overlay.getBoundingClientRect();
     ui.wheel({ x: e.clientX - r.left, y: e.clientY - r.top, deltaX: e.deltaX, deltaY: e.deltaY, zoom: e.ctrlKey || e.metaKey });
   };
+  // A press on a button focuses it without keyboard focus; remember it so Space and Enter still reach the canvas.
+  let pointerFocused: PointerFocus | null = null;
+  const onPointerDownCapture = (e: PointerEvent) => {
+    const t = e.target as (KeyTarget & Partial<PointerFocus>) | null;
+    pointerFocused = t && typeof t.contains === "function" ? (((t.closest?.(CONTROL) as PointerFocus | null | undefined) ?? t) as PointerFocus) : null;
+  };
+  const onFocusIn = (e: FocusEvent) => {
+    pointerFocused = pointerFocusAfterFocusIn(pointerFocused, e.target);
+  };
   const onKeyDown = (e: KeyboardEvent) => {
-    if (isTyping(e.target)) return;
+    pointerFocused = pointerFocusAfterKey(pointerFocused, e.key);
+    const target = e.target as KeyTarget | null;
+    if (isTyping(target) || activatesFocusedControl(target, e.key, pointerFocused)) return;
     if (e.key === " ") {
       ui.setSpace(true);
       invalidate();
       e.preventDefault();
       return;
     }
-    const mod = navigator.platform.startsWith("Mac") ? e.metaKey : e.ctrlKey;
-    if (handleKey(core, { key: e.key, mod, shift: e.shiftKey, alt: e.altKey })) e.preventDefault();
+    if (e.getModifierState?.("AltGraph")) return; // AltGr types a character, it is not a shortcut
+    if (handleKey(core, keyInputOf(e, navigator.platform.startsWith("Mac")))) e.preventDefault();
   };
   const onKeyUp = (e: KeyboardEvent) => {
     if (e.key === " ") {
@@ -191,6 +259,8 @@ export function createEditor(o: EditorOptions): Editor {
   o.overlay.addEventListener("pointercancel", onCancel);
   o.overlay.addEventListener("dblclick", onDoubleClick);
   o.overlay.addEventListener("wheel", onWheel, { passive: false });
+  window.addEventListener("pointerdown", onPointerDownCapture, true);
+  window.addEventListener("focusin", onFocusIn);
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", onKeyUp);
   document.fonts?.addEventListener("loadingdone", onFonts);
@@ -232,6 +302,8 @@ export function createEditor(o: EditorOptions): Editor {
       o.overlay.removeEventListener("pointercancel", onCancel);
       o.overlay.removeEventListener("dblclick", onDoubleClick);
       o.overlay.removeEventListener("wheel", onWheel);
+      window.removeEventListener("pointerdown", onPointerDownCapture, true);
+      window.removeEventListener("focusin", onFocusIn);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       document.fonts?.removeEventListener("loadingdone", onFonts);
