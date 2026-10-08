@@ -54,15 +54,15 @@
     {
       "idx": 7,
       "version": "7",
-      "when": 1791425481081,
-      "tag": "0007_two_factor",
+      "when": 1791424921541,
+      "tag": "0007_row_level_security",
       "breakpoints": true
     },
     {
       "idx": 8,
       "version": "7",
-      "when": 1791425600000,
-      "tag": "0008_row_level_security",
+      "when": 1791425481081,
+      "tag": "0008_two_factor",
       "breakpoints": true
     },
     {
