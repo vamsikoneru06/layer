@@ -170,10 +170,14 @@ export function Dashboard() {
   const { create, busy } = useCreateDesign();
   const [customOpen, setCustomOpen] = useState(false);
   const [hello, setHello] = useState<string | null>(null);
+  const [shortcut, setShortcut] = useState<string | null>(null);
   const search = useRef<HTMLInputElement>(null);
 
-  // Local time decides the greeting, so it is only known in the browser.
-  useEffect(() => setHello(greeting()), []);
+  // Local time decides the greeting, and the platform the shortcut, so both are only known in the browser.
+  useEffect(() => {
+    setHello(greeting());
+    setShortcut(/Mac|iPhone|iPad/.test(navigator.platform) ? "⌘K" : "Ctrl K");
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -205,9 +209,11 @@ export function Dashboard() {
         >
           <Search aria-hidden className="size-[17px] flex-none" />
           <input ref={search} name="q" aria-label="Search designs" placeholder="Search designs" className="min-w-0 flex-1 bg-transparent text-text outline-none placeholder:text-muted" />
-          <kbd className="hidden h-5 min-w-5 items-center justify-center rounded-[5px] bg-field px-[5px] font-sans text-[11px] font-medium text-muted shadow-[inset_0_-1px_0_var(--line)] sm:inline-flex">
-            ⌘K
-          </kbd>
+          {shortcut && (
+            <kbd className="hidden h-5 min-w-5 items-center justify-center rounded-[5px] bg-field px-[5px] font-sans text-[11px] font-medium text-muted shadow-[inset_0_-1px_0_var(--line)] sm:inline-flex">
+              {shortcut}
+            </kbd>
+          )}
         </form>
       </div>
 

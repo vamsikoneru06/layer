@@ -52,9 +52,10 @@ function ProfileSection({ me }: { me: Me }) {
             onChange={(e) => setName(e.target.value)}
             maxLength={LIMITS.nameChars}
             autoComplete="name"
+            placeholder="Your name"
           />
         </label>
-        <Button type="submit" loading={saving} disabled={!canSave}>
+        <Button type="submit" size="lg" loading={saving} disabled={!canSave}>
           {saving ? "Saving…" : "Save"}
         </Button>
       </form>
