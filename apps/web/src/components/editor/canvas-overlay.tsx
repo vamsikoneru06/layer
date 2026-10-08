@@ -1,6 +1,6 @@
 "use client";
 
-import type { Viewport } from "@vash/engine";
+import { GUIDE_COLOR, type Viewport } from "@vash/engine";
 import { useRef, useState, type PointerEvent } from "react";
 import { type GuideAxis, type Guides, toDesign, toScreen } from "@/lib/guides";
 
@@ -25,8 +25,6 @@ interface Drag {
 
 const GRID_MAJOR = 50;
 const GRID_MINOR = 10;
-/** Dropping a guide with its pointer this close to the rulers (screen px) removes it. */
-const RULER_ZONE = 20;
 const HIT_WIDTH = 8;
 
 /** Multiples of `step` between `start` and `end`, inclusive. */
@@ -88,13 +86,15 @@ export function CanvasOverlay({ viewport, size, page, guides, showGuides, showGr
     setDrag({ x: p.x, y: p.y, at });
   };
 
+  // Outside the canvas (over its ruler) the guide stays where it last was. Released there, it is removed.
   const track = (e: PointerEvent<SVGLineElement>, axis: GuideAxis, index: number) => {
     if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
     const p = localPoint(e);
     const along = axis === "x" ? p.x : p.y;
+    if (along < 0) return;
     const at = toDesign(along, zoom, axis === "x" ? panX : panY);
     setDrag({ x: p.x, y: p.y, at });
-    if (along >= RULER_ZONE) onMoveGuide(axis, index, at);
+    onMoveGuide(axis, index, at);
   };
 
   const finish = (e: PointerEvent<SVGLineElement>, axis: GuideAxis, index: number) => {
@@ -102,7 +102,7 @@ export function CanvasOverlay({ viewport, size, page, guides, showGuides, showGr
     e.currentTarget.releasePointerCapture(e.pointerId);
     const p = localPoint(e);
     setDrag(null);
-    if ((axis === "x" ? p.x : p.y) < RULER_ZONE) onRemoveGuide(axis, index);
+    if ((axis === "x" ? p.x : p.y) < 0) onRemoveGuide(axis, index);
   };
 
   const guideLine = (axis: GuideAxis, index: number, designAt: number) => {
@@ -112,7 +112,7 @@ export function CanvasOverlay({ viewport, size, page, guides, showGuides, showGr
     const hit = axis === "x" ? { x1: screenAt, x2: screenAt, y1: 0, y2: size.height } : { x1: 0, x2: size.width, y1: screenAt, y2: screenAt };
     return (
       <g key={`${axis}-${index}`}>
-        <line {...visible} strokeWidth={1} style={{ stroke: "var(--text)" }} />
+        <line {...visible} strokeWidth={1} stroke={GUIDE_COLOR} />
         <line
           {...hit}
           strokeWidth={HIT_WIDTH}

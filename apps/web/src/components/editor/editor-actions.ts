@@ -33,6 +33,7 @@ import {
   type ReorderTarget,
 } from "@vash/engine";
 import type { MenuItem } from "@/components/ui/menu";
+import type { ViewSettings } from "@/lib/guides";
 
 export const ACTION_IDS = [
   "undo",
@@ -76,6 +77,12 @@ export const ACTION_IDS = [
   "fullscreen",
   "togglePanels",
   "shortcuts",
+  "toggleRulers",
+  "toggleGuides",
+  "toggleGrid",
+  "toggleSnapObjects",
+  "toggleSnapGuides",
+  "clearGuides",
 ] as const;
 
 export type ActionId = (typeof ACTION_IDS)[number];
@@ -89,6 +96,8 @@ export interface Action {
   disabled?: string;
   /** Not offered at all, for example Fullscreen in a browser without it. */
   hidden?: boolean;
+  /** For a setting that is on or off. Shown as a check mark in menus. */
+  checked?: boolean;
   run: () => void;
 }
 
@@ -115,6 +124,16 @@ export interface ActionHost {
   fullscreen(): void;
   togglePanels(): void;
   shortcuts(): void;
+  /** The canvas view switches (rulers, guides, grid, snapping). */
+  view: ViewSettings;
+  /** How many guides the design has, so Clear guides can say there are none. */
+  guideCount: number;
+  toggleRulers(): void;
+  toggleGuides(): void;
+  toggleGrid(): void;
+  toggleSnapObjects(): void;
+  toggleSnapGuides(): void;
+  clearGuides(): void;
 }
 
 const DELETE_KEY = { key: "Delete", mod: false, shift: false, alt: false } as const;
@@ -189,6 +208,12 @@ export function buildActions(state: ActionState, core: EditorCore, host: ActionH
     { id: "fullscreen", label: "Fullscreen", hidden: !host.canFullscreen, run: host.fullscreen },
     { id: "togglePanels", label: host.panelsHidden ? "Show panels" : "Hide panels", run: host.togglePanels },
     { id: "shortcuts", label: "Keyboard shortcuts", run: host.shortcuts },
+    { id: "toggleRulers", label: "Rulers", shortcut: "shift+r", checked: host.view.rulers, run: host.toggleRulers },
+    { id: "toggleGuides", label: "Guides", checked: host.view.guides, run: host.toggleGuides },
+    { id: "toggleGrid", label: "Grid", checked: host.view.grid, run: host.toggleGrid },
+    { id: "toggleSnapObjects", label: "Snap to objects", checked: host.view.snapObjects, run: host.toggleSnapObjects },
+    { id: "toggleSnapGuides", label: "Snap to guides", checked: host.view.snapGuides, run: host.toggleSnapGuides },
+    { id: "clearGuides", label: "Clear guides", disabled: host.guideCount === 0 ? "No guides to clear." : undefined, run: host.clearGuides },
   ];
   return Object.fromEntries(list.map((a) => [a.id, a])) as Record<ActionId, Action>;
 }
@@ -219,7 +244,22 @@ export const MENUS = {
     "separator",
     "toggleLock",
   ],
-  view: ["zoomIn", "zoomOut", "fit", "separator", "fullscreen", "togglePanels"],
+  view: [
+    "zoomIn",
+    "zoomOut",
+    "fit",
+    "separator",
+    "toggleRulers",
+    "toggleGuides",
+    "toggleGrid",
+    "separator",
+    "toggleSnapObjects",
+    "toggleSnapGuides",
+    "clearGuides",
+    "separator",
+    "fullscreen",
+    "togglePanels",
+  ],
   help: ["shortcuts"],
 } as const satisfies Record<string, Layout>;
 
@@ -276,14 +316,21 @@ export function toMenuItems(actions: Record<ActionId, Action>, layout: Layout, m
     }
     const a = actions[entry];
     if (a.hidden) continue;
-    items.push({ label: a.label, onSelect: a.run, shortcut: a.shortcut ? formatShortcut(a.shortcut, mac) : undefined, disabled: a.disabled, danger: entry === "delete" || undefined });
+    items.push({
+      label: a.label,
+      onSelect: a.run,
+      shortcut: a.shortcut ? formatShortcut(a.shortcut, mac) : undefined,
+      disabled: a.disabled,
+      danger: entry === "delete" || undefined,
+      checked: a.checked,
+    });
   }
   if (items.at(-1) === "separator") items.pop();
   return items;
 }
 
 /** Actions listed in the shortcuts dialog, in order. */
-export const SHORTCUT_ACTIONS: readonly ActionId[] = ["undo", "redo", "cut", "copy", "paste", "duplicate", "delete", "selectAll", "group", "ungroup", "copyStyle", "pasteStyle", "bringForward", "bringToFront", "sendBackward", "sendToBack", "toggleLock", "save"];
+export const SHORTCUT_ACTIONS: readonly ActionId[] = ["undo", "redo", "cut", "copy", "paste", "duplicate", "delete", "selectAll", "group", "ungroup", "copyStyle", "pasteStyle", "bringForward", "bringToFront", "sendBackward", "sendToBack", "toggleLock", "save", "toggleRulers"];
 
 /** Names for the shortcuts dialog where an action's own label changes with the selection and would mislead there. */
 export const SHORTCUT_NAMES: Partial<Record<ActionId, string>> = { toggleLock: "Lock or unlock" };

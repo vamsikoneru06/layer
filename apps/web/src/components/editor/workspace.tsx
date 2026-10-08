@@ -3,15 +3,17 @@
 import { copiedStyleOf, createEditor, hitTest, toWorld, topLevelOf, type Editor, type EditorState } from "@vash/engine";
 import { parseDoc, type Doc } from "@vash/schema";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type PointerEvent as ReactPointerEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
 import { duplicateDesign, getDesign, saveDesign, saveDesignAsCopy, type Design } from "@/lib/api";
+import { addGuide, loadGuides, loadView, moveGuide, removeGuide, saveGuides, saveView, toDesign, type GuideAxis, type Guides, type ViewSettings } from "@/lib/guides";
 import { copyLocalDesign, localDesigns } from "@/lib/local-designs";
 import { createAutosaver, type Autosaver, type SaveStatus } from "@/lib/autosave";
 import { createImageLoader } from "@/lib/images";
 import { BottomBar } from "./bottom-bar";
+import { CanvasOverlay } from "./canvas-overlay";
 import { DesignInfoDialog } from "./design-info-dialog";
 import { ContextMenu } from "./context-menu";
 import { buildActions, CONTEXT_LAYOUTS, toMenuItems, type ActionHost } from "./editor-actions";
@@ -19,6 +21,7 @@ import { EditorHeader } from "./editor-header";
 import { FloatingToolbar } from "./floating-toolbar";
 import { Segmented } from "./fields";
 import { InsertRail } from "./insert-rail";
+import { Ruler, RULER_THICKNESS } from "./ruler";
 import { SaveToAccount } from "./save-to-account";
 import { LayersPanel } from "./layers-panel";
 import { MoveDialog } from "./move-dialog";
@@ -26,11 +29,15 @@ import { PropertiesPanel } from "./properties-panel";
 import { ShortcutsDialog } from "./shortcuts-dialog";
 import { TextEditor } from "./text-editor";
 import { useClipboard } from "./use-clipboard";
+import { useElementSize } from "./use-element-size";
 import { useFullscreen } from "./use-fullscreen";
 // Self-hosted allowlisted fonts, loaded only on the editor route.
 import "./fonts.css";
 
 const NO_EDITOR = { subscribe: () => () => {}, get: () => null };
+
+/** Where a key press is typed into a field, or belongs to a dialog or menu, so it is not a canvas shortcut. */
+const TYPING_OR_MODAL = "input, textarea, select, [contenteditable]:not([contenteditable=false]), dialog, [role=dialog], [role=menu]";
 
 function useEditorState(editor: Editor | null): EditorState | null {
   return useSyncExternalStore(editor ? editor.subscribe : NO_EDITOR.subscribe, editor ? editor.getState : NO_EDITOR.get, NO_EDITOR.get);
@@ -69,7 +76,22 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
   const [panelsHidden, setPanelsHidden] = useState(false);
   const [savedAt, setSavedAt] = useState(design.updatedAt);
   const [folderId, setFolderId] = useState(design.folderId);
+  const [view, setView] = useState<ViewSettings>(loadView);
+  // Guides belong to one design. The state records which, so opening another design loads its guides.
+  const [guideState, setGuideState] = useState(() => ({ designId: design.id, guides: loadGuides(design.id) }));
+  if (guideState.designId !== design.id) setGuideState({ designId: design.id, guides: loadGuides(design.id) });
+  const guides = guideState.guides;
+  const setGuides = (change: (g: Guides) => Guides) => setGuideState((s) => ({ designId: s.designId, guides: change(s.guides) }));
+  const guideCount = guides.x.length + guides.y.length;
+  const size = useElementSize(container);
   const mac = useMemo(() => typeof navigator !== "undefined" && navigator.platform.startsWith("Mac"), []);
+
+  useEffect(() => saveView(view), [view]);
+  useEffect(() => saveGuides(guideState.designId, guideState.guides), [guideState]);
+  // The engine snaps to guides only while they are shown and snapping to them is on.
+  useEffect(() => {
+    editor?.core.setSnapOptions({ objects: view.snapObjects, guides: view.snapGuides && view.guides ? guides : { x: [], y: [] } });
+  }, [editor, view, guides]);
 
   useEffect(() => {
     // Photos load in the background; the canvas redraws as each arrives.
@@ -226,6 +248,53 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
     return () => window.removeEventListener("keydown", onKey);
   }, [panelsHidden]);
 
+  // Shift+R shows or hides the rulers, unless the key is typed into a field, a dialog or a menu.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== "r" || !e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.target instanceof Element && e.target.closest(TYPING_OR_MODAL)) return;
+      setView((v) => ({ ...v, rulers: !v.rulers }));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  /** Dragging out of a ruler makes a guide that follows the pointer while it is over the canvas. Released outside the canvas, over its ruler, it is removed. */
+  const startGuide = (axis: GuideAxis, e: ReactPointerEvent) => {
+    const el = container.current;
+    if (!editor || !el || e.button !== 0) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const pointerId = e.pointerId;
+    // Distance from the canvas edge on the guide's side. Negative means outside the canvas.
+    const along = (x: number, y: number) => {
+      const r = el.getBoundingClientRect();
+      return axis === "y" ? y - r.top : x - r.left;
+    };
+    const designAt = (pos: number) => {
+      const vp = editor.getState().viewport;
+      return toDesign(pos, vp.zoom, axis === "y" ? vp.panY : vp.panX);
+    };
+    const index = guides[axis].length;
+    setGuides((g) => addGuide(g, axis, designAt(along(e.clientX, e.clientY))));
+    if (!view.guides) setView((v) => ({ ...v, guides: true }));
+
+    const move = (ev: PointerEvent) => {
+      if (ev.pointerId !== pointerId) return;
+      const pos = along(ev.clientX, ev.clientY);
+      if (pos >= 0) setGuides((g) => moveGuide(g, axis, index, designAt(pos)));
+    };
+    const end = (ev: PointerEvent) => {
+      if (ev.pointerId !== pointerId) return;
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", end);
+      window.removeEventListener("pointercancel", end);
+      if (along(ev.clientX, ev.clientY) < 0) setGuides((g) => removeGuide(g, axis, index));
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", end);
+    window.addEventListener("pointercancel", end);
+  };
+
   // Right-click selects the layer under the pointer (unless it is already selected) and opens the menu.
   useEffect(() => {
     const el = overlay.current;
@@ -256,7 +325,8 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
   }, [editor, panelsHidden, fullscreen.active]);
 
   // The latest host. The actions below are memoised, so their host methods go through this ref and never run a stale closure.
-  const latestHost: Omit<ActionHost, "panelsHidden" | "canFullscreen" | "local"> = {
+  const toggleView = (key: keyof ViewSettings) => setView((v) => ({ ...v, [key]: !v[key] }));
+  const latestHost: Omit<ActionHost, "panelsHidden" | "canFullscreen" | "local" | "view" | "guideCount"> = {
     copy: () => void clipboard.copy(),
     cut: () => void clipboard.cut(),
     paste: () => void clipboard.paste(),
@@ -274,6 +344,12 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
     fullscreen: () => void fullscreen.toggle().catch(() => toast({ message: "Fullscreen isn’t available right now." })),
     togglePanels: () => setPanelsHidden((hidden) => !hidden),
     shortcuts: () => setShortcutsOpen(true),
+    toggleRulers: () => toggleView("rulers"),
+    toggleGuides: () => toggleView("guides"),
+    toggleGrid: () => toggleView("grid"),
+    toggleSnapObjects: () => toggleView("snapObjects"),
+    toggleSnapGuides: () => toggleView("snapGuides"),
+    clearGuides: () => setGuides(() => ({ x: [], y: [] })),
   };
   const hostRef = useRef(latestHost);
   hostRef.current = latestHost;
@@ -300,8 +376,16 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
       fullscreen: call("fullscreen"),
       togglePanels: call("togglePanels"),
       shortcuts: call("shortcuts"),
+      view,
+      guideCount,
+      toggleRulers: call("toggleRulers"),
+      toggleGuides: call("toggleGuides"),
+      toggleGrid: call("toggleGrid"),
+      toggleSnapObjects: call("toggleSnapObjects"),
+      toggleSnapGuides: call("toggleSnapGuides"),
+      clearGuides: call("clearGuides"),
     };
-  }, [panelsHidden, fullscreen.supported, local]);
+  }, [panelsHidden, fullscreen.supported, local, view, guideCount]);
   // Hover, viewport and marquee changes rebuild the state but not these inputs, so they do not rebuild the actions.
   const doc = state?.doc;
   const selection = state?.selection;
@@ -344,16 +428,39 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
       <div className="flex min-h-0 flex-1">
         {!panelsHidden && <InsertRail editor={editor} />}
         <div className="relative flex min-w-0 flex-1 flex-col">
-          <div ref={container} className="relative min-h-0 flex-1 overflow-hidden bg-bg2">
-            <canvas ref={scene} className="absolute inset-0" aria-hidden />
-            <canvas ref={overlay} tabIndex={-1} className="absolute inset-0 touch-none outline-none" aria-label="Design canvas. Use the Layers panel to select layers with the keyboard." />
-            {state && editor && <TextEditor editor={editor} state={state} />}
-            {state && editor && actions && <FloatingToolbar core={editor.core} state={state} actions={actions} mac={mac} container={container} focusCanvas={() => overlay.current?.focus()} />}
-            {panelsHidden && (
-              <button type="button" onClick={() => setPanelsHidden(false)} className="glass-btn glass-secondary absolute top-3 right-3 h-8 rounded-lg px-3 text-[13px]">
-                <span className="glass-label">Show panels</span>
-              </button>
+          {view.rulers && state && (
+            <div className="flex flex-none">
+              <div aria-hidden className="flex-none bg-bg2" style={{ width: RULER_THICKNESS, height: RULER_THICKNESS }} />
+              <Ruler axis="x" viewport={state.viewport} length={size.width} page={{ start: 0, end: artboard.width }} onGuideStart={(e) => startGuide("y", e)} />
+            </div>
+          )}
+          <div className="flex min-h-0 flex-1">
+            {view.rulers && state && (
+              <Ruler axis="y" viewport={state.viewport} length={size.height} page={{ start: 0, end: artboard.height }} onGuideStart={(e) => startGuide("x", e)} />
             )}
+            <div ref={container} className="relative min-h-0 min-w-0 flex-1 overflow-hidden bg-bg2">
+              <canvas ref={scene} className="absolute inset-0" aria-hidden />
+              <canvas ref={overlay} tabIndex={-1} className="absolute inset-0 touch-none outline-none" aria-label="Design canvas. Use the Layers panel to select layers with the keyboard." />
+              {state && (
+                <CanvasOverlay
+                  viewport={state.viewport}
+                  size={size}
+                  page={{ width: artboard.width, height: artboard.height }}
+                  guides={guides}
+                  showGuides={view.guides}
+                  showGrid={view.grid}
+                  onMoveGuide={(axis, index, at) => setGuides((g) => moveGuide(g, axis, index, at))}
+                  onRemoveGuide={(axis, index) => setGuides((g) => removeGuide(g, axis, index))}
+                />
+              )}
+              {state && editor && <TextEditor editor={editor} state={state} />}
+              {state && editor && actions && <FloatingToolbar core={editor.core} state={state} actions={actions} mac={mac} container={container} focusCanvas={() => overlay.current?.focus()} />}
+              {panelsHidden && (
+                <button type="button" onClick={() => setPanelsHidden(false)} className="glass-btn glass-secondary absolute top-3 right-3 h-8 rounded-lg px-3 text-[13px]">
+                  <span className="glass-label">Show panels</span>
+                </button>
+              )}
+            </div>
           </div>
           {!panelsHidden && <BottomBar editor={editor} zoom={zoom} size={artboard} actions={actions} />}
         </div>

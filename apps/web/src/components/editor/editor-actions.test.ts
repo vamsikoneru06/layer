@@ -1,6 +1,7 @@
 import { EditorCore, ZOOM_MAX } from "@vash/engine";
 import { createEmptyDoc, type Doc, type ShapeNode } from "@vash/schema";
 import { describe, expect, it, vi } from "vitest";
+import { DEFAULT_VIEW } from "@/lib/guides";
 import { actionTitle, ACTION_IDS, buildActions, CONTEXT_LAYOUTS, formatShortcut, MENUS, SHORTCUT_ACTIONS, SHORTCUT_NAMES, toMenuItems, type ActionHost } from "./editor-actions";
 
 function rect(id: string, x: number, lock: ShapeNode["lock"] = "free"): ShapeNode {
@@ -48,6 +49,14 @@ const host = (over: Partial<ActionHost> = {}): ActionHost => ({
   fullscreen: vi.fn(),
   togglePanels: vi.fn(),
   shortcuts: vi.fn(),
+  view: { ...DEFAULT_VIEW },
+  guideCount: 0,
+  toggleRulers: vi.fn(),
+  toggleGuides: vi.fn(),
+  toggleGrid: vi.fn(),
+  toggleSnapObjects: vi.fn(),
+  toggleSnapGuides: vi.fn(),
+  clearGuides: vi.fn(),
   ...over,
 });
 const actionsFor = (core: EditorCore, h = host()) => buildActions(core.getState(), core, h);
@@ -429,5 +438,72 @@ describe("toMenuItems", () => {
     const actions = actionsFor(new EditorCore(docOf([])), host({ canFullscreen: false }));
     expect(toMenuItems(actions, ["fit", "separator", "fullscreen"], false).map((i) => (i === "separator" ? "-" : i.label))).toEqual(["Fit to screen"]);
     expect(toMenuItems(actions, ["separator", "fit", "separator", "separator", "togglePanels"], false).map((i) => (i === "separator" ? "-" : i.label))).toEqual(["Fit to screen", "-", "Hide panels"]);
+  });
+});
+
+describe("canvas view switches", () => {
+  const SWITCHES = ["toggleRulers", "toggleGuides", "toggleGrid", "toggleSnapObjects", "toggleSnapGuides", "clearGuides"] as const;
+
+  it("labels the switches, and Rulers has the Shift+R shortcut", () => {
+    const a = actionsFor(new EditorCore(docOf([])));
+    expect(SWITCHES.map((id) => a[id].label)).toEqual(["Rulers", "Guides", "Grid", "Snap to objects", "Snap to guides", "Clear guides"]);
+    expect(a.toggleRulers.shortcut).toBe("shift+r");
+    expect(formatShortcut("shift+r", false)).toBe("Shift+R");
+    expect(SHORTCUT_ACTIONS).toContain("toggleRulers");
+  });
+
+  it("shows each switch as checked when it is on", () => {
+    const a = actionsFor(new EditorCore(docOf([])), host({ view: { ...DEFAULT_VIEW, rulers: true, grid: false } }));
+    expect([a.toggleRulers.checked, a.toggleGuides.checked, a.toggleGrid.checked, a.toggleSnapObjects.checked, a.toggleSnapGuides.checked]).toEqual([true, true, false, true, true]);
+    expect(a.clearGuides.checked).toBeUndefined();
+  });
+
+  it("hands each switch to the host", () => {
+    const h = host();
+    const a = actionsFor(new EditorCore(docOf([])), h);
+    a.toggleRulers.run();
+    a.toggleGuides.run();
+    a.toggleGrid.run();
+    a.toggleSnapObjects.run();
+    a.toggleSnapGuides.run();
+    expect(h.toggleRulers).toHaveBeenCalledOnce();
+    expect(h.toggleGuides).toHaveBeenCalledOnce();
+    expect(h.toggleGrid).toHaveBeenCalledOnce();
+    expect(h.toggleSnapObjects).toHaveBeenCalledOnce();
+    expect(h.toggleSnapGuides).toHaveBeenCalledOnce();
+  });
+
+  it("says there are no guides to clear, and clears them when there are", () => {
+    expect(actionsFor(new EditorCore(docOf([]))).clearGuides.disabled).toBe("No guides to clear.");
+    const h = host({ guideCount: 2 });
+    const a = actionsFor(new EditorCore(docOf([])), h);
+    expect(a.clearGuides.disabled).toBeUndefined();
+    a.clearGuides.run();
+    expect(h.clearGuides).toHaveBeenCalledOnce();
+  });
+
+  it("lays out the View menu with the switches between the zoom items and the panels", () => {
+    const a = actionsFor(new EditorCore(docOf([])));
+    expect(labels(toMenuItems(a, MENUS.view, false))).toEqual([
+      "Zoom in",
+      "Zoom out",
+      "Fit to screen",
+      "-",
+      "Rulers",
+      "Guides",
+      "Grid",
+      "-",
+      "Snap to objects",
+      "Snap to guides",
+      "Clear guides",
+      "-",
+      "Fullscreen",
+      "Hide panels",
+    ]);
+  });
+
+  it("passes the checked state to menu rows, and leaves other rows without one", () => {
+    const a = actionsFor(new EditorCore(docOf([])), host({ view: { ...DEFAULT_VIEW, rulers: true } }));
+    expect(toMenuItems(a, ["toggleRulers", "fit"], false)).toMatchObject([{ label: "Rulers", checked: true, shortcut: "Shift+R" }, { label: "Fit to screen", checked: undefined }]);
   });
 });

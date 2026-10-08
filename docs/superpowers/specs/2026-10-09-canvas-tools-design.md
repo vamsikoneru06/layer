@@ -7,7 +7,7 @@ design in this browser (localStorage), not in the document.
 
 - **Rulers** along the top and left of the canvas, in design pixels, following zoom and pan. Ticks every 1, 2, 5,
   10, 20, 50, 100... units, chosen so labels sit at least about 60 screen px apart. The page area (0 to width,
-  0 to height) is shown slightly brighter on the ruler. View > Show rulers (Shift+R).
+  0 to height) is shown slightly brighter on the ruler. View > Rulers (Shift+R).
 - **Guides:** drag from the top ruler to make a horizontal guide, from the left ruler for a vertical one. Drag a
   guide to move it; drag it back onto its ruler to remove it. Guides are thin lines in a clear accent colour drawn
   over the design (not exported). While dragging a guide its position shows next to the pointer. View > Show
@@ -16,7 +16,7 @@ design in this browser (localStorage), not in the document.
   zoomed in far enough that they are at least 8 screen px apart). Not exported.
 - **Snapping switches:** View > Snap to objects (layers and the page edges and centre, today's behaviour, on by
   default) and View > Snap to guides (on by default). Moving and resizing snaps to visible guides when it is on.
-- Menu items that toggle show their state in the label ("Show rulers" / "Hide rulers"), like "Hide panels" today.
+- Toggles in the View menu (Rulers, Guides, Grid, Snap to objects, Snap to guides) show a check mark when on.
   Settings are remembered per browser.
 
 ## Pieces
