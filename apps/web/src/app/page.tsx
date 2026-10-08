@@ -30,7 +30,7 @@ export default function Landing() {
         <h1 className="text-[clamp(44px,8vw,96px)] leading-[.96] font-bold tracking-[-0.035em] text-balance">
           Templates for posts, stories, posters and invitations.
         </h1>
-        <p className="max-w-[440px] text-[19px] leading-normal text-muted">
+        <p className="relative before:absolute before:-inset-x-16 before:-inset-y-8 before:-z-10 before:bg-[radial-gradient(closest-side,var(--bg)_55%,transparent)] max-w-[440px] text-[19px] leading-normal text-text/80">
           Pick a template, make it yours, export a PNG. Free, and you can start without an account. Sign in with an email address to keep your designs.
         </p>
         <div className="flex flex-wrap justify-center gap-3">
@@ -45,16 +45,18 @@ export default function Landing() {
         </div>
       </section>
 
-      <footer className="absolute inset-x-0 bottom-0 z-10 flex justify-center gap-4 pb-4 text-xs text-muted">
-        <Link href="/terms" className="hover:text-text">
-          Terms
-        </Link>
-        <Link href="/privacy" className="hover:text-text">
-          Privacy
-        </Link>
-        <Link href="/cookies" className="hover:text-text">
-          Cookies
-        </Link>
+      <footer className="absolute inset-x-0 bottom-0 z-10 flex justify-center gap-4 pb-4 text-xs text-text/80">
+        <span className="relative flex gap-4 before:absolute before:-inset-x-8 before:-inset-y-3 before:-z-10 before:bg-[radial-gradient(closest-side,var(--bg)_50%,transparent)]">
+          <Link href="/terms" className="hover:text-text">
+            Terms
+          </Link>
+          <Link href="/privacy" className="hover:text-text">
+            Privacy
+          </Link>
+          <Link href="/cookies" className="hover:text-text">
+            Cookies
+          </Link>
+        </span>
       </footer>
     </main>
   );

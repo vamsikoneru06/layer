@@ -221,7 +221,7 @@ export function MediaView() {
       )}
 
       <Dialog open={confirm !== null} onClose={() => setConfirm(null)} title="Delete this photo?">
-        <p className="text-sm text-muted">This canIt&apos;s removed from your media. Designs that use it will show an empty frame instead.apos;t be undone. Designs that use it will show It&apos;s removed from your media. Designs that use it will show an empty frame instead.ldquo;Photo unavailableIt&apos;s removed from your media. Designs that use it will show an empty frame instead.rdquo; where it was.</p>
+        <p className="text-sm text-muted">This can&apos;t be undone. Designs that use it will show &ldquo;Photo unavailable&rdquo; where it was.</p>
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={() => setConfirm(null)} disabled={deleting}>
             Cancel
