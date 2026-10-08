@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, getTableColumns, sql } from "drizzle-orm";
 import type { Doc } from "@vash/schema";
 import { designs } from "../db/schema";
 import type { Db } from "../db/types";
@@ -20,9 +20,10 @@ const summaryColumns = {
   version: designs.version,
   createdAt: designs.createdAt,
   updatedAt: designs.updatedAt,
-  format: sql<string>`${designs.doc}->'meta'->>'format'`,
-  width: sql<number>`(${designs.doc}->'artboard'->>'width')::int`,
-  height: sql<number>`(${designs.doc}->'artboard'->>'height')::int`,
+  // Stored generated columns (migration 0007): reading them never loads the document itself.
+  format: sql<string>`${designs.format}`,
+  width: sql<number>`${designs.width}`,
+  height: sql<number>`${designs.height}`,
 };
 
 const owned = (ownerId: string, id: string) => and(eq(designs.id, id), eq(designs.ownerId, ownerId));
@@ -57,13 +58,17 @@ export async function insertDesign(db: Db, values: typeof designs.$inferInsert):
   return row!;
 }
 
-/** Compare-and-swap on `version`: the WHERE clause makes concurrent saves of one version mutually exclusive. */
-export async function updateDesignDoc(db: Db, ownerId: string, id: string, expectedVersion: number, doc: Doc, now: Date): Promise<DesignRow | undefined> {
+/**
+ * Compare-and-swap on `version`: the WHERE clause makes concurrent saves of one version mutually exclusive.
+ * Returns everything but the document, which the caller already has (it can be hundreds of KB).
+ */
+export async function updateDesignDoc(db: Db, ownerId: string, id: string, expectedVersion: number, doc: Doc, now: Date): Promise<Omit<DesignRow, "doc"> | undefined> {
+  const { doc: _doc, ...columns } = getTableColumns(designs);
   const [row] = await db
     .update(designs)
     .set({ doc, title: doc.meta.title, version: sql`${designs.version} + 1`, updatedAt: now })
     .where(and(owned(ownerId, id), eq(designs.version, expectedVersion)))
-    .returning();
+    .returning(columns);
   return row;
 }
 

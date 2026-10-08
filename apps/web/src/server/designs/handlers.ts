@@ -36,6 +36,8 @@ const summary = (d: Omit<repo.DesignSummary, "format" | "width" | "height">) => 
 const listItem = (d: repo.DesignSummary) => ({ ...summary(d), format: d.format, width: d.width, height: d.height });
 export const toDesignJson = (d: repo.DesignRow) => ({ ...summary(d), doc: d.doc, sourceTemplateId: d.sourceTemplateId, sourceTemplateVersion: d.sourceTemplateVersion });
 
+const prefersMinimal = (req: Request) => /(^|[,;\s])return=minimal($|[,;\s])/i.test(req.headers.get("prefer") ?? "");
+
 export function designHandlers(deps: Deps) {
   const ctx = { db: deps.db, now: deps.now };
   return {
@@ -60,7 +62,10 @@ export function designHandlers(deps: Deps) {
     save: endpoint(deps, { auth: "user", rateLimit: { name: "designSave", rule: RATE_LIMITS.designSave, by: "user" } }, async ({ req, user, params }) => {
       const id = parseId(params.id);
       const body = await readJson(req, SaveBody, DOC_BODY_LIMIT);
-      return Response.json(toDesignJson(await service.saveDesignDoc(ctx, user.id, id, body)));
+      const saved = await service.saveDesignDoc(ctx, user.id, id, body);
+      // RFC 7240: autosave only needs the new version, so it asks not to get the whole document back.
+      if (prefersMinimal(req)) return Response.json(summary(saved), { headers: { "preference-applied": "return=minimal" } });
+      return Response.json(toDesignJson(saved));
     }),
 
     patch: endpoint(deps, { auth: "user", rateLimit: writeLimit }, async ({ req, user, params }) => {

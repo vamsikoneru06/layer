@@ -73,11 +73,21 @@ export async function createDesign(
   }
 }
 
+/**
+ * Autosave, the busiest write: the compare-and-swap update is the only query on success (plus the asset check
+ * when the document has assets). Whether the design exists is looked up only on a failure, so someone else's
+ * design still answers 404 before any 422 or 409.
+ */
 export async function saveDesignDoc(ctx: ServiceContext, ownerId: string, id: string, input: { doc: unknown; version: number }): Promise<repo.DesignRow> {
-  if ((await repo.getDesignVersion(ctx.db, ownerId, id)) === undefined) throw notFound();
-  const doc = await checkDoc(ctx.db, ownerId, input.doc, id);
+  let doc: Doc;
+  try {
+    doc = await checkDoc(ctx.db, ownerId, input.doc, id);
+  } catch (err) {
+    if ((await repo.getDesignVersion(ctx.db, ownerId, id)) === undefined) throw notFound();
+    throw err;
+  }
   const saved = await repo.updateDesignDoc(ctx.db, ownerId, id, input.version, doc, ctx.now());
-  if (saved) return saved;
+  if (saved) return { ...saved, doc };
   const current = await repo.getDesignVersion(ctx.db, ownerId, id);
   if (current === undefined) throw notFound();
   throw conflict("This design changed since you loaded it.", { currentVersion: current });
