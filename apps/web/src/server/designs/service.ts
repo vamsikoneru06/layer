@@ -73,11 +73,21 @@ export async function createDesign(
   }
 }
 
+/**
+ * Autosave, the busiest write: the compare-and-swap update is the only query on success (plus the asset check
+ * when the document has assets). Whether the design exists is looked up only on a failure, so someone else's
+ * design still answers 404 before any 422 or 409.
+ */
 export async function saveDesignDoc(ctx: ServiceContext, ownerId: string, id: string, input: { doc: unknown; version: number }): Promise<repo.DesignRow> {
-  if ((await repo.getDesignVersion(ctx.db, ownerId, id)) === undefined) throw notFound();
-  const doc = await checkDoc(ctx.db, ownerId, input.doc, id);
+  let doc: Doc;
+  try {
+    doc = await checkDoc(ctx.db, ownerId, input.doc, id);
+  } catch (err) {
+    if ((await repo.getDesignVersion(ctx.db, ownerId, id)) === undefined) throw notFound();
+    throw err;
+  }
   const saved = await repo.updateDesignDoc(ctx.db, ownerId, id, input.version, doc, ctx.now());
-  if (saved) return saved;
+  if (saved) return { ...saved, doc };
   const current = await repo.getDesignVersion(ctx.db, ownerId, id);
   if (current === undefined) throw notFound();
   throw conflict("This design changed since you loaded it.", { currentVersion: current });
@@ -88,10 +98,16 @@ export async function updateDesignMeta(
   ownerId: string,
   id: string,
   patch: { title?: string; folderId?: string | null },
-): Promise<repo.DesignRow> {
-  if ((await repo.getDesignVersion(ctx.db, ownerId, id)) === undefined) throw notFound();
-  await assertFolder(ctx.db, ownerId, patch.folderId);
-  const row = await writingFolder(repo.updateDesignMeta(ctx.db, ownerId, id, patch, ctx.now()));
+  opts: { withDoc: boolean } = { withDoc: true },
+): Promise<Omit<repo.DesignRow, "doc"> & { doc?: Doc }> {
+  // A move checks the design and the folder at once; someone else's design still answers 404 before a bad folder's
+  // 422. A rename needs no check: the owner-scoped update finds nothing for someone else's design.
+  if (patch.folderId) {
+    const [version, folderOk] = await Promise.all([repo.getDesignVersion(ctx.db, ownerId, id), folderExists(ctx.db, ownerId, patch.folderId)]);
+    if (version === undefined) throw notFound();
+    if (!folderOk) throw folderMissing();
+  }
+  const row = await writingFolder(repo.updateDesignMeta(ctx.db, ownerId, id, patch, ctx.now(), opts));
   if (!row) throw notFound();
   return row;
 }

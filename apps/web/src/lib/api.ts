@@ -90,14 +90,17 @@ export const getDesign = (id: string) => request<Design>(`/api/designs/${id}`);
 
 /** Saves a new version; resolves to the version the server assigned. Rejects with status 409 on a conflict. */
 export async function saveDesign(id: string, doc: Doc, version: number): Promise<number> {
-  return (await request<Design>(`/api/designs/${id}`, { method: "PUT", json: { doc, version } })).version;
+  // The server answers without the document (often hundreds of KB) when asked; autosave only needs the version.
+  return (await request<{ version: number }>(`/api/designs/${id}`, { method: "PUT", json: { doc, version }, headers: { prefer: "return=minimal" } })).version;
 }
 
 /** "Keep mine as a copy" after a conflict. */
 export const saveDesignAsCopy = (doc: Doc, title: string) => request<{ id: string }>("/api/designs", { method: "POST", json: { doc, title } });
 
-export const renameDesign = (id: string, title: string) => request<unknown>(`/api/designs/${id}`, { method: "PATCH", json: { title } });
-export const moveDesign = (id: string, folderId: string | null) => request<unknown>(`/api/designs/${id}`, { method: "PATCH", json: { folderId } });
+// Neither caller reads the design back, so the server can leave the document out of its answer.
+const minimal = { prefer: "return=minimal" };
+export const renameDesign = (id: string, title: string) => request<unknown>(`/api/designs/${id}`, { method: "PATCH", json: { title }, headers: minimal });
+export const moveDesign = (id: string, folderId: string | null) => request<unknown>(`/api/designs/${id}`, { method: "PATCH", json: { folderId }, headers: minimal });
 
 type FullDesign = Omit<DesignItem, "format" | "width" | "height"> & { doc: { meta: { format: string }; artboard: { width: number; height: number } } };
 
