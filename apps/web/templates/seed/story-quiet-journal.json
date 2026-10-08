@@ -1,0 +1,250 @@
+{
+  "schemaVersion": 2,
+  "id": "story-quiet-journal",
+  "kind": "template",
+  "meta": {
+    "title": "Quiet Journal",
+    "category": "photo-posts",
+    "tags": [
+      "journal",
+      "film",
+      "faded",
+      "minimal"
+    ],
+    "format": "ig-story"
+  },
+  "artboard": {
+    "width": 1080,
+    "height": 1920,
+    "background": {
+      "type": "solid",
+      "color": "#EFEDE8"
+    }
+  },
+  "root": [
+    "title",
+    "photo1",
+    "photo2",
+    "line",
+    "note",
+    "handle"
+  ],
+  "nodes": {
+    "title": {
+      "id": "title",
+      "name": "Title",
+      "transform": {
+        "x": 540,
+        "y": 165,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 900,
+      "height": 90,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "october, slowly",
+      "font": {
+        "family": "Lora",
+        "weight": 400,
+        "style": "italic"
+      },
+      "size": 64,
+      "color": "#3A3631",
+      "align": "center",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 30
+    },
+    "photo1": {
+      "id": "photo1",
+      "name": "Photo",
+      "transform": {
+        "x": 540,
+        "y": 600,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 900,
+      "height": 700,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "content": {
+        "assetId": "6ac0fc48-6a69-8a14-a559-4df811a23978",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": "fade",
+        "brightness": 0,
+        "contrast": -0.3,
+        "saturation": -0.15,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0.35,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "photo2": {
+      "id": "photo2",
+      "name": "Photo",
+      "transform": {
+        "x": 615,
+        "y": 1270,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 750,
+      "height": 560,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "content": {
+        "assetId": "eefd0050-2f81-82aa-add1-cc33d5b146ca",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": "fade",
+        "brightness": 0,
+        "contrast": -0.3,
+        "saturation": -0.15,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0.35,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "line": {
+      "id": "line",
+      "name": "Line",
+      "transform": {
+        "x": 120,
+        "y": 1601.5,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 60,
+      "height": 3,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#3A3631"
+      },
+      "stroke": null
+    },
+    "note": {
+      "id": "note",
+      "name": "Note",
+      "transform": {
+        "x": 500,
+        "y": 1685,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 820,
+      "height": 110,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "two walks, one long weekend, no plans.",
+      "font": {
+        "family": "Inter",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 32,
+      "color": "#5C5750",
+      "align": "left",
+      "lineHeight": 1.5,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 80
+    },
+    "handle": {
+      "id": "handle",
+      "name": "Handle",
+      "transform": {
+        "x": 300,
+        "y": 1800,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 420,
+      "height": 40,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "@yourhandle",
+      "font": {
+        "family": "Inter",
+        "weight": 500,
+        "style": "normal"
+      },
+      "size": 24,
+      "color": "#8A8278",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 24
+    }
+  },
+  "assets": {
+    "6ac0fc48-6a69-8a14-a559-4df811a23978": {
+      "id": "6ac0fc48-6a69-8a14-a559-4df811a23978",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 1400,
+      "height": 1400
+    },
+    "eefd0050-2f81-82aa-add1-cc33d5b146ca": {
+      "id": "eefd0050-2f81-82aa-add1-cc33d5b146ca",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 1400,
+      "height": 1400
+    }
+  }
+}

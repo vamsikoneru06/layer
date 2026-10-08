@@ -1,0 +1,355 @@
+{
+  "schemaVersion": 2,
+  "id": "poster-recipe-card",
+  "kind": "template",
+  "meta": {
+    "title": "Recipe Card",
+    "category": "menus",
+    "tags": [
+      "recipe",
+      "food",
+      "cooking",
+      "pin"
+    ],
+    "format": "poster"
+  },
+  "artboard": {
+    "width": 1240,
+    "height": 1754,
+    "background": {
+      "type": "solid",
+      "color": "#FFF8EF"
+    }
+  },
+  "root": [
+    "photo",
+    "eyebrow",
+    "title",
+    "meta",
+    "divider",
+    "needs-title",
+    "needs",
+    "method-title",
+    "method",
+    "handle"
+  ],
+  "nodes": {
+    "photo": {
+      "id": "photo",
+      "name": "Dish photo",
+      "transform": {
+        "x": 620,
+        "y": 380,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1240,
+      "height": 760,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "content": {
+        "assetId": "7a54baef-06f6-8bc5-88c1-a2c3ced19b68",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "eyebrow": {
+      "id": "eyebrow",
+      "name": "Eyebrow",
+      "transform": {
+        "x": 430,
+        "y": 830,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 700,
+      "height": 40,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "15-MINUTE DINNER",
+      "font": {
+        "family": "Inter",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 26,
+      "color": "#C2410C",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 6,
+      "fit": "shrink",
+      "maxChars": 30
+    },
+    "title": {
+      "id": "title",
+      "name": "Title",
+      "transform": {
+        "x": 620,
+        "y": 925,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1080,
+      "height": 130,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Lemon garlic pasta",
+      "font": {
+        "family": "Playfair Display",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 88,
+      "color": "#2A211B",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 40
+    },
+    "meta": {
+      "id": "meta",
+      "name": "Time and servings",
+      "transform": {
+        "x": 480,
+        "y": 1022,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 800,
+      "height": 44,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Serves 2 · 15 min · Easy",
+      "font": {
+        "family": "Inter",
+        "weight": 500,
+        "style": "normal"
+      },
+      "size": 30,
+      "color": "#6B5E53",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 50
+    },
+    "divider": {
+      "id": "divider",
+      "name": "Divider",
+      "transform": {
+        "x": 620,
+        "y": 1071.5,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 1080,
+      "height": 3,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#E7D9C7"
+      },
+      "stroke": null
+    },
+    "needs-title": {
+      "id": "needs-title",
+      "name": "Ingredients heading",
+      "transform": {
+        "x": 330,
+        "y": 1135,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 500,
+      "height": 50,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "You need",
+      "font": {
+        "family": "Inter",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 32,
+      "color": "#2A211B",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 24
+    },
+    "needs": {
+      "id": "needs",
+      "name": "Ingredients",
+      "transform": {
+        "x": 330,
+        "y": 1370,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 500,
+      "height": 400,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "200 g spaghetti\n2 lemons\n4 cloves garlic\nOlive oil, salt, pepper\nParmesan to serve",
+      "font": {
+        "family": "Inter",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 28,
+      "color": "#4A3F36",
+      "align": "left",
+      "lineHeight": 1.6,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 220
+    },
+    "method-title": {
+      "id": "method-title",
+      "name": "Method heading",
+      "transform": {
+        "x": 900,
+        "y": 1135,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 520,
+      "height": 50,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "Method",
+      "font": {
+        "family": "Inter",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 32,
+      "color": "#2A211B",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 24
+    },
+    "method": {
+      "id": "method",
+      "name": "Method",
+      "transform": {
+        "x": 900,
+        "y": 1370,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 520,
+      "height": 400,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "1. Boil the pasta.\n2. Warm the garlic in oil.\n3. Add lemon and a splash of pasta water.\n4. Toss, season and serve.",
+      "font": {
+        "family": "Inter",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 28,
+      "color": "#4A3F36",
+      "align": "left",
+      "lineHeight": 1.6,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 260
+    },
+    "handle": {
+      "id": "handle",
+      "name": "Handle",
+      "transform": {
+        "x": 290,
+        "y": 1670,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 420,
+      "height": 40,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "@yourkitchen",
+      "font": {
+        "family": "Inter",
+        "weight": 500,
+        "style": "normal"
+      },
+      "size": 26,
+      "color": "#C2410C",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 24
+    }
+  },
+  "assets": {
+    "7a54baef-06f6-8bc5-88c1-a2c3ced19b68": {
+      "id": "7a54baef-06f6-8bc5-88c1-a2c3ced19b68",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 933,
+      "height": 1400
+    }
+  }
+}
