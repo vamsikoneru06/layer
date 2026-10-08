@@ -119,6 +119,9 @@ Repository Settings → Environments → New environment `production`:
    DATABASE_URL="<Neon direct string>" corepack pnpm admin:grant you@example.com
    ```
 
+   Admin tools stay locked until you set up two-step verification: sign in again, then within 10 minutes open
+   Settings → Two-step verification → Set up, with an authenticator app. Keep the backup codes somewhere safe. Each new
+   device needs a code, and one code unlocks admin tools on that device for 12 hours.
 3. Actions → **Backup** → Run workflow, and check it uploads an artifact.
 
 ### 8. UptimeRobot (is the site up?)

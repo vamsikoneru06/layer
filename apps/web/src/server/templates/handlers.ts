@@ -71,7 +71,7 @@ export function templateHandlers(deps: Deps, storage: ObjectStorage | null = nul
 
     get: endpoint(deps, { auth: "optional", rateLimit: publicRead }, async ({ user, params }) => {
       const card = await repo.getTemplateCard(deps.db, parseId(params.id));
-      if (!card || !canSee(card, user)) throw notFound();
+      if (!card || !canSee(card, user, deps.now())) throw notFound();
       const version = await repo.getTemplateVersion(deps.db, card.id, card.currentVersion);
       if (!version) throw notFound();
       return Response.json({ ...toTemplateJson(card), doc: version.doc });

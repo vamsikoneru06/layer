@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { assertAdminStepUp } from "../auth/two-factor";
 import { runAsUser } from "../db/user-scope";
 import type { CurrentUser, Deps } from "../deps";
 import { consume, type RateLimitRule } from "../rate-limit/limiter";
@@ -48,8 +49,9 @@ export function endpoint<A extends AuthMode>(
       if ((options.auth === "user" || options.auth === "admin") && !user) {
         throw new HttpError(401, "Unauthorized", "Sign in to continue.");
       }
-      if (options.auth === "admin" && user?.role !== "admin") {
-        throw new HttpError(403, "Forbidden", "This action requires an administrator.");
+      if (options.auth === "admin") {
+        if (user?.role !== "admin") throw new HttpError(403, "Forbidden", "This action requires an administrator.");
+        assertAdminStepUp(user, deps.now());
       }
       if (options.rateLimit) await enforceRateLimit(deps, req, options.rateLimit, user);
 
