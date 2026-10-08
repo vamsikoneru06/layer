@@ -1,6 +1,6 @@
 "use client";
 
-import { CATEGORIES, FORMATS, type Doc } from "@vash/schema";
+import { CATEGORY_GROUPS, categoryLabel, FORMATS, type Doc } from "@vash/schema";
 import { ChevronDown, LayoutTemplate, Search } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -14,7 +14,6 @@ import { DocPreview } from "./doc-preview";
 
 const CARD_BOX = { width: 260, height: 260 };
 
-export const categoryLabel = (c: string) => c.charAt(0).toUpperCase() + c.slice(1);
 export const formatLabel = (f: string) => (f in FORMATS ? FORMATS[f as keyof typeof FORMATS].label : "Custom size");
 
 /** Template documents, fetched once per page load and shared by every card and the detail page. */
@@ -89,7 +88,7 @@ const SORTS: readonly { value: TemplateSort; label: string }[] = [
 export function TemplatesView() {
   const router = useRouter();
   const params = useSearchParams();
-  // Filters start from the URL, so /templates?category=food opens filtered.
+  // Filters start from the URL, so /templates?category=menus opens filtered.
   const [initial] = useState(() => readGalleryParams(params));
   const [q, setQ] = useState(initial.q);
   const [query, setQuery] = useState(initial.q);
@@ -180,14 +179,20 @@ export function TemplatesView() {
         </div>
       </div>
 
-      <div role="group" aria-label="Category" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+      <div role="group" aria-label="Category" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 md:flex-wrap md:overflow-visible">
         <button type="button" aria-pressed={category === null} onClick={() => setCategory(null)} className={chip(category === null)}>
           All
         </button>
-        {CATEGORIES.map((c) => (
-          <button key={c} type="button" aria-pressed={category === c} onClick={() => setCategory(c)} className={chip(category === c)}>
-            {categoryLabel(c)}
-          </button>
+        {/* Each job under who does it: one scrolling row on phones, wrapping by group on wider screens. */}
+        {CATEGORY_GROUPS.map((g) => (
+          <div key={g.label} role="group" aria-label={g.label} className="flex flex-none items-center gap-2">
+            <span className="ml-2 flex-none text-[12px] text-muted">{g.label}</span>
+            {g.categories.map((c) => (
+              <button key={c.id} type="button" aria-pressed={category === c.id} onClick={() => setCategory(c.id)} className={chip(category === c.id)}>
+                {c.label}
+              </button>
+            ))}
+          </div>
         ))}
       </div>
 

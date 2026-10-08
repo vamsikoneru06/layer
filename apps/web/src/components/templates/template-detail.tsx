@@ -1,5 +1,6 @@
 "use client";
 
+import { categoryLabel } from "@vash/schema";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -9,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { getTemplate, type TemplateDetail as Template } from "@/lib/api";
 import { openTemplate } from "@/lib/open-template";
 import { DocPreview } from "./doc-preview";
-import { categoryLabel, formatLabel } from "./templates-view";
+import { formatLabel } from "./templates-view";
 
 /** `initial`: the template as the server rendered it; null when it isn't public (a hidden one opens for its author through the API). */
 export function TemplateDetail({ id, initial = null }: { id: string; initial?: Template | null }) {

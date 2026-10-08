@@ -34,15 +34,32 @@ function redact(value: unknown, depth = 0): unknown {
   );
 }
 
+export type ErrorReporter = (err: unknown, tags: { event: string; requestId?: string }) => void;
+
+/** `onError` gets the raw `err` of every error event, for an error tracker that scrubs on its own. */
 export function createLogger(
   write: (line: string) => void = (line) => process.stdout.write(`${line}\n`),
   now: () => Date = () => new Date(),
+  onError?: ErrorReporter,
 ): Logger {
   const at =
     (level: "info" | "warn" | "error") =>
     (event: string, fields: LogFields = {}) =>
       write(JSON.stringify({ time: now().toISOString(), level, event, ...(redact(fields) as LogFields) }));
-  return { info: at("info"), warn: at("warn"), error: at("error") };
+  const logError = at("error");
+  return {
+    info: at("info"),
+    warn: at("warn"),
+    error(event, fields = {}) {
+      logError(event, fields);
+      if (!onError || fields.err === undefined) return;
+      try {
+        onError(fields.err, { event, ...(typeof fields.requestId === "string" ? { requestId: fields.requestId } : {}) });
+      } catch {
+        // Reporting is best effort; the log line above is already written.
+      }
+    },
+  };
 }
 
 export const silentLogger: Logger = { info() {}, warn() {}, error() {} };

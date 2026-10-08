@@ -1,0 +1,453 @@
+{
+  "schemaVersion": 2,
+  "id": "post-moodboard",
+  "kind": "template",
+  "meta": {
+    "title": "Moodboard",
+    "category": "photo-posts",
+    "tags": [
+      "moodboard",
+      "palette",
+      "grid",
+      "autumn"
+    ],
+    "format": "ig-post"
+  },
+  "artboard": {
+    "width": 1080,
+    "height": 1080,
+    "background": {
+      "type": "solid",
+      "color": "#F7F5F0"
+    }
+  },
+  "root": [
+    "title",
+    "year",
+    "photo1",
+    "photo2",
+    "photo3",
+    "photo4",
+    "swatch-1",
+    "swatch-2",
+    "swatch-3",
+    "swatch-4",
+    "swatch-5",
+    "palette"
+  ],
+  "nodes": {
+    "title": {
+      "id": "title",
+      "name": "Title",
+      "transform": {
+        "x": 380,
+        "y": 78,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 640,
+      "height": 56,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "mood / autumn",
+      "font": {
+        "family": "Inter",
+        "weight": 600,
+        "style": "normal"
+      },
+      "size": 32,
+      "color": "#2B2925",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 30
+    },
+    "year": {
+      "id": "year",
+      "name": "Year",
+      "transform": {
+        "x": 900,
+        "y": 78,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 240,
+      "height": 56,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "2026",
+      "font": {
+        "family": "Inter",
+        "weight": 600,
+        "style": "normal"
+      },
+      "size": 32,
+      "color": "#2B2925",
+      "align": "right",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 10
+    },
+    "photo1": {
+      "id": "photo1",
+      "name": "Photo",
+      "transform": {
+        "x": 295,
+        "y": 330,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 470,
+      "height": 400,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 12
+      },
+      "content": {
+        "assetId": "818bcc9e-bfc8-839b-9330-8a6ec9328dee",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "photo2": {
+      "id": "photo2",
+      "name": "Photo",
+      "transform": {
+        "x": 785,
+        "y": 330,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 470,
+      "height": 400,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 12
+      },
+      "content": {
+        "assetId": "87b04c2e-b48c-8ab6-9f25-11ce1d2a6859",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "photo3": {
+      "id": "photo3",
+      "name": "Photo",
+      "transform": {
+        "x": 295,
+        "y": 715,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 470,
+      "height": 330,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 12
+      },
+      "content": {
+        "assetId": "54aa1b02-905a-88c7-87a9-884187ceec48",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "photo4": {
+      "id": "photo4",
+      "name": "Photo",
+      "transform": {
+        "x": 785,
+        "y": 715,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 470,
+      "height": 330,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 12
+      },
+      "content": {
+        "assetId": "00df529b-0571-8ec7-9b04-39259028cded",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": null,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "warmth": 0,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0,
+        "vignette": 0,
+        "grain": 0,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "swatch-1": {
+      "id": "swatch-1",
+      "name": "Colour swatch",
+      "transform": {
+        "x": 90,
+        "y": 950,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 60,
+      "height": 60,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#C7A27C"
+      },
+      "stroke": null
+    },
+    "swatch-2": {
+      "id": "swatch-2",
+      "name": "Colour swatch",
+      "transform": {
+        "x": 170,
+        "y": 950,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 60,
+      "height": 60,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#8E9775"
+      },
+      "stroke": null
+    },
+    "swatch-3": {
+      "id": "swatch-3",
+      "name": "Colour swatch",
+      "transform": {
+        "x": 250,
+        "y": 950,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 60,
+      "height": 60,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#E2D3C1"
+      },
+      "stroke": null
+    },
+    "swatch-4": {
+      "id": "swatch-4",
+      "name": "Colour swatch",
+      "transform": {
+        "x": 330,
+        "y": 950,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 60,
+      "height": 60,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#5B4636"
+      },
+      "stroke": null
+    },
+    "swatch-5": {
+      "id": "swatch-5",
+      "name": "Colour swatch",
+      "transform": {
+        "x": 410,
+        "y": 950,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 60,
+      "height": 60,
+      "opacity": 1,
+      "visible": true,
+      "lock": "locked",
+      "type": "shape",
+      "geometry": {
+        "kind": "ellipse"
+      },
+      "fill": {
+        "type": "solid",
+        "color": "#D9CBB0"
+      },
+      "stroke": null
+    },
+    "palette": {
+      "id": "palette",
+      "name": "Palette",
+      "transform": {
+        "x": 750,
+        "y": 950,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 540,
+      "height": 44,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "clay, sage, linen, walnut, oat",
+      "font": {
+        "family": "Inter",
+        "weight": 400,
+        "style": "normal"
+      },
+      "size": 24,
+      "color": "#6B655D",
+      "align": "right",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 60
+    }
+  },
+  "assets": {
+    "818bcc9e-bfc8-839b-9330-8a6ec9328dee": {
+      "id": "818bcc9e-bfc8-839b-9330-8a6ec9328dee",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 933,
+      "height": 1400
+    },
+    "87b04c2e-b48c-8ab6-9f25-11ce1d2a6859": {
+      "id": "87b04c2e-b48c-8ab6-9f25-11ce1d2a6859",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 933,
+      "height": 1400
+    },
+    "54aa1b02-905a-88c7-87a9-884187ceec48": {
+      "id": "54aa1b02-905a-88c7-87a9-884187ceec48",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 934,
+      "height": 1400
+    },
+    "00df529b-0571-8ec7-9b04-39259028cded": {
+      "id": "00df529b-0571-8ec7-9b04-39259028cded",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 1095,
+      "height": 1400
+    }
+  }
+}

@@ -1,0 +1,173 @@
+{
+  "schemaVersion": 2,
+  "id": "post-film-frame",
+  "kind": "template",
+  "meta": {
+    "title": "Film Frame",
+    "category": "photo-posts",
+    "tags": [
+      "film",
+      "grain",
+      "minimal",
+      "date stamp"
+    ],
+    "format": "ig-post"
+  },
+  "artboard": {
+    "width": 1080,
+    "height": 1080,
+    "background": {
+      "type": "solid",
+      "color": "#F5F3EE"
+    }
+  },
+  "root": [
+    "photo",
+    "stamp",
+    "roll",
+    "caption"
+  ],
+  "nodes": {
+    "photo": {
+      "id": "photo",
+      "name": "Photo",
+      "transform": {
+        "x": 540,
+        "y": 470,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 960,
+      "height": 820,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "frame",
+      "shape": {
+        "kind": "rect",
+        "cornerRadius": 0
+      },
+      "content": {
+        "assetId": "9e79177f-f896-8cf1-869d-2b2b15271459",
+        "offsetX": 0,
+        "offsetY": 0,
+        "scale": 1
+      },
+      "filters": {
+        "preset": "film",
+        "brightness": 0,
+        "contrast": -0.12,
+        "saturation": 0,
+        "warmth": 0.12,
+        "tint": 0,
+        "highlights": 0,
+        "shadows": 0.2,
+        "vignette": 0.2,
+        "grain": 0.35,
+        "blur": 0,
+        "sharpen": 0
+      },
+      "placeholder": true
+    },
+    "stamp": {
+      "id": "stamp",
+      "name": "Date stamp",
+      "transform": {
+        "x": 870,
+        "y": 833,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 260,
+      "height": 54,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "’26 10 07",
+      "font": {
+        "family": "Space Grotesk",
+        "weight": 700,
+        "style": "normal"
+      },
+      "size": 40,
+      "color": "#F04E00",
+      "align": "right",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 12
+    },
+    "roll": {
+      "id": "roll",
+      "name": "Roll",
+      "transform": {
+        "x": 340,
+        "y": 930,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 560,
+      "height": 36,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "ROLL 03 · FRAME 17",
+      "font": {
+        "family": "Space Grotesk",
+        "weight": 500,
+        "style": "normal"
+      },
+      "size": 22,
+      "color": "#8A8278",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 4,
+      "fit": "shrink",
+      "maxChars": 30
+    },
+    "caption": {
+      "id": "caption",
+      "name": "Caption",
+      "transform": {
+        "x": 440,
+        "y": 984,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "width": 760,
+      "height": 64,
+      "opacity": 1,
+      "visible": true,
+      "lock": "content-only",
+      "type": "text",
+      "content": "late light on the way home",
+      "font": {
+        "family": "Lora",
+        "weight": 400,
+        "style": "italic"
+      },
+      "size": 38,
+      "color": "#2C2925",
+      "align": "left",
+      "lineHeight": 1.2,
+      "letterSpacing": 0,
+      "fit": "shrink",
+      "maxChars": 50
+    }
+  },
+  "assets": {
+    "9e79177f-f896-8cf1-869d-2b2b15271459": {
+      "id": "9e79177f-f896-8cf1-869d-2b2b15271459",
+      "kind": "photo",
+      "mime": "image/jpeg",
+      "width": 1400,
+      "height": 1400
+    }
+  }
+}

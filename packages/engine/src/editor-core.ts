@@ -4,6 +4,7 @@ import { History } from "./history";
 import type { Box } from "./math";
 import { checkPolicy, type EditMode } from "./policy";
 import type { Guide } from "./snapping";
+import { limitText } from "./text";
 import type { Viewport } from "./viewport";
 
 /** Everything the UI reads. A new object is published on every change (for useSyncExternalStore). */
@@ -112,12 +113,12 @@ export class EditorCore {
     return true;
   }
 
-  /** Replaces the edited layer's text, cut to its `maxChars`. */
+  /** Replaces the edited layer's text, cut to its `maxChars` visible characters. */
   editText(content: string): boolean {
     const id = this.#chrome.editing;
     const node = id ? (this.history.baseDoc ?? this.doc).nodes[id] : undefined;
     if (!id || node?.type !== "text") return false;
-    return this.preview({ type: "update", id, patch: { content: content.slice(0, node.maxChars ?? LIMITS.textChars) } });
+    return this.preview({ type: "update", id, patch: { content: limitText(content, node.maxChars ?? LIMITS.textChars, LIMITS.textChars) } });
   }
 
   /** Ends typing: keeps the text as one undo step, or restores it (Escape). */
