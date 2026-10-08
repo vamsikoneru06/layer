@@ -12,4 +12,5 @@ export const testConfig: AppConfig = {
   storage: null,
   cronSecret: null,
   sentryDsn: null,
+  pexelsApiKey: null,
 };

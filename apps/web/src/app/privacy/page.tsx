@@ -5,7 +5,7 @@ export const metadata = { title: "Privacy · VASH" };
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Privacy Policy" updated="8 October 2026">
+    <LegalPage title="Privacy Policy" updated="9 October 2026">
       <p>
         VASH is a free photo design editor run by an individual based in India, who is responsible for your personal data here (the
         &ldquo;Data Fiduciary&rdquo; under India&apos;s Digital Personal Data Protection Act, 2023). This page explains what we collect,
@@ -82,6 +82,10 @@ export default function PrivacyPage() {
         <li>Google handles &ldquo;Sign in with Google&rdquo; and sends our sign-in emails.</li>
         <li>Sentry receives the error reports described above.</li>
         <li>GitHub stores encrypted copies of the database, as backups.</li>
+        <li>
+          Pexels provides the free stock photos in the editor. When you search, our server sends Pexels your search words, never
+          your name, email or IP address. Photos you pick are copied into your account like your own uploads.
+        </li>
       </ul>
       <p>
         Their servers may be outside India, for example in the United States. We only use providers that protect data with security
