@@ -85,7 +85,7 @@ describe("admin bug reports", () => {
   });
 
   it("lists open reports oldest first, with the reporter's email when there is one", async () => {
-    const admin = await createUser(t.db, { role: "admin" });
+    const admin = await createUser(t.db, { role: "admin", twoFactorEnabled: true });
     const reporter = await createUser(t.db);
     await t.db.delete(bugReports);
     const [older] = await t.db.insert(bugReports).values({ summary: "older", reporterId: reporter.id, createdAt: new Date("2020-01-01T00:00:00Z") }).returning();
@@ -97,7 +97,7 @@ describe("admin bug reports", () => {
   });
 
   it("resolves a report once, recording who did it", async () => {
-    const admin = await createUser(t.db, { role: "admin" });
+    const admin = await createUser(t.db, { role: "admin", twoFactorEnabled: true });
     const [r] = await t.db.insert(bugReports).values({ summary: "crash" }).returning();
     const resolve = () => call(h.resolve, { method: "POST", as: admin, params: { id: r!.id }, body: { status: "fixed" } });
     const res = await resolve();
