@@ -1,6 +1,6 @@
 "use client";
 
-import { copiedStyleOf, createEditor, hitTest, toWorld, topLevelOf, type Editor, type EditorState } from "@vash/engine";
+import { copiedStyleOf, createEditor, hitTest, resizeDesign, toWorld, topLevelOf, type Editor, type EditorState } from "@vash/engine";
 import { parseDoc, type Doc } from "@vash/schema";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type PointerEvent as ReactPointerEvent } from "react";
@@ -16,6 +16,7 @@ import { BottomBar } from "./bottom-bar";
 import { CanvasOverlay } from "./canvas-overlay";
 import { DesignInfoDialog } from "./design-info-dialog";
 import { ContextMenu } from "./context-menu";
+import { ResizeDialog } from "./resize-dialog";
 import { buildActions, CONTEXT_LAYOUTS, toMenuItems, type ActionHost } from "./editor-actions";
 import { EditorHeader } from "./editor-header";
 import { FloatingToolbar } from "./floating-toolbar";
@@ -72,6 +73,7 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
   const fullscreen = useFullscreen();
   const [infoOpen, setInfoOpen] = useState(false);
   const [moveOpen, setMoveOpen] = useState(false);
+  const [resizeOpen, setResizeOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [menuAt, setMenuAt] = useState<{ x: number; y: number; onLayer: boolean } | null>(null);
   const [panelsHidden, setPanelsHidden] = useState(false);
@@ -339,11 +341,13 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
     rename: () => setRenaming(true),
     moveToFolder: () => setMoveOpen(true),
     designInfo: () => setInfoOpen(true),
+    resizeDesign: () => setResizeOpen(true),
     save: () => void saveNow(),
     download: () => setExportOpen(true),
     zoomIn: () => editor?.zoomTo(editor.getState().viewport.zoom * 1.25),
     zoomOut: () => editor?.zoomTo(editor.getState().viewport.zoom / 1.25),
     fit: () => editor?.fit(),
+    actualSize: () => editor?.zoomTo(1),
     fullscreen: () => void fullscreen.toggle().catch(() => toast({ message: "Fullscreen isn’t available right now." })),
     togglePanels: () => setPanelsHidden((hidden) => !hidden),
     shortcuts: () => setShortcutsOpen(true),
@@ -371,11 +375,13 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
       rename: call("rename"),
       moveToFolder: call("moveToFolder"),
       designInfo: call("designInfo"),
+      resizeDesign: call("resizeDesign"),
       save: call("save"),
       download: call("download"),
       zoomIn: call("zoomIn"),
       zoomOut: call("zoomOut"),
       fit: call("fit"),
+      actualSize: call("actualSize"),
       fullscreen: call("fullscreen"),
       togglePanels: call("togglePanels"),
       shortcuts: call("shortcuts"),
@@ -389,6 +395,36 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
       clearGuides: call("clearGuides"),
     };
   }, [panelsHidden, fullscreen.supported, local, view, guideCount]);
+
+  // Ctrl or Cmd with = + - 0 1 zooms the canvas instead of the page. Keys typed into a field or a dialog are left alone.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(mac ? e.metaKey : e.ctrlKey) || e.altKey) return;
+      if (e.target instanceof Element && e.target.closest(TYPING_OR_MODAL)) return;
+      const zoom = hostRef.current;
+      switch (e.key) {
+        case "=":
+        case "+":
+          zoom.zoomIn();
+          break;
+        case "-":
+          zoom.zoomOut();
+          break;
+        case "0":
+          zoom.fit();
+          break;
+        case "1":
+          zoom.actualSize();
+          break;
+        default:
+          return;
+      }
+      e.preventDefault();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mac]);
+
   // Hover, viewport and marquee changes rebuild the state but not these inputs, so they do not rebuild the actions.
   const doc = state?.doc;
   const selection = state?.selection;
@@ -521,6 +557,13 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
       )}
       {actions && <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} actions={actions} mac={mac} />}
       <DesignInfoDialog open={infoOpen} onClose={() => setInfoOpen(false)} doc={state?.doc ?? design.doc} savedAt={savedAt} />
+      <ResizeDialog
+        open={resizeOpen}
+        onClose={() => setResizeOpen(false)}
+        doc={state?.doc ?? design.doc}
+        mode={state?.mode ?? "design"}
+        onResize={(size, scaleContent) => !!editor && resizeDesign(editor.core, size, scaleContent)}
+      />
       <MoveDialog
         open={moveOpen}
         onClose={() => setMoveOpen(false)}

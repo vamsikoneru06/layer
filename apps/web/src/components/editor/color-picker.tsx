@@ -3,6 +3,7 @@
 import { Pipette } from "lucide-react";
 import { createContext, useContext, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { hsvToHex, parseHex, toHsv, type Hsv } from "@/lib/color";
+import { loadRecent, pushRecent } from "@/lib/design-colors";
 import { cn } from "@/lib/utils";
 
 /** Colours already in the design, offered at the bottom of every picker. */
@@ -28,6 +29,7 @@ export function ColorPicker({ value, onChange, name }: { value: string; onChange
   const [hsv, setHsv] = useState<Hsv>(() => toHsv(value) ?? { h: 0, s: 0, v: 0, a: 1 });
   const emitted = useRef(value);
   const [hexDraft, setHexDraft] = useState<string | null>(null);
+  const [recent, setRecent] = useState<string[]>(() => loadRecent());
 
   // Follow outside changes (undo, another layer) without losing the hue of greys.
   useEffect(() => {
@@ -41,6 +43,7 @@ export function ColorPicker({ value, onChange, name }: { value: string; onChange
     const hex = hsvToHex(next);
     emitted.current = hex;
     onChange(hex, final);
+    if (final) setRecent(pushRecent(hex));
   };
 
   const pick = (hex: string) => {
@@ -112,7 +115,8 @@ export function ColorPicker({ value, onChange, name }: { value: string; onChange
           </button>
         )}
       </div>
-      {docColors.length > 0 && <SwatchRow title="In this design" colors={docColors.slice(0, 12)} current={hex} onPick={pick} />}
+      {docColors.length > 0 && <SwatchRow title="Design colours" colors={docColors.slice(0, 16)} current={hex} onPick={pick} />}
+      {recent.length > 0 && <SwatchRow title="Recent" colors={recent} current={hex} onPick={pick} />}
       <SwatchRow title="Swatches" colors={SWATCHES} current={hex} onPick={pick} />
     </div>
   );
@@ -219,17 +223,17 @@ function SwatchRow({ title, colors, current, onPick }: { title: string; colors: 
   return (
     <div className="flex flex-col gap-1.5">
       <span className="text-[11px] font-medium text-muted">{title}</span>
-      <div className="grid grid-cols-[repeat(8,1fr)] gap-1.5">
+      <div className="flex flex-wrap gap-1.5">
         {colors.map((c) => (
           <button
             key={c}
             type="button"
-            aria-label={c}
+            aria-label={`Use colour ${c}`}
             title={c}
             aria-pressed={c === current}
             onClick={() => onPick(c)}
             className={cn(
-              "aspect-square rounded-md shadow-[inset_0_0_0_.5px_var(--line)] transition hover:scale-110 active:scale-95",
+              "size-5 rounded-md border-[0.5px] border-line transition hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-text active:scale-95",
               c === current && "outline-2 outline-offset-1 outline-text",
             )}
             style={{ background: c.length === 9 ? `linear-gradient(${c}, ${c}), ${CHECKER}` : c }}

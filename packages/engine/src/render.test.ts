@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { recordingContext } from "./recording-ctx";
-import { renderDoc, renderScene, type ImageState } from "./render";
+import { arcAngles, arcPoint, arcRadius, renderDoc, renderScene, type ImageState } from "./render";
 import { docWith, frame, group, rect, text } from "./test-docs";
 
 const measure = (s: string, _f: unknown, size: number) => s.length * size * 0.5;
@@ -137,6 +137,114 @@ describe("renderDoc text highlight, outline and list", () => {
     const restore = ops.indexOf("restore", lastText);
     expect(restore).toBeGreaterThan(lastText);
     expect(ops.indexOf("fill", restore)).toBeGreaterThan(restore);
+  });
+});
+
+describe("curved text arc maths", () => {
+  it("bends a 300 px line round a half circle at curve 100, and less for smaller curves", () => {
+    expect(arcRadius(300, 100)).toBeCloseTo(300 / Math.PI, 9);
+    expect(arcRadius(300, -100)).toBeCloseTo(300 / Math.PI, 9);
+    expect(arcRadius(300, 50)).toBeCloseTo((300 * 2) / Math.PI, 9);
+  });
+
+  it("centres the glyphs on the arc's top point, spaced by their widths", () => {
+    // Three 10 px glyphs on a 30 px line: their centres are 10 px left of, on, and 10 px right of the top point.
+    expect(arcAngles([10, 10, 10], [10, 10, 10], 10)).toEqual([-1, 0, 1]);
+    // Letter spacing adds room after each glyph, and the line is centred with that trailing room, as layout measures it.
+    expect(arcAngles([10, 10], [15, 15], 10)).toEqual([-1, 0.5]);
+  });
+
+  it("puts an arch's top point at the offset above the centre line, with glyphs turned to the tangent", () => {
+    const apex = arcPoint(100, 100, 0, 0);
+    expect(apex.x).toBeCloseTo(0, 9);
+    expect(apex.y).toBeCloseTo(0, 9);
+    expect(apex.rotation).toBe(0);
+    // A quarter turn round the arch: the glyph is on the level of the arc's centre, reading straight down.
+    const side = arcPoint(100, 100, 0, Math.PI / 2);
+    expect(side.x).toBeCloseTo(100, 9);
+    expect(side.y).toBeCloseTo(100, 9);
+    expect(side.rotation).toBeCloseTo(Math.PI / 2, 9);
+    // A line 5 px outward of the centre line sits 5 px higher at the top.
+    expect(arcPoint(100, 100, 5, 0).y).toBeCloseTo(-5, 9);
+  });
+
+  it("bends a smile the other way: its bottom point is at the same offset, and its ends rise", () => {
+    expect(arcPoint(100, -100, 0, 0).y).toBeCloseTo(0, 9);
+    expect(arcPoint(100, -100, 5, 0).y).toBeCloseTo(-5, 9);
+    const side = arcPoint(100, -100, 0, Math.PI / 2);
+    expect(side.x).toBeCloseTo(100, 9);
+    expect(side.y).toBeCloseTo(-100, 9);
+    expect(side.rotation).toBeCloseTo(-Math.PI / 2, 9);
+  });
+});
+
+describe("renderDoc curved text", () => {
+  const opts = { measure, image: noImages, dpr: 1 };
+  const identity = [1, 0, 0, 1, 0, 0] as const;
+  // 20 px text, 10 px per character, one 100×100 box: "aaa" is 30 px, so a curve of 100 has a radius of 100 / π.
+  const plain = { ...text("t", {}, "aaa", 100, 100), size: 20, lineHeight: 1.5 };
+  const draw = (node: typeof plain) => {
+    const { ctx, calls } = recordingContext();
+    renderDoc(ctx, docWith([node]), identity, opts, { background: false });
+    return calls;
+  };
+  it("draws one glyph per grapheme, each turned to the arc's tangent", () => {
+    const calls = draw({ ...plain, content: "aaa", curve: 100 });
+    const fills = calls.filter((c) => c.op === "fillText");
+    expect(fills.map((c) => c.args)).toEqual([
+      ["a", -5, 0],
+      ["a", -5, 0],
+      ["a", -5, 0],
+    ]);
+    const rotations = calls.filter((c) => c.op === "rotate").map((c) => c.args[0] as number);
+    // Centres are 10 px either side of and on the top point: angles of -0.1π, 0 and 0.1π.
+    expect(rotations).toHaveLength(3);
+    expect(rotations[0]).toBeCloseTo(-0.1 * Math.PI, 9);
+    expect(rotations[1]).toBeCloseTo(0, 9);
+    expect(rotations[2]).toBeCloseTo(0.1 * Math.PI, 9);
+    // The middle glyph sits on the top point, the box centre, and the outer ones move down the arch.
+    const moves = calls.filter((c) => c.op === "translate").map((c) => c.args as number[]);
+    expect(moves[1]![0]).toBeCloseTo(0, 9);
+    expect(moves[1]![1]).toBeCloseTo(0, 9);
+    expect(moves[0]![1]).toBeGreaterThan(0);
+    expect(moves[2]![1]).toBeCloseTo(moves[0]![1]!, 9);
+    expect(moves[2]![0]).toBeGreaterThan(0);
+  });
+
+  it("skips the highlight band, which does not follow the curve", () => {
+    const calls = draw({ ...plain, content: "aaa", curve: 50, highlight: { color: "#FFFF00" } });
+    expect(calls.some((c) => c.op === "roundRect")).toBe(false);
+    expect(calls.some((c) => c.op === "fillText")).toBe(true);
+  });
+
+  it("strokes every glyph's outline before any glyph is filled", () => {
+    const calls = draw({ ...plain, content: "aaa", curve: -60, outline: { color: "#FF0000", width: 2 } });
+    const ops = calls.map((c) => c.op);
+    const strokes = ops.map((op, i) => (op === "strokeText" ? i : -1)).filter((i) => i >= 0);
+    const fills = ops.map((op, i) => (op === "fillText" ? i : -1)).filter((i) => i >= 0);
+    expect(strokes).toHaveLength(3);
+    expect(fills).toHaveLength(3);
+    expect(Math.max(...strokes)).toBeLessThan(Math.min(...fills));
+  });
+
+  it("stacks lines on rings: the first line of an arch is the outer one", () => {
+    // Two 30 px lines: line 0 sits 15 px above the centre line, line 1 15 px below it.
+    const calls = draw({ ...plain, content: "aaa\nbbb", curve: 100 });
+    const moves = calls.filter((c) => c.op === "translate").map((c) => c.args as number[]);
+    expect(moves).toHaveLength(6);
+    expect(moves[1]![1]).toBeCloseTo(-15, 9);
+    expect(moves[4]![1]).toBeCloseTo(15, 9);
+  });
+
+  it("draws a list marker on the arc, before the text", () => {
+    const calls = draw({ ...plain, content: "aaa", curve: 100, list: "number" });
+    const fills = calls.filter((c) => c.op === "fillText").map((c) => c.args[0]);
+    expect(fills).toEqual(["1.", "a", "a", "a"]);
+  });
+
+  it("draws curve 0 exactly as straight text", () => {
+    expect(draw({ ...plain, content: "aaa", curve: 0 })).toEqual(draw({ ...plain, content: "aaa" }));
+    expect(draw({ ...plain, content: "aaa", curve: 0 }).some((c) => c.op === "rotate")).toBe(false);
   });
 });
 

@@ -2,7 +2,7 @@ import type { Doc, Fill, FrameNode, Node, Shadow, ShapeNode, StickerNode, TextNo
 import { isNeutral, type FilterFn } from "./filters";
 import { multiply, type Mat } from "./math";
 import { drawOrder, parentOf, worldMatrix } from "./scene";
-import { graphemeCount, layoutText, type Measure } from "./text";
+import { graphemeCount, graphemes, LIST_INDENT, layoutText, type Measure, type TextLayout } from "./text";
 import type { Viewport } from "./viewport";
 
 export type Ctx = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
@@ -224,12 +224,99 @@ const HIGHLIGHT_PAD = 0.15;
 const HIGHLIGHT_RADIUS = 0.2;
 
 /**
+ * Radius of the arc that a line `width` px wide bends around for `curve` (non-zero, -100 to 100). At ±100 the width
+ * spans a half circle (radius width / π); smaller curves have a larger radius, so the text bends less.
+ */
+export function arcRadius(width: number, curve: number): number {
+  return width / ((Math.abs(curve) / 100) * Math.PI);
+}
+
+/**
+ * Where a glyph sits on a curved line, in box units from the box centre. The arc's centre is below the text for an
+ * arch (positive curve) and above it for a smile. `radius` is the arc's centre line, `offset` how far the line sits
+ * above that centre line (lines stack outward for an arch and inward for a smile), and `angle` the glyph's angle
+ * from the arc's top (or bottom) point, positive to the right. `rotation` turns the glyph onto the arc's tangent.
+ */
+export function arcPoint(radius: number, curve: number, offset: number, angle: number): { x: number; y: number; rotation: number } {
+  const sign = Math.sign(curve);
+  const r = radius + sign * offset;
+  return { x: r * Math.sin(angle), y: sign * (radius - r * Math.cos(angle)), rotation: sign * angle };
+}
+
+/**
+ * The angle from the arc's top (or bottom) point to the centre of each glyph, so the whole line is centred on that
+ * point. `inks` are the glyph widths; `advances` are the room each takes on the line (its width plus any letter and
+ * word spacing). Lengths along the centre line are divided by `radius`.
+ */
+export function arcAngles(inks: readonly number[], advances: readonly number[], radius: number): number[] {
+  const total = advances.reduce((sum, a) => sum + a, 0);
+  let at = 0;
+  return inks.map((ink, i) => {
+    const centre = at + ink / 2 - total / 2;
+    at += advances[i] ?? 0;
+    return centre / radius;
+  });
+}
+
+/**
+ * Draws a curved text layer. Each grapheme is placed on the arc and turned to its tangent, every line on its own
+ * ring around the same centre. Outline strokes go under all the fills, as in straight text. The highlight band is
+ * not drawn, since it would not follow the curve.
+ */
+function drawCurvedText(ctx: Ctx, n: TextNode, layout: TextLayout, o: RenderOptions): void {
+  const curve = n.curve ?? 0;
+  const size = layout.size;
+  const radius = arcRadius(n.width, curve);
+  const glyphs: Array<{ text: string; ink: number; x: number; y: number; rotation: number }> = [];
+  layout.lines.forEach((line, i) => {
+    // Line i's centre sits (layout.lines.length - 1) / 2 - i line heights above the block's middle, as in straight text.
+    const offset = ((layout.lines.length - 1) / 2 - i) * layout.lineHeight;
+    const items: Array<{ text: string; ink: number; advance: number }> = [];
+    if (line.marker) items.push({ text: line.marker, ink: o.measure(line.marker, n.font, size), advance: LIST_INDENT * size });
+    for (const g of graphemes(line.text)) {
+      const ink = o.measure(g, n.font, size);
+      items.push({ text: g, ink, advance: ink + n.letterSpacing + (g === " " ? line.wordSpacing : 0) });
+    }
+    const angles = arcAngles(
+      items.map((item) => item.ink),
+      items.map((item) => item.advance),
+      radius,
+    );
+    items.forEach((item, k) => glyphs.push({ text: item.text, ink: item.ink, ...arcPoint(radius, curve, offset, angles[k] ?? 0) }));
+  });
+
+  ctx.save();
+  ctx.font = fontString(n, size);
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  const paint = (method: "strokeText" | "fillText") => {
+    for (const g of glyphs) {
+      ctx.save();
+      ctx.translate(g.x, g.y);
+      ctx.rotate(g.rotation);
+      ctx[method](g.text, -g.ink / 2, 0);
+      ctx.restore();
+    }
+  };
+  if (n.outline && n.outline.width > 0) {
+    ctx.lineWidth = n.outline.width * 2;
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = n.outline.color;
+    paint("strokeText");
+  }
+  ctx.fillStyle = n.color;
+  paint("fillText");
+  ctx.restore();
+}
+
+/**
  * Draws a text layer: highlight bands behind each line, then the outline strokes, then the fills, so the outline
  * sits behind the letters and never covers a neighbouring word. List markers are drawn with the text, in the indent.
- * Wrapped in save/restore so the outline's line settings never reach the next node.
+ * Wrapped in save/restore so the outline's line settings never reach the next node. A curved layer is drawn on an arc.
  */
 function drawText(ctx: Ctx, n: TextNode, o: RenderOptions): void {
   const layout = layoutText(n, o.measure);
+  if (n.curve) return drawCurvedText(ctx, n, layout, o);
   const size = layout.size;
   const left = -n.width / 2;
   const top = -n.height / 2;

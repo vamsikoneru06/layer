@@ -1,7 +1,7 @@
 "use client";
 
-import { apply, checkPolicy, FILTER_PRESETS, isNeutral, presetFilters, removePhoto, rotation, zoomPhoto, type Command, type EditorCore, type EditorState, type FilterValues } from "@vash/engine";
-import { defaultFilters, FONT_FAMILIES, LIMITS, type FrameNode, type Node, type ShapeNode, type TextNode } from "@vash/schema";
+import { apply, checkPolicy, removePhoto, rotation, zoomPhoto, type Command, type EditorCore, type EditorState } from "@vash/engine";
+import { FONT_FAMILIES, LIMITS, type FrameNode, type Node, type ShapeNode, type TextNode } from "@vash/schema";
 import {
   AlignCenter,
   AlignCenterHorizontal,
@@ -25,9 +25,10 @@ import {
 } from "lucide-react";
 import { useMemo, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { docColors } from "@/lib/color";
+import { designColors } from "@/lib/design-colors";
 import { DocColorsContext } from "./color-picker";
 import { ColorField, NumberField, Row, Section, Segmented, SelectField, Slider, Switch } from "./fields";
+import { FiltersSection } from "./filters-section";
 import { actionTitle, type Action, type ActionId } from "./editor-actions";
 import { FillField } from "./fill-field";
 import { FONT_FACES } from "./font-faces";
@@ -118,7 +119,7 @@ function ArrangeSection({ actions, mac }: { actions: Actions; mac: boolean }) {
 
 /** `actions` feeds the Arrange buttons; a host without them (the filters lab) shows the panel without that section. */
 export function PropertiesPanel({ state, core, actions, mac = false }: { state: EditorState; core: EditorCore; actions?: Actions; mac?: boolean }) {
-  const colors = useMemo(() => docColors(state.doc), [state.doc]);
+  const colors = useMemo(() => designColors(state.doc, 16), [state.doc]);
   return (
     <DocColorsContext value={colors}>
       <PanelBody state={state} core={core} actions={actions} mac={mac} />
@@ -441,20 +442,6 @@ function ShapeSection({ node, disabled, update }: { node: ShapeNode; disabled: b
   );
 }
 
-const SLIDERS: readonly { key: keyof FilterValues; label: string; signed: boolean }[] = [
-  { key: "brightness", label: "Brightness", signed: true },
-  { key: "contrast", label: "Contrast", signed: true },
-  { key: "saturation", label: "Saturation", signed: true },
-  { key: "warmth", label: "Warmth", signed: true },
-  { key: "tint", label: "Tint", signed: true },
-  { key: "highlights", label: "Highlights", signed: true },
-  { key: "shadows", label: "Shadows", signed: true },
-  { key: "vignette", label: "Vignette", signed: false },
-  { key: "grain", label: "Grain", signed: false },
-  { key: "blur", label: "Blur", signed: false },
-  { key: "sharpen", label: "Sharpen", signed: false },
-];
-
 function PhotoSection({ node, disabled, doc, change }: { node: FrameNode; disabled: boolean; doc: EditorState["doc"]; change: (cmd: Command, final?: boolean) => void }) {
   if (!node.content) {
     return (
@@ -478,42 +465,6 @@ function PhotoSection({ node, disabled, doc, change }: { node: FrameNode; disabl
         <Button variant="secondary" size="sm" disabled={disabled} onClick={() => change(removePhoto(doc, node.id))}>
           Remove photo
         </Button>
-      </div>
-    </Section>
-  );
-}
-
-function FiltersSection({ node, disabled, update }: { node: FrameNode; disabled: boolean; update: Update }) {
-  const f = node.filters;
-  const chip = (selected: boolean) =>
-    `h-8 rounded-lg px-2 text-[12px] font-medium disabled:opacity-45 ${selected ? "bg-text text-bg" : "bg-field text-text hover:bg-line"}`;
-
-  return (
-    <Section title="Filters">
-      {!node.content && <p className="text-[12px] text-muted">Add a photo to this frame to see its filters.</p>}
-      <div role="group" aria-label="Filter presets" className="grid grid-cols-4 gap-1.5">
-        <button type="button" aria-pressed={f.preset === null && isNeutral(f)} disabled={disabled} onClick={() => update({ filters: defaultFilters() })} className={chip(f.preset === null && isNeutral(f))}>
-          None
-        </button>
-        {FILTER_PRESETS.map((p) => (
-          <button key={p.key} type="button" aria-pressed={f.preset === p.key} disabled={disabled} onClick={() => update({ filters: presetFilters(p.key) })} className={chip(f.preset === p.key)}>
-            {p.label}
-          </button>
-        ))}
-      </div>
-      <div className="flex flex-col gap-2.5 pt-1">
-        {SLIDERS.map(({ key, label, signed }) => (
-          <Slider
-            key={key}
-            label={label}
-            value={f[key]}
-            min={signed ? -1 : 0}
-            max={1}
-            disabled={disabled}
-            // Adjusting by hand leaves the preset; its values stay as the starting point.
-            onChange={(v, final) => update({ filters: { ...f, [key]: v, preset: null } }, final)}
-          />
-        ))}
       </div>
     </Section>
   );

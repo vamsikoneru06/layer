@@ -41,11 +41,13 @@ const host = (over: Partial<ActionHost> = {}): ActionHost => ({
   rename: vi.fn(),
   moveToFolder: vi.fn(),
   designInfo: vi.fn(),
+  resizeDesign: vi.fn(),
   save: vi.fn(),
   download: vi.fn(),
   zoomIn: vi.fn(),
   zoomOut: vi.fn(),
   fit: vi.fn(),
+  actualSize: vi.fn(),
   fullscreen: vi.fn(),
   togglePanels: vi.fn(),
   shortcuts: vi.fn(),
@@ -482,12 +484,35 @@ describe("canvas view switches", () => {
     expect(h.clearGuides).toHaveBeenCalledOnce();
   });
 
+  it("gives the zoom items their keys, and lists them in the shortcuts dialog", () => {
+    const a = actionsFor(new EditorCore(docOf([])));
+    expect([a.zoomIn.shortcut, a.zoomOut.shortcut, a.fit.shortcut, a.actualSize.shortcut]).toEqual(["mod+=", "mod+-", "mod+0", "mod+1"]);
+    expect([formatShortcut("mod+=", false), formatShortcut("mod+-", false), formatShortcut("mod+0", false), formatShortcut("mod+1", true)]).toEqual(["Ctrl+=", "Ctrl+-", "Ctrl+0", "⌘1"]);
+    for (const id of ["zoomIn", "zoomOut", "fit", "actualSize"] as const) expect(SHORTCUT_ACTIONS, id).toContain(id);
+  });
+
+  it("runs Actual size through the host", () => {
+    const h = host();
+    actionsFor(new EditorCore(docOf([])), h).actualSize.run();
+    expect(h.actualSize).toHaveBeenCalledOnce();
+  });
+
+  it("lists Resize design in the File menu after Design info, and hands it to the host", () => {
+    const h = host();
+    const a = actionsFor(new EditorCore(docOf([])), h);
+    expect(labels(toMenuItems(a, MENUS.file, false))).toEqual(["New design", "Open", "Make a copy", "-", "Rename", "Move to folder", "Design info", "Resize design", "-", "Save", "Download"]);
+    a.resizeDesign.run();
+    expect(h.resizeDesign).toHaveBeenCalledOnce();
+    expect(a.resizeDesign.disabled).toBeUndefined();
+  });
+
   it("lays out the View menu with the switches between the zoom items and the panels", () => {
     const a = actionsFor(new EditorCore(docOf([])));
     expect(labels(toMenuItems(a, MENUS.view, false))).toEqual([
       "Zoom in",
       "Zoom out",
       "Fit to screen",
+      "Actual size",
       "-",
       "Rulers",
       "Guides",

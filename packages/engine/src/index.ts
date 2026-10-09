@@ -37,6 +37,7 @@ export {
   ungroupSelection,
 } from "./edit-ops";
 export { topLevelSelection, type Plan } from "./selection-utils";
+export { planResize, resizeDesign, type ArtboardSize } from "./resize";
 export { clampContent, fillPhotos, frameAt, newPhotoFrame, photoTargets, placePhoto, removePhoto, swapPhotos, zoomPhoto } from "./photos";
 export { createFilterRenderer, FILTER_KEYS, FILTER_PRESETS, isNeutral, presetFilters, type FilterFn, type FilterValues } from "./filters";
 export { textEditBox, type TextEditBox } from "./text-edit";

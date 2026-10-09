@@ -69,11 +69,13 @@ export const ACTION_IDS = [
   "rename",
   "moveToFolder",
   "designInfo",
+  "resizeDesign",
   "save",
   "download",
   "zoomIn",
   "zoomOut",
   "fit",
+  "actualSize",
   "fullscreen",
   "togglePanels",
   "shortcuts",
@@ -116,11 +118,13 @@ export interface ActionHost {
   rename(): void;
   moveToFolder(): void;
   designInfo(): void;
+  resizeDesign(): void;
   save(): void;
   download(): void;
   zoomIn(): void;
   zoomOut(): void;
   fit(): void;
+  actualSize(): void;
   fullscreen(): void;
   togglePanels(): void;
   shortcuts(): void;
@@ -200,11 +204,13 @@ export function buildActions(state: ActionState, core: EditorCore, host: ActionH
     { id: "rename", label: "Rename", run: host.rename },
     { id: "moveToFolder", label: "Move to folder", disabled: host.local ? "Folders need an account. Use Save to account first." : undefined, run: host.moveToFolder },
     { id: "designInfo", label: "Design info", run: host.designInfo },
+    { id: "resizeDesign", label: "Resize design", run: host.resizeDesign },
     { id: "save", label: "Save", shortcut: "mod+s", run: host.save },
     { id: "download", label: "Download", run: host.download },
-    { id: "zoomIn", label: "Zoom in", disabled: state.viewport.zoom >= ZOOM_MAX - 1e-9 ? "Already at the largest zoom." : undefined, run: host.zoomIn },
-    { id: "zoomOut", label: "Zoom out", disabled: state.viewport.zoom <= ZOOM_MIN + 1e-9 ? "Already at the smallest zoom." : undefined, run: host.zoomOut },
-    { id: "fit", label: "Fit to screen", run: host.fit },
+    { id: "zoomIn", label: "Zoom in", shortcut: "mod+=", disabled: state.viewport.zoom >= ZOOM_MAX - 1e-9 ? "Already at the largest zoom." : undefined, run: host.zoomIn },
+    { id: "zoomOut", label: "Zoom out", shortcut: "mod+-", disabled: state.viewport.zoom <= ZOOM_MIN + 1e-9 ? "Already at the smallest zoom." : undefined, run: host.zoomOut },
+    { id: "fit", label: "Fit to screen", shortcut: "mod+0", run: host.fit },
+    { id: "actualSize", label: "Actual size", shortcut: "mod+1", run: host.actualSize },
     { id: "fullscreen", label: "Fullscreen", hidden: !host.canFullscreen, run: host.fullscreen },
     { id: "togglePanels", label: host.panelsHidden ? "Show panels" : "Hide panels", run: host.togglePanels },
     { id: "shortcuts", label: "Keyboard shortcuts", run: host.shortcuts },
@@ -221,7 +227,7 @@ export function buildActions(state: ActionState, core: EditorCore, host: ActionH
 type Layout = readonly (ActionId | "separator")[];
 
 export const MENUS = {
-  file: ["newDesign", "open", "makeCopy", "separator", "rename", "moveToFolder", "designInfo", "separator", "save", "download"],
+  file: ["newDesign", "open", "makeCopy", "separator", "rename", "moveToFolder", "designInfo", "resizeDesign", "separator", "save", "download"],
   edit: ["undo", "redo", "separator", "cut", "copy", "paste", "copyStyle", "pasteStyle", "duplicate", "delete", "separator", "selectAll", "group", "ungroup"],
   arrange: [
     "bringForward",
@@ -248,6 +254,7 @@ export const MENUS = {
     "zoomIn",
     "zoomOut",
     "fit",
+    "actualSize",
     "separator",
     "toggleRulers",
     "toggleGuides",
@@ -330,7 +337,7 @@ export function toMenuItems(actions: Record<ActionId, Action>, layout: Layout, m
 }
 
 /** Actions listed in the shortcuts dialog, in order. */
-export const SHORTCUT_ACTIONS: readonly ActionId[] = ["undo", "redo", "cut", "copy", "paste", "duplicate", "delete", "selectAll", "group", "ungroup", "copyStyle", "pasteStyle", "bringForward", "bringToFront", "sendBackward", "sendToBack", "toggleLock", "save", "toggleRulers"];
+export const SHORTCUT_ACTIONS: readonly ActionId[] = ["undo", "redo", "cut", "copy", "paste", "duplicate", "delete", "selectAll", "group", "ungroup", "copyStyle", "pasteStyle", "bringForward", "bringToFront", "sendBackward", "sendToBack", "toggleLock", "save", "toggleRulers", "zoomIn", "zoomOut", "fit", "actualSize"];
 
 /** Names for the shortcuts dialog where an action's own label changes with the selection and would mislead there. */
 export const SHORTCUT_NAMES: Partial<Record<ActionId, string>> = { toggleLock: "Lock or unlock" };

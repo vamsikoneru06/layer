@@ -26,10 +26,10 @@ export function checkPolicy(doc: Doc, cmd: Command, mode: EditMode): PolicyResul
     case "asset":
       return OK;
     case "artboard": {
-      // Resizing would pull a template's locked layout apart; the background is always the user's.
+      // Resizing would pull locked layers (a template's, or ones the person locked) apart; the background is always the user's.
       const resizing = "width" in cmd.patch || "height" in cmd.patch;
-      const templated = Object.values(doc.nodes).some((n) => n.lock !== "free");
-      return resizing && templated ? { ok: false, reason: "The template sets this design's size." } : OK;
+      const anyLocked = Object.values(doc.nodes).some((n) => n.lock !== "free");
+      return resizing && anyLocked ? { ok: false, reason: "Locked layers keep this design's size. Unlock them to resize it." } : OK;
     }
     case "batch": {
       for (const c of cmd.commands) {

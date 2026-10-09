@@ -1,6 +1,7 @@
 import { defaultFilters, type Filters } from "@vash/schema";
 
-export type FilterValues = Omit<Filters, "preset">;
+/** The numeric adjustments. Duotone and pixelate are optional document fields, not sliders, so they are left out. */
+export type FilterValues = Omit<Filters, "preset" | "duotone" | "pixelate">;
 export const FILTER_KEYS = ["brightness", "contrast", "saturation", "warmth", "tint", "highlights", "shadows", "vignette", "grain", "blur", "sharpen"] as const;
 
 /** Presets are parameter sets; picking one replaces every value. Keys match the schema's preset pattern. */
@@ -12,6 +13,12 @@ export const FILTER_PRESETS: readonly { key: string; label: string; values: Part
   { key: "mono", label: "Mono", values: { saturation: -1, contrast: 0.15 } },
   { key: "noir", label: "Noir", values: { saturation: -1, contrast: 0.45, shadows: -0.2, vignette: 0.45 } },
   { key: "film", label: "Film", values: { warmth: 0.12, contrast: -0.12, shadows: 0.2, grain: 0.35, vignette: 0.2 } },
+  { key: "golden", label: "Golden", values: { warmth: 0.3, highlights: 0.15, saturation: 0.2 } },
+  { key: "dusk", label: "Dusk", values: { warmth: -0.15, tint: 0.15, shadows: 0.2, vignette: 0.3 } },
+  { key: "crisp", label: "Crisp", values: { sharpen: 0.5, contrast: 0.15, saturation: 0.05 } },
+  { key: "soft", label: "Soft", values: { blur: 0.25, brightness: 0.1, highlights: 0.1, contrast: -0.1 } },
+  { key: "pastel", label: "Pastel", values: { saturation: -0.35, brightness: 0.15, highlights: 0.2, contrast: -0.15 } },
+  { key: "retro", label: "Retro", values: { warmth: 0.2, tint: 0.1, saturation: -0.2, grain: 0.2, vignette: 0.3 } },
 ];
 
 export function presetFilters(key: string | null): Filters {
@@ -20,9 +27,21 @@ export function presetFilters(key: string | null): Filters {
 }
 
 /** True when the filters leave the photo untouched, so rendering can skip them. */
-export const isNeutral = (f: Filters): boolean => FILTER_KEYS.every((k) => f[k] === 0);
+export const isNeutral = (f: Filters): boolean => FILTER_KEYS.every((k) => f[k] === 0) && !f.duotone && (f.pixelate ?? 0) === 0;
 
-const filterHash = (f: Filters) => FILTER_KEYS.map((k) => f[k].toFixed(3)).join(",");
+const filterHash = (f: Filters) =>
+  [...FILTER_KEYS.map((k) => f[k].toFixed(3)), (f.pixelate ?? 0).toFixed(3), f.duotone ? `${f.duotone.light}/${f.duotone.dark}` : "-"].join(",");
+
+/** Block size in px for the pixelate slider: 0 is off, 100 makes blocks a twentieth of the shorter side. */
+export function pixelateBlock(pixelate: number, width: number, height: number): number {
+  return pixelate > 0 ? (pixelate / 100) * (Math.min(width, height) / 20) : 0;
+}
+
+/** `#RRGGBB` or `#RRGGBBAA` as 0 to 1 channels for a shader uniform. The alpha byte is ignored. */
+export function hexToRgb(hex: string): [number, number, number] {
+  const n = parseInt(hex.slice(1, 7), 16);
+  return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+}
 
 /** The part of the photo a frame shows, as [left, top, right, bottom] fractions of the photo. */
 export type VisibleBox = readonly [number, number, number, number];
@@ -71,6 +90,9 @@ precision highp float;
 uniform sampler2D u_tex;
 uniform sampler2D u_soft;
 uniform float u_sharpen, u_brightness, u_contrast, u_saturation, u_warmth, u_tint, u_highlights, u_shadows, u_vignette, u_grain;
+uniform float u_pixel;   // block size in px; 0 = off
+uniform float u_duotone; // 1 = on, 0 = off
+uniform vec3 u_light, u_dark;
 uniform vec2 u_aspect;
 uniform vec2 u_size;
 uniform vec4 u_box;
@@ -82,9 +104,12 @@ float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.545
 
 void main() {
   vec2 uv = u_flip ? vec2(v_uv.x, 1.0 - v_uv.y) : v_uv;
-  vec4 src = texture(u_tex, uv);
+  // Pixelate comes first: every sample reads the centre of its block.
+  vec2 suv = uv;
+  if (u_pixel > 0.0) suv = (floor(uv * u_size / u_pixel) + 0.5) * u_pixel / u_size;
+  vec4 src = texture(u_tex, suv);
   vec3 c = src.rgb;
-  if (u_sharpen > 0.0) c += (c - texture(u_soft, uv).rgb) * u_sharpen * 2.0;
+  if (u_sharpen > 0.0) c += (c - texture(u_soft, suv).rgb) * u_sharpen * 2.0;
 
   c += u_brightness * 0.25;
   c = (c - 0.5) * (1.0 + u_contrast) + 0.5;
@@ -94,6 +119,9 @@ void main() {
   luma = dot(c, vec3(0.2126, 0.7152, 0.0722));
   c = mix(vec3(luma), c, 1.0 + u_saturation);
   c += vec3(u_warmth * 0.1 + u_tint * 0.05, -u_tint * 0.1, -u_warmth * 0.1 + u_tint * 0.05);
+
+  // Duotone maps the adjusted luminance onto a dark-to-light ramp. Alpha is kept (src.a below).
+  if (u_duotone > 0.0) c = mix(u_dark, u_light, clamp(dot(c, vec3(0.2126, 0.7152, 0.0722)), 0.0, 1.0));
 
   if (u_vignette > 0.0) {
     // Centred on the part of the photo the frame shows, and round in that box's proportions.
@@ -276,6 +304,11 @@ export function createFilterRenderer(o: { onRestored?: () => void } = {}): { app
     for (const k of ["sharpen", "brightness", "contrast", "saturation", "warmth", "tint", "highlights", "shadows", "vignette", "grain"] as const) {
       gl.uniform1f(u(`u_${k}`), f[k]);
     }
+    gl.uniform1f(u("u_pixel"), pixelateBlock(f.pixelate ?? 0, width, height));
+    const black: [number, number, number] = [0, 0, 0];
+    gl.uniform1f(u("u_duotone"), f.duotone ? 1 : 0);
+    gl.uniform3f(u("u_light"), ...(f.duotone ? hexToRgb(f.duotone.light) : black));
+    gl.uniform3f(u("u_dark"), ...(f.duotone ? hexToRgb(f.duotone.dark) : black));
     gl.uniform2f(u("u_aspect"), width / side, height / side);
     gl.uniform2f(u("u_size"), width, height);
     gl.uniform4f(u("u_box"), ...visible);

@@ -33,10 +33,13 @@ export function outlineColorFor(text: string, page: string | null = null): strin
   return outline;
 }
 
-/** Outline, highlight and list for a text layer. Each switch starts with a sensible look and removes the field when off. */
+/** Outline, highlight, list and curve for a text layer. Each switch starts with a sensible look and removes the field when off. */
 export function TextEffectsSection({ node, page, disabled, update }: { node: TextNode; page: string | null; disabled: boolean; update: (patch: Record<string, unknown>, final?: boolean) => void }) {
   const o = node.outline;
   const h = node.highlight;
+  const curve = node.curve ?? 0;
+  // The highlight band is drawn behind straight lines only, so it is switched off while the text is curved.
+  const curved = curve !== 0;
   return (
     <Section title="Effects">
       <Row label="Outline">
@@ -59,10 +62,22 @@ export function TextEffectsSection({ node, page, disabled, update }: { node: Tex
         </>
       )}
       <Row label="Highlight">
-        <Switch label="Highlight" checked={!!h} disabled={disabled} onChange={(on) => update({ highlight: on ? { color: DEFAULT_HIGHLIGHT } : null })} />
+        <Switch label="Highlight" checked={!!h} disabled={disabled || curved} onChange={(on) => update({ highlight: on ? { color: DEFAULT_HIGHLIGHT } : null })} />
       </Row>
-      {h && <ColorField name="Highlight" value={h.color} disabled={disabled} onChange={(color, final) => update({ highlight: { color } }, final)} />}
+      {curved && <p className="text-[12px] text-muted">Highlight works on straight text.</p>}
+      {h && <ColorField name="Highlight" value={h.color} disabled={disabled || curved} onChange={(color, final) => update({ highlight: { color } }, final)} />}
       <Segmented name="List" value={node.list ?? "none"} options={LIST_OPTIONS} disabled={disabled} onChange={(list) => update({ list })} />
+      <Slider
+        label="Curve"
+        value={curve}
+        min={-LIMITS.curveMax}
+        max={LIMITS.curveMax}
+        step={1}
+        disabled={disabled}
+        readout={(v) => String(Math.round(v))}
+        valueText={(v) => (Math.round(v) === 0 ? "Straight" : Math.round(v) > 0 ? `Arch ${Math.round(v)}` : `Smile ${-Math.round(v)}`)}
+        onChange={(value, final) => update({ curve: value }, final)}
+      />
     </Section>
   );
 }

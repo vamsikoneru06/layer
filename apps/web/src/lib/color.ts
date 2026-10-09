@@ -1,4 +1,4 @@
-import type { Doc, Fill } from "@vash/schema";
+import type { Fill } from "@vash/schema";
 
 /** A colour as the picker edits it: hue 0–360, saturation, value and alpha 0–1. */
 export type Hsv = { h: number; s: number; v: number; a: number };
@@ -44,26 +44,6 @@ export function fillCss(fill: Fill): string {
   if (fill.type === "solid") return fill.color;
   const stops = fill.stops.map((s) => `${s.color} ${Math.round(s.offset * 100)}%`).join(", ");
   return `linear-gradient(${fill.angle}deg, ${stops})`;
-}
-
-/** Every colour the design uses, once each and in the order they appear, for quick reuse. */
-export function docColors(doc: Doc): string[] {
-  const seen = new Set<string>();
-  const add = (c: string | undefined) => c && seen.add(c.toUpperCase());
-  const addFill = (f: Fill | null | undefined) => {
-    if (!f) return;
-    if (f.type === "solid") add(f.color);
-    else f.stops.forEach((s) => add(s.color));
-  };
-  addFill(doc.artboard.background);
-  for (const node of Object.values(doc.nodes)) {
-    if (node.type === "text") add(node.color);
-    if (node.type === "shape") {
-      addFill(node.fill);
-      add(node.stroke?.color);
-    }
-  }
-  return [...seen];
 }
 
 type Linear = Extract<Fill, { type: "linear" }>;
