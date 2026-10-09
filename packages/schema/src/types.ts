@@ -3,7 +3,8 @@
  *
  * Rules that keep the format safe and predictable:
  * - Every key is required; "absent" is expressed as `null`. The optional keys (`shadow`, `alt`, `stroke.dash`,
- *   and the text `outline`, `highlight`, `list`) may be omitted; designs and templates written before they existed stay valid.
+ *   the filter `duotone` and `pixelate`, and the text `outline`, `highlight`, `list`, `curve`) may be omitted; designs and
+ *   templates written before they existed stay valid.
  * - Layers live in a flat `nodes` map; `root` and `group.children` hold IDs.
  * - Assets are referenced by ID only. The document never contains a URL.
  * - Filters are parameters; pixels are never baked into the document.
@@ -74,6 +75,10 @@ export interface Filters {
   grain: number;
   blur: number;
   sharpen: number;
+  /** Optional: maps light and dark tones to two colours, or omit / `null` for off. */
+  duotone?: { light: Color; dark: Color } | null;
+  /** Optional: block size slider from 0 (off) to 100. Omit for off. */
+  pixelate?: number;
 }
 
 export interface FrameContent {
@@ -118,6 +123,8 @@ export interface TextNode extends BaseNode {
   highlight?: { color: Color } | null;
   /** Optional: list markers per line. Omit for none. */
   list?: TextList;
+  /** Optional: arch (positive) or smile (negative) curve, -100 to 100. Omit for straight text. */
+  curve?: number;
 }
 
 export type ShapeGeometry =

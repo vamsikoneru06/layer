@@ -347,3 +347,78 @@ describe("optional text outline, highlight and list", () => {
     expect(issues).toContainEqual({ path: "nodes.photo1.list", message: "is not allowed" });
   });
 });
+
+describe("optional filter duotone and pixelate, text curve", () => {
+  /** The sample template plus a shape (box), so the curve can be tried on a non-text node. */
+  function withBox(fn: (d: any) => void): Doc {
+    return mutate((d) => {
+      d.nodes.box = {
+        id: "box", type: "shape", name: "Box", transform: { x: 200, y: 200, rotation: 0, scaleX: 1, scaleY: 1 },
+        width: 200, height: 100, opacity: 1, visible: true, lock: "free",
+        geometry: { kind: "rect", cornerRadius: 0 }, fill: null, stroke: null,
+      };
+      d.root.push("box");
+      fn(d);
+    });
+  }
+
+  it("accepts documents without the new fields", () => {
+    expect(issuesOf(withBox(() => {}))).toEqual([]);
+  });
+
+  it("accepts every valid duotone, pixelate and curve form", () => {
+    const forms: Array<(d: any) => void> = [
+      (d) => { d.nodes.photo1.filters.duotone = { light: "#FFFFFF", dark: "#1A2B3C" }; },
+      (d) => { d.nodes.photo1.filters.duotone = { light: "#FFFFFF80", dark: "#00000000" }; },
+      (d) => { d.nodes.photo1.filters.duotone = null; },
+      (d) => { d.nodes.photo1.filters.pixelate = 0; },
+      (d) => { d.nodes.photo1.filters.pixelate = 50; },
+      (d) => { d.nodes.photo1.filters.pixelate = 100; },
+      (d) => { d.nodes.heading.curve = -100; },
+      (d) => { d.nodes.heading.curve = 0; },
+      (d) => { d.nodes.heading.curve = 100; },
+    ];
+    for (const form of forms) {
+      expect(issuesOf(withBox(form))).toEqual([]);
+    }
+  });
+
+  it("rejects a duotone colour that is not hex", () => {
+    const issues = issuesOf(withBox((d) => { d.nodes.photo1.filters.duotone = { light: "white", dark: "#000000" }; }));
+    expect(issues).toEqual([{ path: "nodes.photo1.filters.duotone.light", message: "expected #RRGGBB or #RRGGBBAA" }]);
+  });
+
+  it("rejects a duotone with a missing, extra or non-object value", () => {
+    expect(issuesOf(withBox((d) => { d.nodes.photo1.filters.duotone = { light: "#FFFFFF" }; })))
+      .toEqual([{ path: "nodes.photo1.filters.duotone.dark", message: "is required" }]);
+    expect(issuesOf(withBox((d) => { d.nodes.photo1.filters.duotone = { light: "#FFFFFF", dark: "#000000", mid: "#808080" }; })))
+      .toEqual([{ path: "nodes.photo1.filters.duotone.mid", message: "is not allowed" }]);
+    expect(issuesOf(withBox((d) => { d.nodes.photo1.filters.duotone = "sepia"; })))
+      .toEqual([{ path: "nodes.photo1.filters.duotone", message: "expected object" }]);
+  });
+
+  it("rejects pixelate outside 0 to 100 or not a number", () => {
+    expect(issuesOf(withBox((d) => { d.nodes.photo1.filters.pixelate = 101; })))
+      .toEqual([{ path: "nodes.photo1.filters.pixelate", message: "must be between 0 and 100" }]);
+    expect(issuesOf(withBox((d) => { d.nodes.photo1.filters.pixelate = -1; })))
+      .toEqual([{ path: "nodes.photo1.filters.pixelate", message: "must be between 0 and 100" }]);
+    expect(issuesOf(withBox((d) => { d.nodes.photo1.filters.pixelate = "10"; })))
+      .toEqual([{ path: "nodes.photo1.filters.pixelate", message: "expected finite number" }]);
+  });
+
+  it("rejects curve outside -100 to 100 on a text node", () => {
+    expect(issuesOf(withBox((d) => { d.nodes.heading.curve = -101; })))
+      .toEqual([{ path: "nodes.heading.curve", message: "must be between -100 and 100" }]);
+    expect(issuesOf(withBox((d) => { d.nodes.heading.curve = 101; })))
+      .toEqual([{ path: "nodes.heading.curve", message: "must be between -100 and 100" }]);
+  });
+
+  it("rejects curve on a shape or a photo frame", () => {
+    const issues = issuesOf(withBox((d) => {
+      d.nodes.box.curve = 40;
+      d.nodes.photo1.curve = 40;
+    }));
+    expect(issues).toContainEqual({ path: "nodes.box.curve", message: "is not allowed" });
+    expect(issues).toContainEqual({ path: "nodes.photo1.curve", message: "is not allowed" });
+  });
+});

@@ -101,7 +101,9 @@ const NODE_KEYS: Record<string, readonly string[]> = {
 /** Optional on every node type. Omitted means absent, like `null`. */
 const OPTIONAL_NODE_KEYS = ["shadow", "alt"] as const;
 /** Optional on text nodes only. */
-const TEXT_OPTIONAL_KEYS = ["outline", "highlight", "list"] as const;
+const TEXT_OPTIONAL_KEYS = ["outline", "highlight", "list", "curve"] as const;
+/** Optional on frame filters. Omitted means absent, like `null`. */
+const FILTER_OPTIONAL_KEYS = ["duotone", "pixelate"] as const;
 const TEXT_LISTS = ["none", "bullet", "number"] as const;
 const FILTER_SIGNED = ["brightness", "contrast", "saturation", "warmth", "tint", "highlights", "shadows"] as const;
 const FILTER_UNSIGNED = ["vignette", "grain", "blur", "sharpen"] as const;
@@ -186,13 +188,22 @@ function checkTransform(c: Checker, v: unknown, path: string): void {
   }
 }
 
+function checkDuotone(c: Checker, v: unknown, path: string): void {
+  if (v === null) return;
+  if (!c.object(v, path, ["light", "dark"])) return;
+  c.color(v.light, join(path, "light"));
+  c.color(v.dark, join(path, "dark"));
+}
+
 function checkFilters(c: Checker, v: unknown, path: string): void {
-  if (!c.object(v, path, ["preset", ...FILTER_SIGNED, ...FILTER_UNSIGNED])) return;
+  if (!c.object(v, path, ["preset", ...FILTER_SIGNED, ...FILTER_UNSIGNED], FILTER_OPTIONAL_KEYS)) return;
   if (v.preset !== null && (typeof v.preset !== "string" || !PRESET.test(v.preset))) {
     c.fail(join(path, "preset"), "expected null or preset key [a-z0-9-]{1,32}");
   }
   for (const k of FILTER_SIGNED) c.number(v[k], join(path, k), -1, 1);
   for (const k of FILTER_UNSIGNED) c.number(v[k], join(path, k), 0, 1);
+  if (v.duotone !== undefined) checkDuotone(c, v.duotone, join(path, "duotone"));
+  if (v.pixelate !== undefined) c.number(v.pixelate, join(path, "pixelate"), 0, LIMITS.pixelateMax);
 }
 
 function checkNode(c: Checker, key: string, v: unknown, path: string): void {
@@ -266,6 +277,7 @@ function checkNode(c: Checker, key: string, v: unknown, path: string): void {
       if (v.outline !== undefined) checkOutline(c, v.outline, join(path, "outline"));
       if (v.highlight !== undefined) checkHighlight(c, v.highlight, join(path, "highlight"));
       if (v.list !== undefined) c.oneOf(v.list, join(path, "list"), TEXT_LISTS);
+      if (v.curve !== undefined) c.number(v.curve, join(path, "curve"), -LIMITS.curveMax, LIMITS.curveMax);
       break;
     }
     case "shape": {

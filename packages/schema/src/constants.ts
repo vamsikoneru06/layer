@@ -29,6 +29,8 @@ export const LIMITS = {
   shadowBlurMax: 200,
   shadowOffsetMax: 500,
   textOutlineMax: 20,
+  curveMax: 100,
+  pixelateMax: 100,
 } as const;
 
 export const FORMATS: Record<Exclude<FormatKey, "custom">, { width: number; height: number; label: string }> = {
