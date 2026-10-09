@@ -7,7 +7,7 @@ export { createInteraction, type Interaction, type PointerInput, type WheelInput
 export { handleKey, type KeyInput } from "./shortcuts";
 export { hitTest, nodesInBox, worldBounds } from "./hit-test";
 export { drawOrder, parentOf, topLevelOf, worldMatrix } from "./scene";
-export { layoutText, type Measure, type TextLayout } from "./text";
+export { layoutText, LIST_INDENT, type Measure, type TextLayout } from "./text";
 export { fontRequests } from "./fonts";
 export { createNode, insertLayer, insertShape, newNodeId, type InsertKind, type ShapeSpec } from "./insert";
 export { CLIPBOARD_PREFIX, planDuplicate } from "./clipboard";

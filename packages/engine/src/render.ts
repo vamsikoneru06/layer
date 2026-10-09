@@ -219,27 +219,68 @@ function drawFrame(ctx: Ctx, n: FrameNode, o: RenderOptions): void {
   ctx.restore();
 }
 
+/** Highlight padding and corner radius, as fractions of the font size. */
+const HIGHLIGHT_PAD = 0.15;
+const HIGHLIGHT_RADIUS = 0.2;
+
+/**
+ * Draws a text layer: highlight bands behind each line, then the outline strokes, then the fills, so the outline
+ * sits behind the letters and never covers a neighbouring word. List markers are drawn with the text, in the indent.
+ * Wrapped in save/restore so the outline's line settings never reach the next node.
+ */
 function drawText(ctx: Ctx, n: TextNode, o: RenderOptions): void {
   const layout = layoutText(n, o.measure);
-  ctx.fillStyle = n.color;
-  ctx.font = fontString(n, layout.size);
-  ctx.textAlign = "left";
-  ctx.textBaseline = "middle";
-  if ("letterSpacing" in ctx) ctx.letterSpacing = `${n.letterSpacing}px`;
+  const size = layout.size;
   const left = -n.width / 2;
   const top = -n.height / 2;
+  // Every piece of text to paint, as its own run (a whole line, or one word of a justified line).
+  const runs: Array<{ text: string; x: number; y: number }> = [];
   for (const line of layout.lines) {
     const y = top + line.y + layout.lineHeight / 2;
+    if (line.marker) runs.push({ text: line.marker, x: left, y });
     if (line.wordSpacing === 0) {
-      ctx.fillText(line.text, left + line.x, y);
+      runs.push({ text: line.text, x: left + line.x, y });
       continue;
     }
     let x = left + line.x;
     for (const word of line.text.split(" ")) {
-      ctx.fillText(word, x, y);
-      x += o.measure(`${word} `, n.font, layout.size) + n.letterSpacing * (graphemeCount(word) + 1) + line.wordSpacing;
+      runs.push({ text: word, x, y });
+      x += o.measure(`${word} `, n.font, size) + n.letterSpacing * (graphemeCount(word) + 1) + line.wordSpacing;
     }
   }
+
+  ctx.save();
+  ctx.font = fontString(n, size);
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  if ("letterSpacing" in ctx) ctx.letterSpacing = `${n.letterSpacing}px`;
+
+  if (n.highlight) {
+    const pad = HIGHLIGHT_PAD * size;
+    const h = size + 2 * pad;
+    ctx.fillStyle = n.highlight.color;
+    for (const line of layout.lines) {
+      if (line.text === "") continue;
+      // A justified line is drawn to the column's edge (its word spacing adds up to that), so its band reaches there too.
+      const w = line.width + line.wordSpacing * (line.text.split(" ").length - 1);
+      const y = top + line.y + layout.lineHeight / 2;
+      ctx.beginPath();
+      ctx.roundRect(left + line.x - pad, y - h / 2, w + 2 * pad, h, HIGHLIGHT_RADIUS * size);
+      ctx.fill();
+    }
+  }
+
+  if (n.outline && n.outline.width > 0) {
+    // The stroke is centred on the glyph edge, so half of it is hidden under the fill; double the width to show the full outline.
+    ctx.lineWidth = n.outline.width * 2;
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = n.outline.color;
+    for (const r of runs) ctx.strokeText(r.text, r.x, r.y);
+  }
+
+  ctx.fillStyle = n.color;
+  for (const r of runs) ctx.fillText(r.text, r.x, r.y);
+  ctx.restore();
 }
 
 function drawSticker(ctx: Ctx, n: StickerNode, o: RenderOptions): void {

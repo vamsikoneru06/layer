@@ -21,7 +21,7 @@ describe("STYLE_FIELDS", () => {
   it("pins the style fields of every node type", () => {
     expect(STYLE_FIELDS).toEqual({
       frame: ["opacity", "shadow", "filters"],
-      text: ["opacity", "shadow", "font", "size", "color", "align", "lineHeight", "letterSpacing", "fit"],
+      text: ["opacity", "shadow", "font", "size", "color", "align", "lineHeight", "letterSpacing", "fit", "outline", "highlight", "list"],
       shape: ["opacity", "shadow", "fill", "stroke"],
       sticker: ["opacity", "shadow"],
       group: ["opacity", "shadow"],
@@ -37,7 +37,8 @@ describe("STYLE_FIELDS", () => {
       group: ["id", "type", "name", "transform", "width", "height", "visible", "lock", "alt", "children"],
     };
     // Every optional key is present on the samples, so the test sees all of them.
-    const samples: Node[] = [frame("f", {}), text("t", {}), rect("s", {}), sticker("k"), group("g", {}, [])].map((n) => ({ ...n, shadow: null, alt: "Alt text" }));
+    const withText: Node = { ...text("t", {}), outline: null, highlight: null, list: "none" };
+    const samples: Node[] = [frame("f", {}), withText, rect("s", {}), sticker("k"), group("g", {}, [])].map((n) => ({ ...n, shadow: null, alt: "Alt text" }));
     for (const node of samples) {
       const style = STYLE_FIELDS[node.type] as readonly string[];
       expect([...Object.keys(node)].sort(), node.type).toEqual([...style, ...notStyle[node.type]].sort());
@@ -66,6 +67,14 @@ describe("styleOf", () => {
     expect(styleOf(rect("a", {})).fields.shadow).toBeNull();
   });
 
+  it("carries a text layer's outline, highlight and list as copies", () => {
+    const source = { ...text("t", {}, "Items"), outline: { color: "#FF0000", width: 3 }, highlight: { color: "#FFFF00" }, list: "number" as const };
+    const style = styleOf(source);
+    expect(style.fields).toMatchObject({ outline: { color: "#FF0000", width: 3 }, highlight: { color: "#FFFF00" }, list: "number" });
+    expect(style.fields.outline).not.toBe(source.outline);
+    expect(styleOf(text("t", {})).fields).toMatchObject({ outline: null, highlight: null, list: "none" });
+  });
+
   it("leaves out identity, geometry and content", () => {
     const t = text("t", { x: 10 }, "Secret words");
     expect(Object.keys(styleOf(t).fields).sort()).toEqual([...STYLE_FIELDS.text].sort());
@@ -91,6 +100,14 @@ describe("planPasteStyle", () => {
     const next = run(doc, planPasteStyle(doc, ["a", "b"], "design", styleOf(source)));
     for (const id of ["a", "b"]) expect(next.nodes[id]).toMatchObject({ size: 64, color: "#AA0000", align: "center", font: { family: "Lora", weight: 700 } });
     expect(next.nodes.a).toMatchObject({ content: "Alpha", maxChars: null });
+  });
+
+  it("pastes a list as none when the copied text has none, so the document stays valid", () => {
+    const source = text("s", {});
+    const doc = docWith([source, { ...text("t", {}), list: "bullet" as const }]);
+    const next = run(doc, planPasteStyle(doc, ["t"], "design", styleOf(source)));
+    expect(next.nodes.t).toMatchObject({ list: "none" });
+    expect(validateDoc(next)).toMatchObject({ ok: true });
   });
 
   it("pastes a frame's filters without touching its photo", () => {

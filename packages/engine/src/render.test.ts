@@ -75,6 +75,71 @@ describe("renderScene", () => {
   });
 });
 
+describe("renderDoc text highlight, outline and list", () => {
+  const opts = { measure, image: noImages, dpr: 1 };
+  const identity = [1, 0, 0, 1, 0, 0] as const;
+  // A 100×100 box with one 20 px line at lineHeight 1.5 (30 px): the line is centred, so its middle is at y 0.
+  const plain = { ...text("t", {}, "aaa", 100, 100), size: 20, lineHeight: 1.5 };
+  const draw = (node: typeof plain) => {
+    const { ctx, calls } = recordingContext();
+    renderDoc(ctx, docWith([node]), identity, opts, { background: false });
+    return calls;
+  };
+
+  it("fills a rounded band behind each non-empty line before the text", () => {
+    // Three lines (90 px) in a 200 px box: the top line's middle is at y −30, the bottom line's at y 30.
+    const calls = draw({ ...plain, content: "aaa\n\nbbb", height: 200, highlight: { color: "#FFFF00" } });
+    const bands = calls.filter((c) => c.op === "roundRect");
+    // 30 px wide text plus 3 px padding each side; 20 px text plus 3 px padding above and below; 4 px corners.
+    expect(bands.map((c) => c.args)).toEqual([
+      [-53, -43, 36, 26, 4],
+      [-53, 17, 36, 26, 4],
+    ]);
+    const firstText = calls.findIndex((c) => c.op === "fillText");
+    expect(calls.findIndex((c) => c.op === "roundRect")).toBeLessThan(firstText);
+    expect(calls).toContainEqual({ op: "set:fillStyle", args: ["#FFFF00"] });
+  });
+
+  it("strokes the outline before the fill, at twice its width, with round joins", () => {
+    const calls = draw({ ...plain, content: "aaa bbb", outline: { color: "#FF0000", width: 3 } });
+    const ops = calls.map((c) => c.op);
+    const stroke = ops.indexOf("strokeText");
+    const fill = ops.indexOf("fillText");
+    expect(stroke).toBeGreaterThan(-1);
+    expect(stroke).toBeLessThan(fill);
+    expect(calls).toContainEqual({ op: "set:lineWidth", args: [6] });
+    expect(calls).toContainEqual({ op: "set:lineJoin", args: ["round"] });
+    expect(calls).toContainEqual({ op: "set:strokeStyle", args: ["#FF0000"] });
+    expect(calls[stroke]!.args).toEqual(["aaa bbb", -50, 0]);
+  });
+
+  it("strokes nothing without an outline or with a zero-width one", () => {
+    expect(draw({ ...plain, content: "aaa" }).some((c) => c.op === "strokeText")).toBe(false);
+    expect(draw({ ...plain, content: "aaa", outline: null }).some((c) => c.op === "strokeText")).toBe(false);
+    expect(draw({ ...plain, content: "aaa", outline: { color: "#FF0000", width: 0 } }).some((c) => c.op === "strokeText")).toBe(false);
+  });
+
+  it("draws a list marker at the box's left edge, with the text in the indent, and outlines the marker too", () => {
+    const calls = draw({ ...plain, content: "aaa", list: "number", outline: { color: "#FF0000", width: 2 } });
+    // The indent is 1.6 × 20 = 32 px, so the text starts at −50 + 32.
+    expect(calls).toContainEqual({ op: "fillText", args: ["1.", -50, 0] });
+    expect(calls).toContainEqual({ op: "strokeText", args: ["1.", -50, 0] });
+    expect(calls).toContainEqual({ op: "fillText", args: ["aaa", -18, 0] });
+  });
+
+  it("restores the canvas state after a text layer, so a shape drawn after it is not affected", () => {
+    const { ctx, calls } = recordingContext();
+    // The text is drawn first (bottom), then a shape that has no stroke.
+    const doc = docWith([{ ...plain, content: "aaa", outline: { color: "#FF0000", width: 3 } }, rect("r", { x: 300 })]);
+    renderDoc(ctx, doc, identity, opts, { background: false });
+    const ops = calls.map((c) => c.op);
+    const lastText = ops.lastIndexOf("fillText");
+    const restore = ops.indexOf("restore", lastText);
+    expect(restore).toBeGreaterThan(lastText);
+    expect(ops.indexOf("fill", restore)).toBeGreaterThan(restore);
+  });
+});
+
 describe("renderDoc shadows and stroke dashes", () => {
   const opts = { measure, image: noImages, dpr: 1 };
   const identity = [1, 0, 0, 1, 0, 0] as const;

@@ -19,7 +19,7 @@ type NodeOf<T extends NodeType> = Extract<Node, { type: T }>;
  */
 export const STYLE_FIELDS: { readonly [T in NodeType]: readonly (keyof NodeOf<T>)[] } = {
   frame: ["opacity", "shadow", "filters"],
-  text: ["opacity", "shadow", "font", "size", "color", "align", "lineHeight", "letterSpacing", "fit"],
+  text: ["opacity", "shadow", "font", "size", "color", "align", "lineHeight", "letterSpacing", "fit", "outline", "highlight", "list"],
   shape: ["opacity", "shadow", "fill", "stroke"],
   sticker: ["opacity", "shadow"],
   group: ["opacity", "shadow"],
@@ -35,7 +35,8 @@ export interface Style {
 export function styleOf(node: Node): Style {
   const source = node as unknown as Record<string, unknown>;
   const fields: Record<string, unknown> = {};
-  for (const key of STYLE_FIELDS[node.type] as readonly string[]) fields[key] = structuredClone(source[key] ?? null);
+  // An absent optional field copies as null, except a list: its schema type has no null, so it copies as "none".
+  for (const key of STYLE_FIELDS[node.type] as readonly string[]) fields[key] = structuredClone(source[key] ?? (key === "list" ? "none" : null));
   return { type: node.type, fields };
 }
 

@@ -60,6 +60,50 @@ describe("layoutText", () => {
     expect(layoutText(n, measure)).toBe(layoutText(n, measure));
   });
 
+  describe("lists", () => {
+    // Size 20 → hanging indent 1.6 × 20 = 32 px, so the text column is 100 − 32 = 68 px wide.
+
+    it("hangs the text after the indent and wraps it to the narrower column", () => {
+      // "aaa bbb" is 70 px: too wide for the 68 px column, so each word gets its own line.
+      const l = layoutText(node("aaa bbb ccc", { list: "bullet" }), measure);
+      expect(l.lines.map((x) => x.text)).toEqual(["aaa", "bbb", "ccc"]);
+      expect(l.lines.map((x) => x.x)).toEqual([32, 32, 32]);
+    });
+
+    it("marks only the first line of a paragraph, with a bullet or a number", () => {
+      const wrapped = layoutText(node("aaa bbb ccc", { list: "bullet" }), measure);
+      expect(wrapped.lines.map((x) => x.marker)).toEqual(["•", undefined, undefined]);
+      const numbered = layoutText(node("one\n\ntwo\nthree", { list: "number", height: 200 }), measure);
+      expect(numbered.lines.map((x) => x.text)).toEqual(["one", "", "two", "three"]);
+      expect(numbered.lines.map((x) => x.marker)).toEqual(["1.", undefined, "2.", "3."]);
+    });
+
+    it("keeps no indent and no marker without a list", () => {
+      const plain = layoutText(node("aaa bbb ccc"), measure);
+      expect(plain.lines.map((x) => x.text)).toEqual(["aaa bbb", "ccc"]);
+      expect(plain.lines.every((x) => x.x === 0 && x.marker === undefined)).toBe(true);
+      const none = layoutText(node("aaa", { list: "none" }), measure).lines[0]!;
+      expect(none.x).toBe(0);
+      expect(none.marker).toBeUndefined();
+    });
+
+    it("aligns within the column right of the indent, so centred and right lines stay inside the box", () => {
+      // "aaa" is 30 px wide: centred in the 68 px column it starts at 32 + 19, right-aligned at 32 + 38.
+      expect(layoutText(node("aaa", { list: "bullet", align: "center" }), measure).lines[0]!.x).toBe(51);
+      expect(layoutText(node("aaa", { list: "bullet", align: "right" }), measure).lines[0]!.x).toBe(70);
+    });
+
+    it("counts the indent when shrinking to fit", () => {
+      const base = node("aaaa bbbb cccc dddd", { fit: "shrink", size: 40, height: 60 });
+      const bulleted = layoutText({ ...base, list: "bullet" }, measure);
+      expect(bulleted.overflow).toBe(false);
+      expect(bulleted.height).toBeLessThanOrEqual(60);
+      // The indent takes width from the lines, so the text has to be smaller than without a list.
+      expect(bulleted.size).toBeLessThan(layoutText(base, measure).size);
+      expect(bulleted.lines[0]!.x).toBeCloseTo(1.6 * bulleted.size, 6);
+    });
+  });
+
   describe("text beyond plain ASCII", () => {
     const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
     const graphemes = (s: string) => [...segmenter.segment(s)].map((g) => g.segment);

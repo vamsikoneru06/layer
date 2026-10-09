@@ -35,6 +35,7 @@ import { IconButton } from "./icon-button";
 import { AltTextSection } from "./alt-text-section";
 import { ShadowSection } from "./shadow-section";
 import { changeCase, presetPatch, TEXT_PRESETS, type Case } from "./text-tools";
+import { TextEffectsSection } from "./text-effects-section";
 
 const TYPE_LABEL: Record<Node["type"], string> = { frame: "Photo frame", text: "Text", shape: "Shape", sticker: "Sticker", group: "Group" };
 
@@ -198,6 +199,7 @@ function PanelBody({ state, core, actions, mac }: { state: EditorState; core: Ed
       )}
 
       {node.type === "text" && <TextSection node={node} disabled={locked} update={update} artboard={doc.artboard} authoring={mode === "template"} />}
+      {node.type === "text" && <TextEffectsSection node={node} disabled={locked} update={update} />}
       {node.type === "shape" && <ShapeSection node={node} disabled={locked} update={update} />}
       {node.type === "frame" && <PhotoSection node={node} disabled={locked} doc={doc} change={change} />}
       {node.type === "frame" && <FiltersSection node={node} disabled={locked} update={update} />}
