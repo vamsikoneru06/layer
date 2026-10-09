@@ -199,7 +199,14 @@ function PanelBody({ state, core, actions, mac }: { state: EditorState; core: Ed
       )}
 
       {node.type === "text" && <TextSection node={node} disabled={locked} update={update} artboard={doc.artboard} authoring={mode === "template"} />}
-      {node.type === "text" && <TextEffectsSection node={node} disabled={locked} update={update} />}
+      {node.type === "text" && (
+        <TextEffectsSection
+          node={node}
+          page={doc.artboard.background.type === "solid" ? doc.artboard.background.color : (doc.artboard.background.stops[0]?.color ?? null)}
+          disabled={locked}
+          update={update}
+        />
+      )}
       {node.type === "shape" && <ShapeSection node={node} disabled={locked} update={update} />}
       {node.type === "frame" && <PhotoSection node={node} disabled={locked} doc={doc} change={change} />}
       {node.type === "frame" && <FiltersSection node={node} disabled={locked} update={update} />}

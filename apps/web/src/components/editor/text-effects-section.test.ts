@@ -13,4 +13,11 @@ describe("outlineColorFor", () => {
     expect(outlineColorFor("#00000080")).toBe("#FFFFFF");
     expect(outlineColorFor("#FFFFFF80")).toBe("#000000");
   });
+
+  it("uses grey when the outline would vanish into the page", () => {
+    expect(outlineColorFor("#1D1D1F", "#FFFFFF")).toBe("#8E8E93");
+    expect(outlineColorFor("#FFFFFF", "#000000")).toBe("#8E8E93");
+    expect(outlineColorFor("#1D1D1F", "#000000")).toBe("#FFFFFF");
+    expect(outlineColorFor("#FFFFFF", "#FFFFFF")).toBe("#000000");
+  });
 });

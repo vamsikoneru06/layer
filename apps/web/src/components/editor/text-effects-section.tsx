@@ -16,21 +16,31 @@ const LIST_OPTIONS: readonly { value: TextList; label: string }[] = [
 ];
 
 /** White behind dark text, black behind light text, judged by perceived brightness (Rec. 601 weights). */
-export function outlineColorFor(text: string): string {
-  const c = parseHex(text);
-  if (!c) return "#000000";
-  const brightness = (0.299 * c.r + 0.587 * c.g + 0.114 * c.b) / 255;
-  return brightness < 0.5 ? "#FFFFFF" : "#000000";
+const brightness = (hex: string): number | null => {
+  const c = parseHex(hex);
+  return c ? (0.299 * c.r + 0.587 * c.g + 0.114 * c.b) / 255 : null;
+};
+
+/**
+ * The opposite of the text colour, so the outline stands out around the letters. When that would vanish into the
+ * page (a white outline on a white page), a mid grey that shows on both light and dark is used instead.
+ */
+export function outlineColorFor(text: string, page: string | null = null): string {
+  const t = brightness(text);
+  const outline = t === null || t >= 0.5 ? "#000000" : "#FFFFFF";
+  const p = page === null ? null : brightness(page);
+  if (p !== null && Math.abs(p - (outline === "#FFFFFF" ? 1 : 0)) < 0.2) return "#8E8E93";
+  return outline;
 }
 
 /** Outline, highlight and list for a text layer. Each switch starts with a sensible look and removes the field when off. */
-export function TextEffectsSection({ node, disabled, update }: { node: TextNode; disabled: boolean; update: (patch: Record<string, unknown>, final?: boolean) => void }) {
+export function TextEffectsSection({ node, page, disabled, update }: { node: TextNode; page: string | null; disabled: boolean; update: (patch: Record<string, unknown>, final?: boolean) => void }) {
   const o = node.outline;
   const h = node.highlight;
   return (
     <Section title="Effects">
       <Row label="Outline">
-        <Switch label="Outline" checked={!!o} disabled={disabled} onChange={(on) => update({ outline: on ? { color: outlineColorFor(node.color), width: DEFAULT_OUTLINE_WIDTH } : null })} />
+        <Switch label="Outline" checked={!!o} disabled={disabled} onChange={(on) => update({ outline: on ? { color: outlineColorFor(node.color, page), width: DEFAULT_OUTLINE_WIDTH } : null })} />
       </Row>
       {o && (
         <>
