@@ -54,3 +54,34 @@ describe("per-user write limit", () => {
     expect((await call(folders.create, { method: "POST", as: bob, body: { name: "Bob" } })).status).toBe(201);
   });
 });
+
+describe("per-user read limit", () => {
+  it("shares one budget across signed-in reads, separate from writes and other users", async () => {
+    const fixed = new Date("2026-09-26T11:00:05.000Z");
+    const deps = testDeps(t.db, { now: () => fixed });
+    const designs = designHandlers(deps);
+    const folders = folderHandlers(deps);
+    const me = meHandlers(deps);
+    const alice = await createUser(t.db);
+    const bob = await createUser(t.db);
+    const design = (await call(designs.create, { method: "POST", as: alice, body: { doc: emptyDoc() } })).body as { id: string };
+
+    const max = RATE_LIMITS.userRead.max;
+    for (let i = 0; i < max; i++) {
+      const res =
+        i % 3 === 0
+          ? await call(designs.get, { as: alice, params: { id: design.id } })
+          : i % 3 === 1
+            ? await call(folders.list, { as: alice })
+            : await call(me.get, { as: alice });
+      expect(res.status, `read ${i}`).toBe(200);
+    }
+
+    const blocked = await call(designs.list, { as: alice });
+    expect(blocked.status).toBe(429);
+    expect(blocked.headers.get("retry-after")).toMatch(/^\d+$/);
+
+    expect((await call(designs.patch, { method: "PATCH", as: alice, params: { id: design.id }, body: { title: "Still writable" } })).status).toBe(200);
+    expect((await call(designs.list, { as: bob })).status).toBe(200);
+  });
+});

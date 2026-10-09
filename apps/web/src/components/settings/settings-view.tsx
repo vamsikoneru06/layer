@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/toast";
 import { deleteMe, updateMe, type Me } from "@/lib/api";
 import { currentTheme, setTheme, type Theme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
+import { TwoFactorSection } from "./two-factor-section";
 
 function ProfileSection({ me }: { me: Me }) {
   const id = useId();
@@ -280,6 +281,12 @@ export function SettingsView() {
         <Divider />
         <AppearanceSection />
         <Divider />
+        {me.role === "admin" && (
+          <>
+            <TwoFactorSection me={me} />
+            <Divider />
+          </>
+        )}
         <DataSection />
         <Divider />
         <DangerSection email={me.email} />

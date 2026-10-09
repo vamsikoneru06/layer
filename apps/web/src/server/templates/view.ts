@@ -1,9 +1,10 @@
+import { hasAdminAccess } from "../auth/two-factor";
 import type { CurrentUser } from "../deps";
 import type { TemplateCard } from "./repository";
 
-/** Published templates are public; a hidden one stays visible to its author and to admins. */
-export function canSee(card: Pick<TemplateCard, "status" | "authorId">, viewer: Pick<CurrentUser, "id" | "role"> | null): boolean {
-  return card.status === "published" || (viewer !== null && (viewer.id === card.authorId || viewer.role === "admin"));
+/** Published templates are public; a hidden one stays visible to its author and to admins (with a recent two-factor code). */
+export function canSee(card: Pick<TemplateCard, "status" | "authorId">, viewer: CurrentUser | null, now: Date): boolean {
+  return card.status === "published" || (viewer !== null && (viewer.id === card.authorId || hasAdminAccess(viewer, now)));
 }
 
 /** Public JSON: the author appears by handle and name only, never by account id. */

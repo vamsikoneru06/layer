@@ -5,7 +5,7 @@ export const metadata = { title: "Privacy · VASH" };
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Privacy Policy" updated="7 October 2026">
+    <LegalPage title="Privacy Policy" updated="8 October 2026">
       <p>
         VASH is a free photo design editor run by an individual based in India, who is responsible for your personal data here (the
         &ldquo;Data Fiduciary&rdquo; under India&apos;s Digital Personal Data Protection Act, 2023). This page explains what we collect,
@@ -30,6 +30,10 @@ export default function PrivacyPage() {
         <li>
           <strong>Sign-in sessions:</strong> a record for each device you sign in on, which can include its IP address and browser name,
           to keep you signed in and to spot misuse of your account.
+        </li>
+        <li>
+          <strong>Two-step verification (administrators only):</strong> the key for your authenticator app and your backup codes, both
+          stored encrypted, and when each signed-in device last entered a code. Admin tools use this to check it&apos;s really you.
         </li>
         <li>
           <strong>Abuse limits:</strong> short-lived counters, keyed by account or IP address, that stop too many requests in a short
@@ -95,6 +99,7 @@ export default function PrivacyPage() {
       <ul>
         <li>Your account, designs and photos: until you delete them or your account.</li>
         <li>Sign-in sessions: until you sign out, or 30 days without use.</li>
+        <li>Two-step verification key and backup codes: until you turn it off or delete your account.</li>
         <li>Abuse-limit counters: up to two days.</li>
         <li>Error reports: up to 90 days, then Sentry deletes them.</li>
         <li>Encrypted database backups: 7 days.</li>
@@ -108,7 +113,7 @@ export default function PrivacyPage() {
       <h2>How we protect it</h2>
       <p>
         Everything is sent over HTTPS and stored with our providers&apos; encryption. Each account can only reach its own data, photos are
-        checked to be real images before they&apos;re accepted, and requests are rate-limited. If a breach of personal data happens, we
+        checked to be real images before they&apos;re accepted, requests are rate-limited, and admin tools need two-step verification. If a breach of personal data happens, we
         will inform the people affected and report it to the Data Protection Board of India and to CERT-In as the law requires.
       </p>
 

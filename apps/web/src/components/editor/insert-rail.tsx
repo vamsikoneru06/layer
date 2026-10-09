@@ -8,6 +8,7 @@ import { filterByName } from "@/lib/element-helpers";
 import { LINES, SHAPES, type CatalogShape } from "@/lib/shape-catalog";
 import { cn } from "@/lib/utils";
 import { GeometryPreview } from "./geometry-preview";
+import { PhotosPanel } from "./photos-panel";
 
 type Tab = "text" | "shapes" | "photos";
 
@@ -102,7 +103,7 @@ function IconsSection({ add }: { add: (spec: ShapeSpec) => void }) {
   );
 }
 
-function Panel({ tab, add, addShape }: { tab: Tab; add: (kind: InsertKind) => void; addShape: (spec: ShapeSpec) => void }) {
+function Panel({ tab, add, addShape, editor }: { tab: Tab; add: (kind: InsertKind) => void; addShape: (spec: ShapeSpec) => void; editor: Editor | null }) {
   if (tab === "text") {
     return (
       <>
@@ -137,18 +138,19 @@ function Panel({ tab, add, addShape }: { tab: Tab; add: (kind: InsertKind) => vo
     );
   }
   return (
-    <>
-      <h2 className="text-[15px] font-semibold">Photos</h2>
-      <p className="text-[12px] text-muted">A frame marks where a photo goes. Uploading your own photos is the next feature to arrive.</p>
-      <div className="grid grid-cols-2 gap-2">
-        <Tile label="Square frame" onClick={() => add("frame")}>
-          <rect x="8" y="8" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 3" />
-        </Tile>
-        <Tile label="Round frame" onClick={() => add("frame-circle")}>
-          <circle cx="24" cy="24" r="16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 3" />
-        </Tile>
-      </div>
-    </>
+    <PhotosPanel
+      editor={editor}
+      frameTiles={
+        <div className="grid grid-cols-2 gap-2">
+          <Tile label="Square frame" onClick={() => add("frame")}>
+            <rect x="8" y="8" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 3" />
+          </Tile>
+          <Tile label="Round frame" onClick={() => add("frame-circle")}>
+            <circle cx="24" cy="24" r="16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 3" />
+          </Tile>
+        </div>
+      }
+    />
   );
 }
 
@@ -179,6 +181,7 @@ export function InsertRail({ editor }: { editor: Editor | null }) {
         <div className="flex w-[240px] flex-none flex-col gap-3 overflow-y-auto border-r-[.5px] border-line p-4">
           <Panel
             tab={open}
+            editor={editor}
             add={(kind) => editor && insertLayer(editor.core, kind)}
             addShape={(spec) => editor && insertShape(editor.core, spec)}
           />

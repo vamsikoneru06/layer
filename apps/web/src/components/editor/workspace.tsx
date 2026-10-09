@@ -23,6 +23,7 @@ import { Segmented } from "./fields";
 import { InsertRail } from "./insert-rail";
 import { Ruler, RULER_THICKNESS } from "./ruler";
 import { SaveToAccount } from "./save-to-account";
+import { usePhotoDrop } from "./use-photo-drop";
 import { LayersPanel } from "./layers-panel";
 import { MoveDialog } from "./move-dialog";
 import { PropertiesPanel } from "./properties-panel";
@@ -136,6 +137,8 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
       e.destroy();
     };
   }, [design, local]);
+
+  const photoDrop = usePhotoDrop(editor);
 
   // Refusals ("This layer is locked. Unlock it to change it.") and other engine messages show as a toast, then clear.
   const notice = state?.notice ?? null;
@@ -438,7 +441,7 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
             {view.rulers && state && (
               <Ruler axis="y" viewport={state.viewport} length={size.height} page={{ start: 0, end: artboard.height }} onGuideStart={(e) => startGuide("x", e)} />
             )}
-            <div ref={container} className="relative min-h-0 min-w-0 flex-1 overflow-hidden bg-bg2">
+            <div ref={container} {...photoDrop} className="relative min-h-0 min-w-0 flex-1 overflow-hidden bg-bg2">
               <canvas ref={scene} className="absolute inset-0" aria-hidden />
               <canvas ref={overlay} tabIndex={-1} className="absolute inset-0 touch-none outline-none" aria-label="Design canvas. Use the Layers panel to select layers with the keyboard." />
               {state && (

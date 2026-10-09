@@ -15,7 +15,7 @@ const mailer = captureMailer();
 beforeAll(async () => {
   t = await createTestDb();
   auth = createAuth({ db: t.db, config: testConfig, mailer, now: () => new Date() });
-  route = createAuthRoute(auth, testConfig);
+  route = createAuthRoute(auth, { db: t.db, config: testConfig, now: () => new Date() });
 });
 afterAll(() => t.close());
 
@@ -184,7 +184,7 @@ describe("magic-link abuse controls", () => {
   it("still limits links per client when no proxy is trusted (shared bucket, fail closed)", async () => {
     const untrusted = createAuthRoute(
       createAuth({ db: t.db, config: { ...testConfig, trustProxy: false }, mailer, now: () => new Date() }),
-      testConfig,
+      { db: t.db, config: testConfig, now: () => new Date() },
     );
     const statuses = [];
     for (let i = 0; i < 21; i++) {
