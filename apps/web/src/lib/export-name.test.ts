@@ -14,4 +14,10 @@ describe("exportFileName", () => {
   it("keeps names short without a trailing dash", () => {
     expect(exportFileName(`${"a".repeat(59)} b`, 1)).toBe(`${"a".repeat(59)}.png`);
   });
+
+  it("ends the name with the requested format", () => {
+    expect(exportFileName("Riya's Birthday!", 1, "jpg")).toBe("riyas-birthday.jpg");
+    expect(exportFileName("Riya's Birthday!", 2, "pdf")).toBe("riyas-birthday@2x.pdf");
+    expect(exportFileName("🎉🎉", 1, "pdf")).toBe("design.pdf");
+  });
 });

@@ -1,6 +1,6 @@
 import type { Doc, NodeId } from "@vash/schema";
 import { EditorCore, type EditorState } from "./editor-core";
-import { exportPng } from "./export";
+import { exportImage, exportPng, type ImageFormat } from "./export";
 import { createFilterRenderer, type FilterFn } from "./filters";
 import { fontRequests } from "./fonts";
 import { createInteraction, type PointerInput } from "./interaction";
@@ -38,6 +38,8 @@ export interface Editor {
   invalidate(): void;
   /** The current document as a PNG at 1×/2×/3×. */
   exportPng(o: { scale: number; transparent: boolean }): Promise<Blob>;
+  /** The current document as a PNG or JPEG. JPEG ignores `transparent` and always paints the background. */
+  exportImage(o: { scale: number; transparent: boolean; format: ImageFormat; quality?: number }): Promise<Blob>;
   /** Placement of the on-canvas text box while a text layer is being edited. */
   textEditBox(): TextEditBox | null;
   /**
@@ -286,6 +288,7 @@ export function createEditor(o: EditorOptions): Editor {
     zoomTo: (zoom) => core.setChrome({ viewport: zoomAt(core.getState().viewport, { x: size.width / 2, y: size.height / 2 }, zoom) }),
     invalidate,
     exportPng: (e) => exportPng(core.doc, { ...e, measure, image, imagesReady: o.imagesReady, filter }),
+    exportImage: (e) => exportImage(core.doc, { ...e, measure, image, imagesReady: o.imagesReady, filter }),
     dropTarget: (at) => {
       let id: NodeId | null = null;
       if (at) {

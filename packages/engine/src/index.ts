@@ -40,7 +40,7 @@ export { topLevelSelection, type Plan } from "./selection-utils";
 export { clampContent, fillPhotos, frameAt, newPhotoFrame, photoTargets, placePhoto, removePhoto, swapPhotos, zoomPhoto } from "./photos";
 export { createFilterRenderer, FILTER_KEYS, FILTER_PRESETS, isNeutral, presetFilters, type FilterFn, type FilterValues } from "./filters";
 export { textEditBox, type TextEditBox } from "./text-edit";
-export { checkExport, exportPng, EXPORT_MAX_SIDE, PHOTOS_NOT_READY, referencedImages, type ExportCheck, type ExportOptions } from "./export";
+export { checkExport, exportImage, exportPng, EXPORT_MAX_SIDE, PHOTOS_NOT_READY, referencedImages, type ExportCheck, type ExportOptions, type ImageFormat } from "./export";
 export { drawNode, renderDoc, renderScene, fontString, type ImageState, type LoadedImage, type RenderOptions } from "./render";
 export { renderOverlay, GUIDE_COLOR, type OverlayState } from "./overlay";
 export { selectionFrame, handlePositions, handleAt, type Handle, type SelectionFrame } from "./handles";
