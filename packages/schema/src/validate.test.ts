@@ -258,3 +258,92 @@ describe("optional shadow, alt and stroke dash", () => {
     expect(issues).toContainEqual({ path: "nodes.heading.dash", message: "is not allowed" });
   });
 });
+
+describe("optional text outline, highlight and list", () => {
+  /** The sample template plus a shape (box), so text-only keys can be tried on a non-text node. */
+  function withBox(fn: (d: any) => void): Doc {
+    return mutate((d) => {
+      d.nodes.box = {
+        id: "box", type: "shape", name: "Box", transform: { x: 200, y: 200, rotation: 0, scaleX: 1, scaleY: 1 },
+        width: 200, height: 100, opacity: 1, visible: true, lock: "free",
+        geometry: { kind: "rect", cornerRadius: 0 }, fill: null, stroke: null,
+      };
+      d.root.push("box");
+      fn(d);
+    });
+  }
+
+  it("accepts a text node without the new keys", () => {
+    expect(issuesOf(withBox(() => {}))).toEqual([]);
+  });
+
+  it("accepts every valid outline, highlight and list form on a text node", () => {
+    const forms: Array<(d: any) => void> = [
+      (d) => { d.nodes.heading.outline = { color: "#FF000080", width: 0 }; },
+      (d) => { d.nodes.heading.outline = { color: "#112233", width: 20 }; },
+      (d) => { d.nodes.heading.outline = null; },
+      (d) => { d.nodes.heading.highlight = { color: "#FFFF00" }; },
+      (d) => { d.nodes.heading.highlight = null; },
+      (d) => { d.nodes.heading.list = "none"; },
+      (d) => { d.nodes.heading.list = "bullet"; },
+      (d) => { d.nodes.heading.list = "number"; },
+    ];
+    for (const form of forms) {
+      expect(issuesOf(withBox(form))).toEqual([]);
+    }
+  });
+
+  it("rejects an outline or highlight colour that is not hex", () => {
+    const issues = issuesOf(withBox((d) => {
+      d.nodes.heading.outline = { color: "red", width: 2 };
+      d.nodes.heading.highlight = { color: "yellow" };
+    }));
+    expect(issues).toContainEqual({ path: "nodes.heading.outline.color", message: "expected #RRGGBB or #RRGGBBAA" });
+    expect(issues).toContainEqual({ path: "nodes.heading.highlight.color", message: "expected #RRGGBB or #RRGGBBAA" });
+  });
+
+  it("rejects an outline width outside 0 to the limit", () => {
+    const tooWide = issuesOf(withBox((d) => { d.nodes.heading.outline = { color: "#000000", width: 21 }; }));
+    expect(tooWide).toEqual([{ path: "nodes.heading.outline.width", message: "must be between 0 and 20" }]);
+    const negative = issuesOf(withBox((d) => { d.nodes.heading.outline = { color: "#000000", width: -1 }; }));
+    expect(negative).toEqual([{ path: "nodes.heading.outline.width", message: "must be between 0 and 20" }]);
+  });
+
+  it("rejects an outline or highlight with a missing or extra key", () => {
+    expect(issuesOf(withBox((d) => { d.nodes.heading.outline = { color: "#000000" }; })))
+      .toEqual([{ path: "nodes.heading.outline.width", message: "is required" }]);
+    expect(issuesOf(withBox((d) => { d.nodes.heading.outline = { color: "#000000", width: 2, blur: 1 }; })))
+      .toEqual([{ path: "nodes.heading.outline.blur", message: "is not allowed" }]);
+    expect(issuesOf(withBox((d) => { d.nodes.heading.highlight = { color: "#000000", width: 2 }; })))
+      .toEqual([{ path: "nodes.heading.highlight.width", message: "is not allowed" }]);
+  });
+
+  it("rejects an outline or highlight that is neither an object nor null", () => {
+    const issues = issuesOf(withBox((d) => {
+      d.nodes.heading.outline = "thick";
+      d.nodes.heading.highlight = 1;
+    }));
+    expect(issues).toContainEqual({ path: "nodes.heading.outline", message: "expected object" });
+    expect(issues).toContainEqual({ path: "nodes.heading.highlight", message: "expected object" });
+  });
+
+  it("rejects a list value outside the allowlist, including null", () => {
+    const unknown = issuesOf(withBox((d) => { d.nodes.heading.list = "checkbox"; }));
+    expect(unknown).toEqual([{ path: "nodes.heading.list", message: "must be one of: none, bullet, number" }]);
+    const nullList = issuesOf(withBox((d) => { d.nodes.heading.list = null; }));
+    expect(nullList).toEqual([{ path: "nodes.heading.list", message: "must be one of: none, bullet, number" }]);
+  });
+
+  it("rejects the text-only keys on non-text nodes", () => {
+    const issues = issuesOf(withBox((d) => {
+      d.nodes.box.outline = { color: "#000000", width: 2 };
+      d.nodes.box.highlight = { color: "#FFFF00" };
+      d.nodes.box.list = "bullet";
+      d.nodes.photo1.list = "number";
+    }));
+    expect(issues).toContainEqual({ path: "nodes.box.outline", message: "is not allowed" });
+    expect(issues).toContainEqual({ path: "nodes.box.highlight", message: "is not allowed" });
+    expect(issues).toContainEqual({ path: "nodes.box.list", message: "is not allowed" });
+    expect(issues).toContainEqual({ path: "nodes.photo1.list", message: "is not allowed" });
+  });
+});

@@ -2,8 +2,8 @@
  * The VASH document format (schemaVersion 2).
  *
  * Rules that keep the format safe and predictable:
- * - Every key is required; "absent" is expressed as `null`. The optional keys (`shadow`, `alt`, `stroke.dash`)
- *   may be omitted; designs and templates written before they existed stay valid.
+ * - Every key is required; "absent" is expressed as `null`. The optional keys (`shadow`, `alt`, `stroke.dash`,
+ *   and the text `outline`, `highlight`, `list`) may be omitted; designs and templates written before they existed stay valid.
  * - Layers live in a flat `nodes` map; `root` and `group.children` hold IDs.
  * - Assets are referenced by ID only. The document never contains a URL.
  * - Filters are parameters; pixels are never baked into the document.
@@ -99,6 +99,8 @@ export interface FontSpec {
   style: "normal" | "italic";
 }
 
+export type TextList = "none" | "bullet" | "number";
+
 export interface TextNode extends BaseNode {
   type: "text";
   content: string;
@@ -110,6 +112,12 @@ export interface TextNode extends BaseNode {
   letterSpacing: number;
   fit: "none" | "shrink";
   maxChars: number | null;
+  /** Optional: text outline, or omit / `null` for none. */
+  outline?: { color: Color; width: number } | null;
+  /** Optional: background highlight behind the text, or omit / `null` for none. */
+  highlight?: { color: Color } | null;
+  /** Optional: list markers per line. Omit for none. */
+  list?: TextList;
 }
 
 export type ShapeGeometry =

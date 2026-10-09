@@ -100,6 +100,9 @@ const NODE_KEYS: Record<string, readonly string[]> = {
 };
 /** Optional on every node type. Omitted means absent, like `null`. */
 const OPTIONAL_NODE_KEYS = ["shadow", "alt"] as const;
+/** Optional on text nodes only. */
+const TEXT_OPTIONAL_KEYS = ["outline", "highlight", "list"] as const;
+const TEXT_LISTS = ["none", "bullet", "number"] as const;
 const FILTER_SIGNED = ["brightness", "contrast", "saturation", "warmth", "tint", "highlights", "shadows"] as const;
 const FILTER_UNSIGNED = ["vignette", "grain", "blur", "sharpen"] as const;
 const STROKE_DASHES = ["solid", "dashed", "dotted"] as const;
@@ -120,6 +123,19 @@ function checkShadow(c: Checker, v: unknown, path: string): void {
   c.number(v.blur, join(path, "blur"), 0, LIMITS.shadowBlurMax);
   c.number(v.offsetX, join(path, "offsetX"), -LIMITS.shadowOffsetMax, LIMITS.shadowOffsetMax);
   c.number(v.offsetY, join(path, "offsetY"), -LIMITS.shadowOffsetMax, LIMITS.shadowOffsetMax);
+}
+
+function checkOutline(c: Checker, v: unknown, path: string): void {
+  if (v === null) return;
+  if (!c.object(v, path, ["color", "width"])) return;
+  c.color(v.color, join(path, "color"));
+  c.number(v.width, join(path, "width"), 0, LIMITS.textOutlineMax);
+}
+
+function checkHighlight(c: Checker, v: unknown, path: string): void {
+  if (v === null) return;
+  if (!c.object(v, path, ["color"])) return;
+  c.color(v.color, join(path, "color"));
 }
 
 function checkAlt(c: Checker, v: unknown, path: string): void {
@@ -190,7 +206,8 @@ function checkNode(c: Checker, key: string, v: unknown, path: string): void {
     c.fail(join(path, "type"), "must be one of: frame, text, shape, sticker, group");
     return;
   }
-  if (!c.object(v, path, keys, OPTIONAL_NODE_KEYS)) return;
+  const optional = type === "text" ? [...OPTIONAL_NODE_KEYS, ...TEXT_OPTIONAL_KEYS] : OPTIONAL_NODE_KEYS;
+  if (!c.object(v, path, keys, optional)) return;
   if (c.id(v.id, join(path, "id")) && v.id !== key) c.fail(join(path, "id"), "must match its key in nodes");
   c.string(v.name, join(path, "name"), 0, LIMITS.nameChars);
   checkTransform(c, v.transform, join(path, "transform"));
@@ -246,6 +263,9 @@ function checkNode(c: Checker, key: string, v: unknown, path: string): void {
       c.number(v.letterSpacing, join(path, "letterSpacing"), -100, 500);
       c.oneOf(v.fit, join(path, "fit"), ["none", "shrink"] as const);
       c.nullable(v.maxChars, join(path, "maxChars"), (m, p) => c.integer(m, p, 1, LIMITS.textChars));
+      if (v.outline !== undefined) checkOutline(c, v.outline, join(path, "outline"));
+      if (v.highlight !== undefined) checkHighlight(c, v.highlight, join(path, "highlight"));
+      if (v.list !== undefined) c.oneOf(v.list, join(path, "list"), TEXT_LISTS);
       break;
     }
     case "shape": {
