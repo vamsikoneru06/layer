@@ -215,6 +215,22 @@ export const designs = pgTable(
   (t) => [index("designs_owner_idx").on(t.ownerId, t.updatedAt, t.id)],
 );
 
+/** Earlier versions of a design, kept on save (see designs/service.ts). Deleted with the design or the owner. */
+export const designVersions = pgTable(
+  "design_versions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    designId: uuid("design_id").notNull().references(() => designs.id, { onDelete: "cascade" }),
+    ownerId: text("owner_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    /** The design's version number when this content was current. */
+    version: integer("version").notNull(),
+    title: text("title").notNull(),
+    doc: jsonb("doc").$type<Doc>().notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("design_versions_design_idx").on(t.designId, t.createdAt.desc())],
+);
+
 export const reports = pgTable(
   "reports",
   {

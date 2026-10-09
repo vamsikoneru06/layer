@@ -1,6 +1,6 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, notInArray, sql } from "drizzle-orm";
 import type { Doc } from "@vash/schema";
-import { designs } from "../db/schema";
+import { designs, designVersions } from "../db/schema";
 import type { Db } from "../db/types";
 import type { Cursor } from "../http/cursor";
 
@@ -52,6 +52,12 @@ export async function getDesignVersion(db: Db, ownerId: string, id: string): Pro
   return row?.version;
 }
 
+/** Reads the design and locks its row until the transaction ends, so concurrent saves and restores queue up. */
+export async function getDesignForUpdate(db: Db, ownerId: string, id: string): Promise<DesignRow | undefined> {
+  const [row] = await db.select().from(designs).where(owned(ownerId, id)).for("update");
+  return row;
+}
+
 export async function insertDesign(db: Db, values: typeof designs.$inferInsert): Promise<DesignRow> {
   const [row] = await db.insert(designs).values(values).returning();
   return row!;
@@ -94,4 +100,46 @@ export async function updateDesignMeta(
 
 export async function deleteDesign(db: Db, ownerId: string, id: string): Promise<boolean> {
   return (await db.delete(designs).where(owned(ownerId, id)).returning({ id: designs.id })).length > 0;
+}
+
+export type VersionRow = typeof designVersions.$inferSelect;
+
+/** Newest first. Snapshots of one design are ordered by time, then by version (versions only ever grow). */
+const newestFirst = [desc(designVersions.createdAt), desc(designVersions.version)];
+
+export async function latestVersionAt(db: Db, ownerId: string, designId: string): Promise<Date | undefined> {
+  const [row] = await db
+    .select({ createdAt: designVersions.createdAt })
+    .from(designVersions)
+    .where(and(eq(designVersions.designId, designId), eq(designVersions.ownerId, ownerId)))
+    .orderBy(...newestFirst)
+    .limit(1);
+  return row?.createdAt;
+}
+
+export async function insertVersion(db: Db, values: typeof designVersions.$inferInsert): Promise<void> {
+  await db.insert(designVersions).values(values);
+}
+
+/** Keeps the newest `keep` versions of a design and deletes the rest. */
+export async function pruneVersions(db: Db, ownerId: string, designId: string, keep: number): Promise<void> {
+  const scope = and(eq(designVersions.designId, designId), eq(designVersions.ownerId, ownerId));
+  const newest = db.select({ id: designVersions.id }).from(designVersions).where(scope).orderBy(...newestFirst).limit(keep);
+  await db.delete(designVersions).where(and(scope, notInArray(designVersions.id, newest)));
+}
+
+export async function listVersionRows(db: Db, ownerId: string, designId: string): Promise<Pick<VersionRow, "id" | "version" | "title" | "createdAt">[]> {
+  return db
+    .select({ id: designVersions.id, version: designVersions.version, title: designVersions.title, createdAt: designVersions.createdAt })
+    .from(designVersions)
+    .where(and(eq(designVersions.designId, designId), eq(designVersions.ownerId, ownerId)))
+    .orderBy(...newestFirst);
+}
+
+export async function getVersionRow(db: Db, ownerId: string, designId: string, versionId: string): Promise<VersionRow | undefined> {
+  const [row] = await db
+    .select()
+    .from(designVersions)
+    .where(and(eq(designVersions.id, versionId), eq(designVersions.designId, designId), eq(designVersions.ownerId, ownerId)));
+  return row;
 }

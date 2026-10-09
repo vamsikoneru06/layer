@@ -15,7 +15,8 @@ const FolderId = z.uuid().nullable();
 const DOC_BODY_LIMIT = LIMITS.docBytes + 16 * 1024;
 
 const CreateBody = z.object({ id: z.uuid().transform((s) => s.toLowerCase()).optional(), title: Title.optional(), folderId: FolderId.optional(), doc: z.unknown() }).strict();
-const SaveBody = z.object({ doc: z.unknown(), version: z.number().int().positive() }).strict();
+const SaveBody = z.object({ doc: z.unknown(), version: z.number().int().positive(), checkpoint: z.boolean().optional() }).strict();
+const RestoreBody = z.object({ version: z.number().int().positive() }).strict();
 const PatchBody = z
   .object({ title: Title.optional(), folderId: FolderId.optional() })
   .strict()
@@ -36,6 +37,7 @@ const summary = (d: Omit<repo.DesignSummary, "format" | "width" | "height">) => 
 });
 const listItem = (d: repo.DesignSummary) => ({ ...summary(d), format: d.format, width: d.width, height: d.height });
 export const toDesignJson = (d: repo.DesignRow) => ({ ...summary(d), doc: d.doc, sourceTemplateId: d.sourceTemplateId, sourceTemplateVersion: d.sourceTemplateVersion });
+const versionMeta = (v: Pick<repo.VersionRow, "id" | "version" | "title" | "createdAt">) => ({ id: v.id, version: v.version, title: v.title, createdAt: v.createdAt.toISOString() });
 
 export function designHandlers(deps: Deps) {
   const ctx = { db: deps.db, now: deps.now };
@@ -62,6 +64,22 @@ export function designHandlers(deps: Deps) {
       const id = parseId(params.id);
       const body = await readJson(req, SaveBody, DOC_BODY_LIMIT);
       return Response.json(toDesignJson(await service.saveDesignDoc(ctx, user.id, id, body)));
+    }),
+
+    listVersions: endpoint(deps, { auth: "user", rateLimit: readLimit }, async ({ user, params }) => {
+      const rows = await service.listVersions(ctx, user.id, parseId(params.id));
+      return Response.json(rows.map(versionMeta));
+    }),
+
+    getVersion: endpoint(deps, { auth: "user", rateLimit: readLimit }, async ({ user, params }) => {
+      const row = await service.getVersion(ctx, user.id, parseId(params.id), parseId(params.versionId));
+      return Response.json({ ...versionMeta(row), designId: row.designId, doc: row.doc });
+    }),
+
+    restoreVersion: endpoint(deps, { auth: "user", rateLimit: { name: "designSave", rule: RATE_LIMITS.designSave, by: "user" } }, async ({ req, user, params }) => {
+      const body = await readJson(req, RestoreBody);
+      const design = await service.restoreVersion(ctx, user.id, parseId(params.id), parseId(params.versionId), body.version);
+      return Response.json(toDesignJson(design));
     }),
 
     patch: endpoint(deps, { auth: "user", rateLimit: writeLimit }, async ({ req, user, params }) => {
