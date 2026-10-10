@@ -69,6 +69,7 @@ export const ACTION_IDS = [
   "rename",
   "moveToFolder",
   "designInfo",
+  "versionHistory",
   "resizeDesign",
   "save",
   "download",
@@ -118,6 +119,8 @@ export interface ActionHost {
   rename(): void;
   moveToFolder(): void;
   designInfo(): void;
+  /** Opens the version history panel in the side panel. */
+  versionHistory(): void;
   resizeDesign(): void;
   save(): void;
   download(): void;
@@ -204,6 +207,7 @@ export function buildActions(state: ActionState, core: EditorCore, host: ActionH
     { id: "rename", label: "Rename", run: host.rename },
     { id: "moveToFolder", label: "Move to folder", disabled: host.local ? "Folders need an account. Use Save to account first." : undefined, run: host.moveToFolder },
     { id: "designInfo", label: "Design info", run: host.designInfo },
+    { id: "versionHistory", label: "Version history", run: host.versionHistory },
     { id: "resizeDesign", label: "Resize design", run: host.resizeDesign },
     { id: "save", label: "Save", shortcut: "mod+s", run: host.save },
     { id: "download", label: "Download", run: host.download },
@@ -227,7 +231,7 @@ export function buildActions(state: ActionState, core: EditorCore, host: ActionH
 type Layout = readonly (ActionId | "separator")[];
 
 export const MENUS = {
-  file: ["newDesign", "open", "makeCopy", "separator", "rename", "moveToFolder", "designInfo", "resizeDesign", "separator", "save", "download"],
+  file: ["newDesign", "open", "makeCopy", "separator", "rename", "moveToFolder", "designInfo", "versionHistory", "resizeDesign", "separator", "save", "download"],
   edit: ["undo", "redo", "separator", "cut", "copy", "paste", "copyStyle", "pasteStyle", "duplicate", "delete", "separator", "selectAll", "group", "ungroup"],
   arrange: [
     "bringForward",

@@ -88,10 +88,25 @@ export type Design = { id: string; title: string; version: number; folderId: str
 
 export const getDesign = (id: string) => request<Design>(`/api/designs/${id}`);
 
-/** Saves a new version; resolves to the version the server assigned. Rejects with status 409 on a conflict. */
-export async function saveDesign(id: string, doc: Doc, version: number): Promise<number> {
-  return (await request<Design>(`/api/designs/${id}`, { method: "PUT", json: { doc, version } })).version;
+/**
+ * Saves a new version; resolves to the version the server assigned. Rejects with status 409 on a conflict.
+ * `checkpoint` marks an explicit save (Ctrl+S, File > Save), which always keeps the replaced content in the history.
+ */
+export async function saveDesign(id: string, doc: Doc, version: number, checkpoint = false): Promise<number> {
+  return (await request<Design>(`/api/designs/${id}`, { method: "PUT", json: checkpoint ? { doc, version, checkpoint } : { doc, version } })).version;
 }
+
+/** An earlier version kept for restoring (see Version history). */
+export type VersionItem = { id: string; version: number; title: string; createdAt: string };
+
+export const listVersions = (designId: string) => request<VersionItem[]>(`/api/designs/${designId}/versions`);
+
+export const getVersion = (designId: string, versionId: string) =>
+  request<VersionItem & { designId: string; doc: unknown }>(`/api/designs/${designId}/versions/${versionId}`);
+
+/** Replaces the design with an earlier version (keeping the current content as a version). 409 if the design changed meanwhile. */
+export const restoreVersion = (designId: string, versionId: string, version: number) =>
+  request<Design>(`/api/designs/${designId}/versions/${versionId}/restore`, { method: "POST", json: { version } });
 
 /** "Keep mine as a copy" after a conflict. */
 export const saveDesignAsCopy = (doc: Doc, title: string) => request<{ id: string }>("/api/designs", { method: "POST", json: { doc, title } });

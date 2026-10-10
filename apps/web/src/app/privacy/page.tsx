@@ -5,7 +5,7 @@ export const metadata = { title: "Privacy · VASH" };
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Privacy Policy" updated="8 October 2026">
+    <LegalPage title="Privacy Policy" updated="10 October 2026">
       <p>
         VASH is a free photo design editor run by an individual based in India, who is responsible for your personal data here (the
         &ldquo;Data Fiduciary&rdquo; under India&apos;s Digital Personal Data Protection Act, 2023). This page explains what we collect,
@@ -20,7 +20,9 @@ export default function PrivacyPage() {
           Google, we receive your name, email address and profile picture link from Google. We never see your Google password.
         </li>
         <li>
-          <strong>Your work:</strong> the designs, folders and photos you create or upload, to save them and show them only to you.
+          <strong>Your work:</strong> the designs, folders and photos you create or upload, to save them and show them only to you. For
+          each design we keep up to 30 earlier versions so you can restore them. They are deleted when you delete the design or your
+          account, and they are included when you download your data.
         </li>
         <li>
           <strong>Designs made without signing in:</strong> kept only in your browser&apos;s storage on your device. We don&apos;t

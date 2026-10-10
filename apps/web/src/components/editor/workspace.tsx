@@ -1,13 +1,13 @@
 "use client";
 
-import { copiedStyleOf, createEditor, hitTest, resizeDesign, toWorld, topLevelOf, type Editor, type EditorState } from "@vash/engine";
+import { copiedStyleOf, createEditor, hitTest, resizeDesign, toWorld, topLevelOf, type Editor, type EditorState, type Measure } from "@vash/engine";
 import { parseDoc, type Doc } from "@vash/schema";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type PointerEvent as ReactPointerEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
-import { duplicateDesign, getDesign, saveDesign, saveDesignAsCopy, type Design } from "@/lib/api";
+import { duplicateDesign, getDesign, restoreVersion, saveDesign, saveDesignAsCopy, type Design } from "@/lib/api";
 import { addGuide, loadGuides, loadView, moveGuide, removeGuide, saveGuides, saveView, toDesign, type GuideAxis, type Guides, type ViewSettings } from "@/lib/guides";
 import { copyLocalDesign, localDesigns } from "@/lib/local-designs";
 import { createAutosaver, type Autosaver, type SaveStatus } from "@/lib/autosave";
@@ -33,6 +33,7 @@ import { TextEditor } from "./text-editor";
 import { useClipboard } from "./use-clipboard";
 import { useElementSize } from "./use-element-size";
 import { useFullscreen } from "./use-fullscreen";
+import { VersionHistoryPanel } from "./version-history-panel";
 // Self-hosted allowlisted fonts, loaded only on the editor route.
 import "./fonts.css";
 
@@ -51,6 +52,14 @@ const saveLocal = (id: string) => async (doc: Doc, version: number) => {
   return version + 1;
 };
 
+let measureContext: CanvasRenderingContext2D | null = null;
+/** Text widths for the version previews, measured as the editor measures them (the engine's own measure is not exported). */
+const measure: Measure = (text, font, size) => {
+  measureContext ??= document.createElement("canvas").getContext("2d")!;
+  measureContext.font = `${font.style} ${font.weight} ${size}px "${font.family}", system-ui, sans-serif`;
+  return measureContext.measureText(text).width;
+};
+
 export function Workspace({ design, local = false }: { design: Design; local?: boolean }) {
   const router = useRouter();
   const container = useRef<HTMLDivElement>(null);
@@ -67,6 +76,11 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
   const [conflictError, setConflictError] = useState<string | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  // Set by an explicit save (Ctrl+S, File > Save) so the server keeps the replaced content as a version.
+  const checkpointNext = useRef(false);
+  // The photo loader of the open design, for the version previews.
+  const photos = useRef<ReturnType<typeof createImageLoader> | null>(null);
   const state = useEditorState(editor);
   const toast = useToast();
   const clipboard = useClipboard(editor);
@@ -100,13 +114,20 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
     // Photos load in the background; the canvas redraws as each arrives.
     let e: Editor | null = null;
     const images = createImageLoader(() => e?.invalidate());
+    photos.current = images;
     e = createEditor({ container: container.current!, scene: scene.current!, overlay: overlay.current!, doc: design.doc, image: images.image, imagesReady: images.ready });
     setEditor(e);
     const s = createAutosaver<Doc>({
       version: design.version,
       delayMs: 1500,
       retryMs: 5000,
-      save: local ? saveLocal(design.id) : (doc, v) => saveDesign(design.id, doc, v),
+      save: local
+        ? saveLocal(design.id)
+        : (doc, v) => {
+            const checkpoint = checkpointNext.current;
+            checkpointNext.current = false;
+            return saveDesign(design.id, doc, v, checkpoint);
+          },
       onStatus: (st) => {
         statusRef.current = st;
         setStatus(st);
@@ -191,6 +212,26 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
       router.push(`/edit/${id}`);
     });
 
+  /** Replaces the design with an earlier version. The server keeps what it replaces, so the restore can be undone. */
+  const restore = async (versionId: string) => {
+    const s = saver.current;
+    if (!editor || !s) return;
+    await s.flush();
+    if (s.dirty) throw new Error("Your latest changes are still saving. Try again in a moment.");
+    const restored = await restoreVersion(design.id, versionId, s.version);
+    // The same validation as on first open; never hand the engine a malformed document.
+    const parsed = parseDoc(restored.doc, { kind: "design" });
+    if (!parsed.ok) throw new Error("This version couldn’t be opened.");
+    editor.core.endTextEdit(false);
+    editor.core.history.reset(parsed.doc);
+    s.reset(restored.version);
+    setHistoryOpen(false);
+    toast({ message: "Version restored.", duration: 3000 });
+  };
+
+  /** Photos for the version previews. The loader redraws the canvas as photos arrive, so a preview may need a redraw to show them. */
+  const previewImage = (assetId: string) => photos.current?.image(assetId) ?? "missing";
+
   // When a save finishes, "Last saved" in Design info moves on.
   const wasSaved = useRef(true);
   useEffect(() => {
@@ -204,8 +245,10 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
   async function saveNow() {
     const s = saver.current;
     if (!s) return;
+    // Only when something is pending: a checkpoint with nothing to save would otherwise ride on the next autosave.
+    if (s.dirty) checkpointNext.current = true;
     await s.flush();
-    const message = !s.dirty ? "All changes saved." : saveInProgress() ? "Saving your changes." : "Not saved yet. The status at the top shows why.";
+    const message =!s.dirty ? "All changes saved." : saveInProgress() ? "Saving your changes." : "Not saved yet. The status at the top shows why.";
     toast({ message, duration: 3000 });
   }
 
@@ -341,6 +384,11 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
     rename: () => setRenaming(true),
     moveToFolder: () => setMoveOpen(true),
     designInfo: () => setInfoOpen(true),
+    // The panel lives in the side panel, so opening it shows that panel again.
+    versionHistory: () => {
+      setPanelsHidden(false);
+      setHistoryOpen(true);
+    },
     resizeDesign: () => setResizeOpen(true),
     save: () => void saveNow(),
     download: () => setExportOpen(true),
@@ -375,6 +423,7 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
       rename: call("rename"),
       moveToFolder: call("moveToFolder"),
       designInfo: call("designInfo"),
+      versionHistory: call("versionHistory"),
       resizeDesign: call("resizeDesign"),
       save: call("save"),
       download: call("download"),
@@ -505,23 +554,44 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
         </div>
         {!panelsHidden && (
           <aside className="flex w-[288px] flex-none flex-col border-l-[.5px] border-line text-[13px]" aria-label="Design panel">
-            <div className="px-4 pt-3.5 pb-3">
-              <Segmented
-                name="Panel"
-                value={panel}
-                options={[
-                  { value: "properties", label: "Properties" },
-                  { value: "layers", label: "Layers" },
-                ]}
-                onChange={setPanel}
-              />
-            </div>
-            {state && editor && actions && panel === "properties" && (
-              <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
-                <PropertiesPanel state={state} core={editor.core} actions={actions} mac={mac} />
+            {historyOpen ? (
+              <div className="flex min-h-0 flex-1 flex-col">
+                <VersionHistoryPanel
+                  designId={design.id}
+                  local={local}
+                  currentVersion={saver.current?.version ?? design.version}
+                  measure={measure}
+                  image={previewImage}
+                  onRestore={restore}
+                  onClose={() => setHistoryOpen(false)}
+                />
+                {local && (
+                  <div className="px-4 pt-3 pb-4">
+                    <SaveToAccount id={design.id} saver={saver} />
+                  </div>
+                )}
               </div>
+            ) : (
+              <>
+                <div className="px-4 pt-3.5 pb-3">
+                  <Segmented
+                    name="Panel"
+                    value={panel}
+                    options={[
+                      { value: "properties", label: "Properties" },
+                      { value: "layers", label: "Layers" },
+                    ]}
+                    onChange={setPanel}
+                  />
+                </div>
+                {state && editor && actions && panel === "properties" && (
+                  <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+                    <PropertiesPanel state={state} core={editor.core} actions={actions} mac={mac} />
+                  </div>
+                )}
+                {state && editor && panel === "layers" && <LayersPanel state={state} core={editor.core} />}
+              </>
             )}
-            {state && editor && panel === "layers" && <LayersPanel state={state} core={editor.core} />}
           </aside>
         )}
       </div>

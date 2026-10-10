@@ -41,6 +41,7 @@ const host = (over: Partial<ActionHost> = {}): ActionHost => ({
   rename: vi.fn(),
   moveToFolder: vi.fn(),
   designInfo: vi.fn(),
+  versionHistory: vi.fn(),
   resizeDesign: vi.fn(),
   save: vi.fn(),
   download: vi.fn(),
@@ -500,10 +501,19 @@ describe("canvas view switches", () => {
   it("lists Resize design in the File menu after Design info, and hands it to the host", () => {
     const h = host();
     const a = actionsFor(new EditorCore(docOf([])), h);
-    expect(labels(toMenuItems(a, MENUS.file, false))).toEqual(["New design", "Open", "Make a copy", "-", "Rename", "Move to folder", "Design info", "Resize design", "-", "Save", "Download"]);
+    expect(labels(toMenuItems(a, MENUS.file, false))).toEqual(["New design", "Open", "Make a copy", "-", "Rename", "Move to folder", "Design info", "Version history", "Resize design", "-", "Save", "Download"]);
     a.resizeDesign.run();
     expect(h.resizeDesign).toHaveBeenCalledOnce();
     expect(a.resizeDesign.disabled).toBeUndefined();
+  });
+
+  it("offers Version history in the File menu, also for guest designs (the panel explains it needs an account)", () => {
+    const h = host({ local: true });
+    const a = actionsFor(new EditorCore(docOf([])), h);
+    expect(a.versionHistory.label).toBe("Version history");
+    expect(a.versionHistory.disabled).toBeUndefined();
+    a.versionHistory.run();
+    expect(h.versionHistory).toHaveBeenCalledOnce();
   });
 
   it("lays out the View menu with the switches between the zoom items and the panels", () => {
