@@ -9,8 +9,8 @@ batch adds the missing half: earlier versions of a design that the owner can loo
   time ("Today, 14:05", "Yesterday, 09:12", "3 Oct, 18:40") and a small preview rendered in the browser from the
   version's document (the engine's renderer, no server images).
 - Selecting a version shows a larger preview. **Restore this version** (with a confirm step) replaces the design's
-  content with it as a new save, so the restore itself can be undone with Ctrl+Z in that session and also appears as
-  a newer version. Nothing is lost by restoring.
+  content with it as a new save. The content it replaces is kept as a newer version, so switching back is another
+  restore. Nothing is lost by restoring. (The editor reloads after a restore, so Ctrl+Z does not undo it.)
 - Designs kept in the browser (guest mode) show "Version history needs an account. Save to account to keep
   versions." with the existing Save to account button.
 
