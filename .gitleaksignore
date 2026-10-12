@@ -1,0 +1,9 @@
+# Findings reviewed and accepted. Format: commit:file:rule:line (gitleaks fingerprints).
+# Only add a line after checking that the flagged text is not a secret.
+#
+# docs/decisions.md line 16 is a decision-table row that names technologies
+# ("S3-compatible storage", "Auth.js"). generic-api-key matches a short word on it.
+# The same line exists in two commits, and which one gitleaks reports depends on
+# the refs it scans, so both are listed.
+f2bafcd57049bda6b1f8a300543b221dab680d6d:docs/decisions.md:generic-api-key:16
+7330a50189413d35092b5ec747d73f24fc20a7c2:docs/decisions.md:generic-api-key:16
