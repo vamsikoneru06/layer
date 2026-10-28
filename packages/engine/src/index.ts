@@ -3,6 +3,8 @@ export { EditorCore, type EditorState } from "./editor-core";
 export { applyCommand, type Command, type NodePatch } from "./commands";
 export { History, HISTORY_LIMIT } from "./history";
 export { checkPolicy, type EditMode, type PolicyResult } from "./policy";
+export { planBrandKit, type BrandPlan, type BrandStyle } from "./brand";
+export { adaptToSize, type TargetSize } from "./resize";
 export { createInteraction, type Interaction, type PointerInput, type WheelInput } from "./interaction";
 export { handleKey, type KeyInput } from "./shortcuts";
 export { hitTest, nodesInBox, worldBounds } from "./hit-test";

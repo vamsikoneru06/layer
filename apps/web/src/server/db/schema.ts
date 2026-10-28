@@ -134,7 +134,8 @@ export const assets = pgTable(
   (t) => [
     index("assets_owner_idx").on(t.ownerId, t.createdAt, t.id),
     index("assets_template_idx").on(t.templateId),
-    check("assets_template_copy_check", sql`${t.templateId} is null or (${t.ownerId} is null and ${t.visibility} = 'public')`),
+    // A template's photo copies belong to no user. They're public while the template is, private while it's hidden.
+    check("assets_template_copy_check", sql`${t.templateId} is null or ${t.ownerId} is null`),
     index("assets_pending_idx").on(t.status, t.createdAt),
     check("assets_kind_check", sql`${t.kind} in ('photo', 'thumbnail', 'sticker')`),
     check("assets_visibility_check", sql`${t.visibility} in ('private', 'public')`),
@@ -196,6 +197,17 @@ export const templateUses = pgTable(
   },
   (t) => [primaryKey({ columns: [t.templateId, t.userId, t.day] })],
 );
+
+/** A user's saved brand: colours, fonts and a logo to apply to any template in one step (roadmap M4). One per user. */
+export const brandKits = pgTable("brand_kits", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  colors: text("colors").array().notNull().default(emptyTextArray),
+  fonts: text("fonts").array().notNull().default(emptyTextArray),
+  logoAssetId: uuid("logo_asset_id").references(() => assets.id, { onDelete: "set null" }),
+  updatedAt: updatedAt(),
+});
 
 export const designs = pgTable(
   "designs",

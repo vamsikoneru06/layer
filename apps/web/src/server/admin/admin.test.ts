@@ -5,6 +5,7 @@ import { createTestDb, type TestDb } from "../../../tests/support/db";
 import { testDeps, tickingClock } from "../../../tests/support/deps";
 import { createTemplate, createUser } from "../../../tests/support/factories";
 import { call } from "../../../tests/support/invoke";
+import { memoryStorage } from "../../../tests/support/storage";
 import { auditLog, reports } from "../db/schema";
 import { templateHandlers } from "../templates/handlers";
 import { adminHandlers } from "./handlers";
@@ -14,7 +15,7 @@ let h: ReturnType<typeof adminHandlers>;
 let gallery: ReturnType<typeof templateHandlers>;
 beforeAll(async () => {
   t = await createTestDb();
-  h = adminHandlers(testDeps(t.db, { now: tickingClock() }));
+  h = adminHandlers(testDeps(t.db, { now: tickingClock() }), memoryStorage());
   gallery = templateHandlers(testDeps(t.db));
 });
 afterAll(() => t.close());

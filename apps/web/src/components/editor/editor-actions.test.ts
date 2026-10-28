@@ -37,6 +37,7 @@ const host = (over: Partial<ActionHost> = {}): ActionHost => ({
   newDesign: vi.fn(),
   open: vi.fn(),
   makeCopy: vi.fn(),
+  makeSizes: vi.fn(),
   rename: vi.fn(),
   moveToFolder: vi.fn(),
   designInfo: vi.fn(),

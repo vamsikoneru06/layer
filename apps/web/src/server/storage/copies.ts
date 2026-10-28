@@ -21,7 +21,8 @@ const RESERVATION_MS = 60 * 60 * 1000;
  * Returns the registrations: call `releaseCopies` in the transaction that records the copies, or
  * `dropCopies` if that transaction fails. A failed copy drops them itself and answers 503.
  */
-export async function copyAll(db: Db, storage: ObjectStorage, copies: readonly Copy[], owner: string, now: Date): Promise<string[]> {
+/** `owner` is null for copies charged to nobody (a template that ships with VASH). */
+export async function copyAll(db: Db, storage: ObjectStorage, copies: readonly Copy[], owner: string | null, now: Date): Promise<string[]> {
   if (copies.length === 0) return [];
   const rows = await db
     .insert(storageDeletions)

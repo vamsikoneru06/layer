@@ -45,6 +45,18 @@ export function hitTest(doc: Doc, point: Point, pad = 0): NodeId | null {
   return null;
 }
 
+/** Visible leaf layers painted below `id` that cover `point`, nearest first: what shows through behind it. */
+export function layersBelow(doc: Doc, id: NodeId, point: Point): NodeId[] {
+  const order = drawOrder(doc);
+  const below: NodeId[] = [];
+  for (let i = order.indexOf(id) - 1; i >= 0; i--) {
+    const node = doc.nodes[order[i]!];
+    const inverse = node && invert(worldMatrix(doc, node.id));
+    if (inverse && containsLocal(node, apply(inverse, point), 0)) below.push(node.id);
+  }
+  return below;
+}
+
 const intersects = (a: Box, b: Box) => a.minX <= b.maxX && a.maxX >= b.minX && a.minY <= b.maxY && a.maxY >= b.minY;
 
 /** Axis-aligned world bounds of a node. */

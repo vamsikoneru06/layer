@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestDb, type TestDb } from "../../../tests/support/db";
 import { testDeps } from "../../../tests/support/deps";
@@ -11,6 +11,7 @@ import { assetHandlers } from "../assets/handlers";
 import { storageUsedBytes } from "../assets/repository";
 import { UPLOAD_LIMITS } from "../assets/service";
 import { assets, designs, storageDeletions, templates, templateVersions } from "../db/schema";
+import { moderateTemplate } from "../admin/service";
 import { meHandlers } from "../me/handlers";
 import { templateHandlers } from "./handlers";
 
@@ -198,5 +199,28 @@ describe("POST /api/templates/:id/versions", () => {
     const bobsDraft = await createDesign(t.db, bob.id, templateDoc());
     const bobsThumb = await stored(bob.id, "thumbnail");
     expect((await call(h.publishVersion, { method: "POST", as: bob, params: { id }, body: { designId: bobsDraft.id, thumbnailAssetId: bobsThumb.id, title: "Mine", category: "events" } })).status).toBe(404);
+  });
+
+  it("keeps a hidden template's new photo copies in private storage until it's restored", async () => {
+    const alice = await author();
+    const adminRow = await createUser(t.db, { role: "admin", twoFactorEnabled: true });
+    const admin = { id: adminRow.id, email: adminRow.email, role: "admin" as const, handle: null, twoFactor: { enabled: true, verifiedAt: new Date() } };
+    const draft = await createDesign(t.db, alice.id, templateDoc());
+    const { body } = await publish(alice, { designId: draft.id, thumbnailAssetId: (await stored(alice.id, "thumbnail")).id });
+    const id = body.template.id;
+    await moderateTemplate({ db: t.db, storage }, admin, id, "hide", new Date());
+
+    const newThumb = await stored(alice.id, "thumbnail");
+    const next = await call(h.publishVersion, { method: "POST", as: alice, params: { id }, body: { designId: draft.id, thumbnailAssetId: newThumb.id, title: "Party v2", category: "events" } });
+    expect(next.status).toBe(201);
+    const [fresh] = await t.db.select().from(assets).where(and(eq(assets.templateId, id), eq(assets.sourceAssetId, newThumb.id)));
+    expect(fresh!.visibility).toBe("private");
+    expect(storage.has("private", fresh!.storageKey)).toBe(true);
+    expect(storage.has("public", fresh!.storageKey)).toBe(false);
+
+    await moderateTemplate({ db: t.db, storage }, admin, id, "restore", new Date());
+    const copies = await t.db.select({ visibility: assets.visibility }).from(assets).where(eq(assets.templateId, id));
+    expect(copies.every((c) => c.visibility === "public")).toBe(true);
+    expect(storage.has("public", fresh!.storageKey)).toBe(true);
   });
 });
