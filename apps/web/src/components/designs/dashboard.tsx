@@ -112,7 +112,7 @@ function GuestRecentDesigns() {
     return (
       <EmptyState
         icon={<Sparkles />}
-        title="Your first design is a minute away"
+        title="No designs yet"
         body="Pick a size above or a template. No account needed: designs are saved in this browser until you sign in."
       />
     );
@@ -133,9 +133,10 @@ function RecentDesigns() {
   }, [session.status]);
 
   if (session.status === "guest") return <GuestRecentDesigns />;
-  if (error) return <p className="text-sm text-danger">{error}</p>;
+  const failure = session.status === "error" ? session.message : error;
+  if (failure) return <p className="text-sm text-danger">{failure}</p>;
   if (designs?.length === 0) {
-    return <EmptyState icon={<Sparkles />} title="Your first design is a minute away" body="Pick a size above to start." />;
+    return <EmptyState icon={<Sparkles />} title="No designs yet" body="Pick a size above to start." />;
   }
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
@@ -170,10 +171,14 @@ export function Dashboard() {
   const { create, busy } = useCreateDesign();
   const [customOpen, setCustomOpen] = useState(false);
   const [hello, setHello] = useState<string | null>(null);
+  const [shortcut, setShortcut] = useState<string | null>(null);
   const search = useRef<HTMLInputElement>(null);
 
-  // Local time decides the greeting, so it is only known in the browser.
-  useEffect(() => setHello(greeting()), []);
+  // Local time decides the greeting, and the platform the shortcut, so both are only known in the browser.
+  useEffect(() => {
+    setHello(greeting());
+    setShortcut(/Mac|iPhone|iPad/.test(navigator.platform) ? "⌘K" : "Ctrl K");
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -205,9 +210,11 @@ export function Dashboard() {
         >
           <Search aria-hidden className="size-[17px] flex-none" />
           <input ref={search} name="q" aria-label="Search designs" placeholder="Search designs" className="min-w-0 flex-1 bg-transparent text-text outline-none placeholder:text-muted" />
-          <kbd className="hidden h-5 min-w-5 items-center justify-center rounded-[5px] bg-field px-[5px] font-sans text-[11px] font-medium text-muted shadow-[inset_0_-1px_0_var(--line)] sm:inline-flex">
-            ⌘K
-          </kbd>
+          {shortcut && (
+            <kbd className="hidden h-5 min-w-5 items-center justify-center rounded-[5px] bg-field px-[5px] font-sans text-[11px] font-medium text-muted shadow-[inset_0_-1px_0_var(--line)] sm:inline-flex">
+              {shortcut}
+            </kbd>
+          )}
         </form>
       </div>
 

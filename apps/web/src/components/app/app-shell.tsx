@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { ArrowRight, Plus } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, type ReactNode } from "react";
@@ -34,8 +34,9 @@ function GuestBanner() {
   return (
     <div className="flex min-h-11 flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-[14px] bg-bg2 px-4 py-2.5 text-sm">
       <span className="text-muted">You’re not signed in. Designs you make are saved in this browser only. Sign in to keep them in your account.</span>
-      <Link href="/signin" className="font-medium underline-offset-4 hover:underline">
-        Sign in →
+      <Link href="/signin" className="flex items-center gap-1 font-medium underline-offset-4 hover:underline">
+        Sign in
+        <ArrowRight aria-hidden className="size-3.5" />
       </Link>
     </div>
   );

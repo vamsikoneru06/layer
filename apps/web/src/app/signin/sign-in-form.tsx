@@ -83,7 +83,7 @@ export function SignInForm({ googleEnabled, initialError }: { googleEnabled: boo
     setGoogleBusy(true);
     setError(null);
     const res = await post("/sign-in/social", { provider: "google", ...REDIRECTS });
-    const data = res?.ok ? ((await res.json()) as { url?: string }) : null;
+    const data = res?.ok ? ((await res.json().catch(() => null)) as { url?: string } | null) : null;
     if (data?.url) return window.location.assign(data.url);
     setGoogleBusy(false);
     setError(errorFor(res));

@@ -2,7 +2,7 @@
 
 import { LIMITS } from "@vash/schema";
 import { Download, Monitor, Moon, Sun, Trash2 } from "lucide-react";
-import { useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useState, type FormEvent } from "react";
 import { useSession, useSetMe } from "@/components/app/session";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
@@ -52,9 +52,10 @@ function ProfileSection({ me }: { me: Me }) {
             onChange={(e) => setName(e.target.value)}
             maxLength={LIMITS.nameChars}
             autoComplete="name"
+            placeholder="Your name"
           />
         </label>
-        <Button type="submit" loading={saving} disabled={!canSave}>
+        <Button type="submit" size="lg" loading={saving} disabled={!canSave}>
           {saving ? "Saving…" : "Save"}
         </Button>
       </form>
@@ -81,8 +82,9 @@ const THEMES = [
 ] as const;
 
 function AppearanceSection() {
-  // The page is rendered with the saved choice, so read it once on the client.
-  const [theme, setChoice] = useState<Theme>(() => (typeof document === "undefined" ? "system" : currentTheme()));
+  // The server can't see the saved choice, so start from "system" on both sides and read it after hydration.
+  const [theme, setChoice] = useState<Theme>("system");
+  useEffect(() => setChoice(currentTheme()), []);
 
   return (
     <section className="flex flex-col gap-4">
@@ -227,7 +229,7 @@ function DangerSection({ email }: { email: string }) {
     <section className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
         <h2 className="text-lg font-semibold tracking-[-0.02em]">Danger zone</h2>
-        <p className="text-sm text-muted">Deleting your account removes all your data from VASH. Download a backup first if you need one.</p>
+        <p className="text-sm text-muted">Deleting your account removes your designs, photos and profile from VASH. Encrypted database backups keep a copy for up to 7 days. Download your data first if you need it.</p>
       </div>
       <div>
         <Button variant="danger" onClick={() => setDialogOpen(true)} icon={<Trash2 aria-hidden className="size-4" />}>
@@ -265,7 +267,13 @@ export function SettingsView() {
         <div className="flex max-w-[560px] flex-col gap-8">
           <AppearanceSection />
           <Divider />
-          <p className="text-sm text-muted">Sign in to manage your account.</p>
+          {session.status === "error" ? (
+            <p role="alert" className="text-sm text-danger">
+              {session.message}
+            </p>
+          ) : (
+            <p className="text-sm text-muted">Sign in to manage your account.</p>
+          )}
         </div>
       </div>
     );

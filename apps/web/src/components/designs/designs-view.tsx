@@ -282,7 +282,7 @@ export function DesignsView() {
           }
           setHidden((h) => new Set([...h].filter((x) => !ids.includes(x))));
           undoToasts.current.delete(toastId);
-          toast({ message: "Restored. Nothing was lost.", duration: 2500 });
+          toast({ message: "Design restored.", duration: 2500 });
         },
       },
     });

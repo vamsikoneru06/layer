@@ -18,7 +18,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
           title="VASH couldn't load"
           body={
             <>
-              <p>Something went wrong while loading the app. Your saved designs are safe. Try again in a moment.</p>
+              <p>Something went wrong while loading the app. Try again in a moment.</p>
               {error.digest ? <p className="mt-2 text-xs">Reference: {error.digest}</p> : null}
             </>
           }

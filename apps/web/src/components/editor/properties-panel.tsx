@@ -2,7 +2,7 @@
 
 import { apply, checkPolicy, FILTER_PRESETS, isNeutral, presetFilters, rotation, type Command, type EditorCore, type EditorState, type FilterValues } from "@vash/engine";
 import { defaultFilters, FONT_FAMILIES, LIMITS, type FrameNode, type Node, type ShapeNode, type TextNode } from "@vash/schema";
-import { AlignCenter, AlignJustify, AlignLeft, AlignRight, Lock } from "lucide-react";
+import { AlignCenter, AlignJustify, AlignLeft, AlignRight, ArrowLeftRight, ArrowUpDown, Lock, RotateCw, SquareRoundCorner } from "lucide-react";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { docColors } from "@/lib/color";
@@ -121,7 +121,7 @@ function PanelBody({ state, core }: { state: EditorState; core: EditorCore }) {
           <NumberField label="W" name="Width" value={node.width} min={1} max={LIMITS.coordinate} disabled={layoutLocked || node.type === "group"} onCommit={(v) => resize("width", v)} />
           <NumberField label="H" name="Height" value={node.height} min={1} max={LIMITS.coordinate} disabled={layoutLocked || node.type === "group"} onCommit={(v) => resize("height", v)} />
           <NumberField
-            label="↻"
+            label={<RotateCw aria-hidden className="size-3" />}
             name="Rotation in degrees"
             value={t.rotation}
             suffix="°"
@@ -194,8 +194,8 @@ function TextSection({ node, disabled, update }: { node: TextNode; disabled: boo
       </div>
       <Segmented name="Alignment" value={node.align} options={ALIGN} disabled={disabled} onChange={(align) => update({ align })} />
       <div className="grid grid-cols-2 gap-2">
-        <NumberField label="↕" name="Line height" value={node.lineHeight} min={0.5} max={5} step={0.05} digits={2} disabled={disabled} onCommit={(lineHeight) => update({ lineHeight })} />
-        <NumberField label="↔" name="Letter spacing" value={node.letterSpacing} min={-100} max={500} step={0.5} digits={1} disabled={disabled} onCommit={(letterSpacing) => update({ letterSpacing })} />
+        <NumberField label={<ArrowUpDown aria-hidden className="size-3" />} name="Line height" value={node.lineHeight} min={0.5} max={5} step={0.05} digits={2} disabled={disabled} onCommit={(lineHeight) => update({ lineHeight })} />
+        <NumberField label={<ArrowLeftRight aria-hidden className="size-3" />} name="Letter spacing" value={node.letterSpacing} min={-100} max={500} step={0.5} digits={1} disabled={disabled} onCommit={(letterSpacing) => update({ letterSpacing })} />
       </div>
       <Row label="Shrink text to fit">
         <Switch label="Shrink text to fit" checked={node.fit === "shrink"} disabled={disabled} onChange={(on) => update({ fit: on ? "shrink" : "none" })} />
@@ -241,7 +241,7 @@ function ShapeSection({ node, disabled, update }: { node: ShapeNode; disabled: b
       )}
       {g.kind === "rect" && (
         <NumberField
-          label="◜"
+          label={<SquareRoundCorner aria-hidden className="size-3" />}
           name="Corner radius"
           value={g.cornerRadius}
           min={0}

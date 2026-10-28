@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { Menu } from "@/components/ui/menu";
+import { useToast } from "@/components/ui/toast";
 import { signOut } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Avatar } from "./avatar";
@@ -41,6 +42,7 @@ const ITEM_CLASS =
 function Profile() {
   const session = useSession();
   const router = useRouter();
+  const toast = useToast();
   if (session.status === "loading") return <span className="size-11 animate-[shimmer_1.4s_ease-in-out_infinite] rounded-xl bg-field" />;
   if (session.status !== "user") {
     return (
@@ -62,8 +64,12 @@ function Profile() {
           label: "Sign out",
           icon: <LogOut aria-hidden className="size-4" />,
           onSelect: async () => {
-            await signOut().catch(() => {});
-            window.location.href = "/";
+            try {
+              await signOut();
+              window.location.href = "/";
+            } catch {
+              toast({ message: "Couldn't sign out. Check your connection and try again." });
+            }
           },
         },
       ]}
