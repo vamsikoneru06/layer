@@ -5,7 +5,7 @@ export const metadata = { title: "Privacy · VASH" };
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Privacy Policy" updated="9 October 2026">
+    <LegalPage title="Privacy Policy" updated="29 October 2026">
       <p>
         VASH is a free photo design editor run by an individual based in India, who is responsible for your personal data here (the
         &ldquo;Data Fiduciary&rdquo; under India&apos;s Digital Personal Data Protection Act, 2023). This page explains what we collect,
@@ -26,8 +26,9 @@ export default function PrivacyPage() {
         <li>
           <strong>Designs and photos added without signing in:</strong> kept only in your browser&apos;s storage on your device.
           We don&apos;t receive them. When you sign in or choose Save to account, VASH uploads the photos those designs use, moves
-          the designs to your account and deletes them from the browser. Until then, clearing your browser&apos;s site data
-          deletes them, and you can delete each design on the Designs page.
+          the designs to your account and removes the uploaded photos from the browser once no design there uses them. Photos
+          that were never uploaded, or that no design still uses, stay in the browser until you clear its site data. Deleting a
+          design on the Designs page doesn&apos;t delete its photos.
         </li>
         <li>
           <strong>Sign-in sessions:</strong> a record for each device you sign in on, which can include its IP address and browser name,

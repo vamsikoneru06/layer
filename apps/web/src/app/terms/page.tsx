@@ -16,8 +16,8 @@ export default function TermsPage() {
       <ul>
         <li>You must be 18 or older.</li>
         <li>
-          You can make and export designs without an account. They&apos;re saved only in your browser, so we can&apos;t recover them if
-          that browser&apos;s data is cleared.
+          You can make and export designs, and add photos to them, without an account. They&apos;re saved only in your browser, so we
+          can&apos;t recover them if that browser&apos;s data is cleared.
         </li>
         <li>To keep designs in an account you need an email address or a Google account. Keep it secure: anyone who can read your email can sign in as you.</li>
         <li>One person per account. Don&apos;t sign in as someone else or create accounts with automated tools.</li>
