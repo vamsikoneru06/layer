@@ -27,7 +27,7 @@ function Tile({ label, onClick, children }: { label: string; onClick: () => void
   );
 }
 
-function Panel({ tab, add, editor }: { tab: Tab; add: (kind: InsertKind) => void; editor: Editor | null }) {
+function Panel({ tab, add, editor, local }: { tab: Tab; add: (kind: InsertKind) => void; editor: Editor | null; local: boolean }) {
   if (tab === "text") {
     return (
       <>
@@ -69,6 +69,7 @@ function Panel({ tab, add, editor }: { tab: Tab; add: (kind: InsertKind) => void
   }
   return (
     <PhotosPanel
+      local={local}
       editor={editor}
       frameTiles={
         <div className="grid grid-cols-2 gap-2">
@@ -85,7 +86,7 @@ function Panel({ tab, add, editor }: { tab: Tab; add: (kind: InsertKind) => void
 }
 
 /** The editor's left rail: pick Text, Shapes or Photos to open a panel of things to add to the design. */
-export function InsertRail({ editor }: { editor: Editor | null }) {
+export function InsertRail({ editor, local = false }: { editor: Editor | null; local?: boolean }) {
   const [open, setOpen] = useState<Tab | null>(null);
 
   return (
@@ -109,7 +110,7 @@ export function InsertRail({ editor }: { editor: Editor | null }) {
       </nav>
       {open && (
         <div className="flex w-[240px] flex-none flex-col gap-3 overflow-y-auto border-r-[.5px] border-line p-4">
-          <Panel tab={open} editor={editor} add={(kind) => editor && insertLayer(editor.core, kind)} />
+          <Panel tab={open} editor={editor} local={local} add={(kind) => editor && insertLayer(editor.core, kind)} />
         </div>
       )}
     </>

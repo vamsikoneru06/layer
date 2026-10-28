@@ -17,9 +17,10 @@ async function decode(blob: Blob): Promise<ImageBitmap> {
 /**
  * Images by asset id for the renderer. Ids asked for in the same tick are resolved in one request,
  * each photo is fetched and decoded once, and `onChange` runs whenever photos arrive so the caller
- * can redraw. Unknown or unreachable assets become "missing"; `ready` retries those once.
+ * can redraw. Unknown or unreachable assets become "missing"; `ready` retries those once. `local` finds
+ * photos kept on this device, which are tried before the API.
  */
-export function createImageLoader(onChange: () => void) {
+export function createImageLoader(onChange: () => void, o: { local?: (id: string) => Promise<Blob | undefined> } = {}) {
   const states = new Map<string, ImageState>();
   const waiters: { ids: string[]; done: () => void }[] = [];
   let queued = new Set<string>();
@@ -38,8 +39,23 @@ export function createImageLoader(onChange: () => void) {
     const ids = [...queued];
     queued = new Set();
     const found = new Set<string>();
+    // Photos kept on this device (guest photos) decode straight from their stored file.
+    const remote: string[] = [];
+    await Promise.all(
+      ids.map(async (id) => {
+        const blob = await o.local?.(id).catch(() => undefined);
+        if (!blob) return void remote.push(id);
+        found.add(id);
+        try {
+          const bitmap = await decode(blob);
+          states.set(id, { source: bitmap, width: bitmap.width, height: bitmap.height });
+        } catch {
+          states.set(id, "missing");
+        }
+      }),
+    );
     try {
-      const { assets } = await resolveAssets(ids);
+      const { assets } = remote.length ? await resolveAssets(remote) : { assets: [] };
       await Promise.all(
         assets.map(async (a) => {
           found.add(a.id);

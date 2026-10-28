@@ -36,6 +36,16 @@ describe("createImageLoader", () => {
     expect(loader.image("a")).toMatchObject({ width: 10 });
   });
 
+  it("decodes photos kept on this device without asking the API", async () => {
+    resolveAssets.mockResolvedValue({ assets: [{ id: "b", url: "/b.jpg" }] });
+    const local = vi.fn(async (id: string) => (id === "a" ? new Blob(["x"]) : undefined));
+    const loader = createImageLoader(() => {}, { local });
+    await loader.ready(["a", "b"]);
+    expect(loader.image("a")).toMatchObject({ width: 10 });
+    expect(loader.image("b")).toMatchObject({ width: 10 });
+    expect(resolveAssets).toHaveBeenCalledWith(["b"]);
+  });
+
   it("treats a failed lookup as missing rather than loading forever", async () => {
     resolveAssets.mockRejectedValue(new Error("offline"));
     const loader = createImageLoader(() => {});
