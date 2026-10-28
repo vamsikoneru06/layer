@@ -37,8 +37,9 @@ const REDIRECT_SOURCES: Record<string, "body" | "query"> = {
 const REDIRECT_FIELDS = ["callbackURL", "newUserCallbackURL", "errorCallbackURL"] as const;
 
 /**
- * True when `value` (if given) resolves to this app's origin. Better Auth URL-decodes the value again
+ * True when `value` (if given) resolves to this app's origin. Some Better Auth versions URL-decode the value again
  * before redirecting, so every decoding of it must stay on-site too ("%2F%2Fevil.example" -> "//evil.example").
+ * The check keeps decoding for that reason even where the installed version doesn't.
  */
 export function isSameOriginRedirect(value: unknown, appOrigin: string): boolean {
   if (value === undefined) return true;
