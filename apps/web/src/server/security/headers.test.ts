@@ -19,6 +19,14 @@ describe("buildCsp", () => {
   it("allows eval only in development (React refresh)", () => {
     expect(buildCsp({ nonce: "n", isDevelopment: true })).toContain("'unsafe-eval'");
   });
+
+  it("allows no frames or workers, and requires Trusted Types in production only", () => {
+    const prod = buildCsp({ nonce: "n", isDevelopment: false });
+    expect(prod).toContain("frame-src 'none'");
+    expect(prod).toContain("worker-src 'none'");
+    expect(prod).toContain("require-trusted-types-for 'script'");
+    expect(buildCsp({ nonce: "n", isDevelopment: true })).not.toContain("require-trusted-types-for");
+  });
 });
 
 describe("securityHeaders", () => {

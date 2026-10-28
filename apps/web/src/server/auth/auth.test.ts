@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { testConfig } from "../../../tests/support/config";
 import { createTestDb, type TestDb } from "../../../tests/support/db";
 import { captureMailer } from "../../../tests/support/mailer";
+import { silentLogger } from "../logging";
 import { user, verification } from "../db/schema";
 import { createAuth, createAuthRoute, type Auth } from "./auth";
 import { createAuthenticator } from "./current-user";
@@ -15,7 +16,7 @@ const mailer = captureMailer();
 beforeAll(async () => {
   t = await createTestDb();
   auth = createAuth({ db: t.db, config: testConfig, mailer, now: () => new Date() });
-  route = createAuthRoute(auth, { db: t.db, config: testConfig, now: () => new Date() });
+  route = createAuthRoute(auth, { db: t.db, config: testConfig, now: () => new Date(), mailer, logger: silentLogger });
 });
 afterAll(() => t.close());
 
@@ -184,7 +185,7 @@ describe("magic-link abuse controls", () => {
   it("still limits links per client when no proxy is trusted (shared bucket, fail closed)", async () => {
     const untrusted = createAuthRoute(
       createAuth({ db: t.db, config: { ...testConfig, trustProxy: false }, mailer, now: () => new Date() }),
-      { db: t.db, config: testConfig, now: () => new Date() },
+      { db: t.db, config: testConfig, now: () => new Date(), mailer, logger: silentLogger },
     );
     const statuses = [];
     for (let i = 0; i < 21; i++) {

@@ -34,6 +34,8 @@ export default function PrivacyPage() {
         <li>
           <strong>Two-step verification (administrators only):</strong> the key for your authenticator app and your backup codes, both
           stored encrypted, and when each signed-in device last entered a code. Admin tools use this to check it&apos;s really you.
+          We also keep a security record each time it&apos;s turned on or off, backup codes are replaced, or a code unlocks admin
+          tools, and we email you when it&apos;s turned on or off or the backup codes are replaced.
         </li>
         <li>
           <strong>Abuse limits:</strong> short-lived counters, keyed by account or IP address, that stop too many requests in a short
@@ -100,6 +102,10 @@ export default function PrivacyPage() {
         <li>Your account, designs and photos: until you delete them or your account.</li>
         <li>Sign-in sessions: until you sign out, or 30 days without use.</li>
         <li>Two-step verification key and backup codes: until you turn it off or delete your account.</li>
+        <li>
+          Security records of administrator actions (two-step verification changes and unlocks, moderation decisions): kept
+          permanently, as a record of who did what. They hold an internal account id and the time, not your name or email.
+        </li>
         <li>Abuse-limit counters: up to two days.</li>
         <li>Error reports: up to 90 days, then Sentry deletes them.</li>
         <li>Encrypted database backups: 7 days.</li>

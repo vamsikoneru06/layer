@@ -12,10 +12,15 @@ export function buildCsp({ nonce, isDevelopment, storageOrigins = [] }: { nonce:
     ["font-src", "'self'"],
     ["connect-src", "'self'", ...storageOrigins],
     ["object-src", "'none'"],
+    // VASH embeds no frames and starts no workers; saying so stops injected code from adding either.
+    ["frame-src", "'none'"],
+    ["worker-src", "'none'"],
     ["base-uri", "'self'"],
     ["form-action", "'self'"],
     ["frame-ancestors", "'none'"],
-    ...(isDevelopment ? [] : [["upgrade-insecure-requests"] as [string]]),
+    // Trusted Types: the browser refuses plain strings in DOM sinks such as innerHTML and script URLs, so a string that
+    // reaches one (DOM XSS) is blocked. Production only: the development server's hot reload writes to those sinks.
+    ...(isDevelopment ? [] : [["require-trusted-types-for", "'script'"] as [string, string], ["upgrade-insecure-requests"] as [string]]),
   ];
   return directives.map((d) => d.join(" ")).join("; ");
 }

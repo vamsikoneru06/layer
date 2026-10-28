@@ -10,6 +10,7 @@ import type { AppConfig } from "../config";
 import { authSchema } from "../db/schema";
 import type { Db } from "../db/types";
 import { readText } from "../http/body";
+import type { Logger } from "../logging";
 import { clientIp, rateLimitSubject } from "../http/client-ip";
 import { HttpError, problem } from "../http/problem";
 import { betterAuthRateLimitStorage, consume } from "../rate-limit/limiter";
@@ -165,9 +166,10 @@ export function createAuth({ db, config, mailer, now }: AuthDeps) {
 export type Auth = ReturnType<typeof createAuth>;
 
 /** Better Auth's handler behind the same strict Origin check, a small body cap and VASH's two-factor rules. */
-export function createAuthRoute(auth: Auth, { db, config, now }: Pick<AuthDeps, "db" | "config" | "now">) {
+export function createAuthRoute(auth: Auth, deps: AuthDeps & { logger: Logger }) {
+  const { config } = deps;
   const http = toNextJsHandler(auth);
-  const guard = twoFactorGuard({ auth, db, config, now });
+  const guard = twoFactorGuard({ auth, ...deps });
   return {
     GET: (req: Request) => http.GET(req),
     async POST(req: Request): Promise<Response> {
