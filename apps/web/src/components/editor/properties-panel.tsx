@@ -1,7 +1,7 @@
 "use client";
 
-import { apply, checkPolicy, removePhoto, rotation, zoomPhoto, type Command, type EditorCore, type EditorState } from "@vash/engine";
-import { FONT_FAMILIES, LIMITS, type FrameNode, type Node, type ShapeNode, type TextNode } from "@vash/schema";
+import { apply, checkPolicy, planReplacePhoto, planResetFilters, removePhoto, rotation, runPlan, zoomPhoto, type Command, type EditorCore, type EditorState } from "@vash/engine";
+import { FONT_FAMILIES, LIMITS, type FrameNode, type Node, type NodeId, type ShapeNode, type TextNode } from "@vash/schema";
 import {
   AlignCenter,
   AlignCenterHorizontal,
@@ -23,13 +23,15 @@ import {
   Lock,
   SendToBack,
 } from "lucide-react";
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useRef, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { UPLOAD_TYPES } from "@/lib/api";
 import { designColors } from "@/lib/design-colors";
 import { DocColorsContext } from "./color-picker";
 import { ColorField, NumberField, Row, Section, Segmented, SelectField, Slider, Switch } from "./fields";
 import { FiltersSection } from "./filters-section";
 import { actionTitle, type Action, type ActionId } from "./editor-actions";
+import { uploadAll } from "./photo-actions";
 import { FillField } from "./fill-field";
 import { FONT_FACES } from "./font-faces";
 import { IconButton } from "./icon-button";
@@ -166,6 +168,7 @@ function PanelBody({ state, core, actions, mac }: { state: EditorState; core: Ed
   const locked = mode === "design" && node.lock === "locked";
   const layoutLocked = mode === "design" && node.lock !== "free";
   const t = node.transform;
+  const reset = planResetFilters(doc, [id], mode);
 
   // X/Y are the top-left of the layer's unrotated box, as in most design tools; the document stores its centre.
   const w = node.width * t.scaleX;
@@ -209,8 +212,16 @@ function PanelBody({ state, core, actions, mac }: { state: EditorState; core: Ed
         />
       )}
       {node.type === "shape" && <ShapeSection node={node} disabled={locked} update={update} />}
-      {node.type === "frame" && <PhotoSection node={node} disabled={locked} doc={doc} change={change} />}
-      {node.type === "frame" && <FiltersSection node={node} disabled={locked} update={update} />}
+      {node.type === "frame" && <PhotoSection node={node} disabled={locked} doc={doc} change={change} core={core} />}
+      {node.type === "frame" && (
+        <FiltersSection
+          node={node}
+          disabled={locked}
+          update={update}
+          resetReason={reset.ok ? null : reset.reason}
+          onReset={() => runPlan(core, planResetFilters(core.doc, [id], core.mode))}
+        />
+      )}
 
       {actions && <ArrangeSection actions={actions} mac={mac} />}
 
@@ -442,7 +453,38 @@ function ShapeSection({ node, disabled, update }: { node: ShapeNode; disabled: b
   );
 }
 
-function PhotoSection({ node, disabled, doc, change }: { node: FrameNode; disabled: boolean; doc: EditorState["doc"]; change: (cmd: Command, final?: boolean) => void }) {
+/** Picks a photo from the computer, uploads it and swaps it into the frame (one undo step). The frame is the one picked at the time. */
+function ReplacePhotoButton({ core, frameId, disabled }: { core: EditorCore; frameId: NodeId; disabled: boolean }) {
+  const input = useRef<HTMLInputElement>(null);
+  const replace = async (files: File[]) => {
+    if (files.length === 0) return;
+    core.setChrome({ notice: files.length === 1 ? "Uploading photo…" : "Uploading photos…" });
+    const { photos, errors } = await uploadAll(files.slice(0, 1), () => undefined);
+    const [asset] = photos;
+    if (!asset) return core.setChrome({ notice: errors.join(" ") || "That photo couldn't be uploaded." });
+    if (runPlan(core, planReplacePhoto(core.doc, frameId, asset, core.mode))) core.setChrome({ notice: null });
+  };
+  return (
+    <>
+      <input
+        ref={input}
+        type="file"
+        accept={UPLOAD_TYPES.join(",")}
+        hidden
+        onChange={(e) => {
+          const files = [...(e.target.files ?? [])];
+          e.target.value = "";
+          void replace(files);
+        }}
+      />
+      <Button variant="secondary" size="sm" disabled={disabled} onClick={() => input.current?.click()}>
+        Replace photo
+      </Button>
+    </>
+  );
+}
+
+function PhotoSection({ node, disabled, doc, change, core }: { node: FrameNode; disabled: boolean; doc: EditorState["doc"]; change: (cmd: Command, final?: boolean) => void; core: EditorCore }) {
   if (!node.content) {
     return (
       <Section title="Photo">
@@ -458,10 +500,11 @@ function PhotoSection({ node, disabled, doc, change }: { node: FrameNode; disabl
     <Section title="Photo">
       <Slider label="Zoom" value={node.content.scale} min={1} max={4} disabled={disabled} onChange={(scale, final) => zoom({ scale }, final)} />
       <p className="text-[12px] text-muted">Double-click the photo on the canvas to move it, or drag it onto another frame to swap.</p>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button variant="secondary" size="sm" disabled={disabled} onClick={() => zoom({ offsetX: 0, offsetY: 0 })}>
           Centre photo
         </Button>
+        <ReplacePhotoButton core={core} frameId={node.id} disabled={disabled} />
         <Button variant="secondary" size="sm" disabled={disabled} onClick={() => change(removePhoto(doc, node.id))}>
           Remove photo
         </Button>

@@ -42,12 +42,14 @@ const host = (over: Partial<ActionHost> = {}): ActionHost => ({
   moveToFolder: vi.fn(),
   designInfo: vi.fn(),
   versionHistory: vi.fn(),
+  share: vi.fn(),
   resizeDesign: vi.fn(),
   save: vi.fn(),
   download: vi.fn(),
   zoomIn: vi.fn(),
   zoomOut: vi.fn(),
   fit: vi.fn(),
+  fitWidth: vi.fn(),
   actualSize: vi.fn(),
   fullscreen: vi.fn(),
   togglePanels: vi.fn(),
@@ -59,6 +61,8 @@ const host = (over: Partial<ActionHost> = {}): ActionHost => ({
   toggleGrid: vi.fn(),
   toggleSnapObjects: vi.fn(),
   toggleSnapGuides: vi.fn(),
+  toggleSafeArea: vi.fn(),
+  toggleMargins: vi.fn(),
   clearGuides: vi.fn(),
   ...over,
 });
@@ -445,20 +449,35 @@ describe("toMenuItems", () => {
 });
 
 describe("canvas view switches", () => {
-  const SWITCHES = ["toggleRulers", "toggleGuides", "toggleGrid", "toggleSnapObjects", "toggleSnapGuides", "clearGuides"] as const;
+  const SWITCHES = ["toggleRulers", "toggleGuides", "toggleGrid", "toggleSnapObjects", "toggleSnapGuides", "toggleSafeArea", "toggleMargins", "clearGuides"] as const;
 
   it("labels the switches, and Rulers has the Shift+R shortcut", () => {
     const a = actionsFor(new EditorCore(docOf([])));
-    expect(SWITCHES.map((id) => a[id].label)).toEqual(["Rulers", "Guides", "Grid", "Snap to objects", "Snap to guides", "Clear guides"]);
+    expect(SWITCHES.map((id) => a[id].label)).toEqual(["Rulers", "Guides", "Grid", "Snap to objects", "Snap to guides", "Safe area", "Margins", "Clear guides"]);
     expect(a.toggleRulers.shortcut).toBe("shift+r");
     expect(formatShortcut("shift+r", false)).toBe("Shift+R");
     expect(SHORTCUT_ACTIONS).toContain("toggleRulers");
+  });
+
+  it("gives Safe area and Margins no shortcut", () => {
+    const a = actionsFor(new EditorCore(docOf([])));
+    expect(a.toggleSafeArea.shortcut).toBeUndefined();
+    expect(a.toggleMargins.shortcut).toBeUndefined();
+    expect(SHORTCUT_ACTIONS).not.toContain("toggleSafeArea");
+    expect(SHORTCUT_ACTIONS).not.toContain("toggleMargins");
   });
 
   it("shows each switch as checked when it is on", () => {
     const a = actionsFor(new EditorCore(docOf([])), host({ view: { ...DEFAULT_VIEW, rulers: true, grid: false } }));
     expect([a.toggleRulers.checked, a.toggleGuides.checked, a.toggleGrid.checked, a.toggleSnapObjects.checked, a.toggleSnapGuides.checked]).toEqual([true, true, false, true, true]);
     expect(a.clearGuides.checked).toBeUndefined();
+  });
+
+  it("checks Safe area and Margins from the view settings, and they are off by default", () => {
+    const off = actionsFor(new EditorCore(docOf([])));
+    expect([off.toggleSafeArea.checked, off.toggleMargins.checked]).toEqual([false, false]);
+    const on = actionsFor(new EditorCore(docOf([])), host({ view: { ...DEFAULT_VIEW, safeArea: true, margins: true } }));
+    expect([on.toggleSafeArea.checked, on.toggleMargins.checked]).toEqual([true, true]);
   });
 
   it("hands each switch to the host", () => {
@@ -469,11 +488,25 @@ describe("canvas view switches", () => {
     a.toggleGrid.run();
     a.toggleSnapObjects.run();
     a.toggleSnapGuides.run();
+    a.toggleSafeArea.run();
+    a.toggleMargins.run();
     expect(h.toggleRulers).toHaveBeenCalledOnce();
     expect(h.toggleGuides).toHaveBeenCalledOnce();
     expect(h.toggleGrid).toHaveBeenCalledOnce();
     expect(h.toggleSnapObjects).toHaveBeenCalledOnce();
     expect(h.toggleSnapGuides).toHaveBeenCalledOnce();
+    expect(h.toggleSafeArea).toHaveBeenCalledOnce();
+    expect(h.toggleMargins).toHaveBeenCalledOnce();
+  });
+
+  it("labels Fit width, gives it no shortcut, and hands it to the host", () => {
+    const h = host();
+    const a = actionsFor(new EditorCore(docOf([])), h);
+    expect(a.fitWidth.label).toBe("Fit width");
+    expect(a.fitWidth.shortcut).toBeUndefined();
+    expect(a.fitWidth.disabled).toBeUndefined();
+    a.fitWidth.run();
+    expect(h.fitWidth).toHaveBeenCalledOnce();
   });
 
   it("says there are no guides to clear, and clears them when there are", () => {
@@ -501,7 +534,7 @@ describe("canvas view switches", () => {
   it("lists Resize design in the File menu after Design info, and hands it to the host", () => {
     const h = host();
     const a = actionsFor(new EditorCore(docOf([])), h);
-    expect(labels(toMenuItems(a, MENUS.file, false))).toEqual(["New design", "Open", "Make a copy", "-", "Rename", "Move to folder", "Design info", "Version history", "Resize design", "-", "Save", "Download"]);
+    expect(labels(toMenuItems(a, MENUS.file, false))).toEqual(["New design", "Open", "Make a copy", "-", "Rename", "Move to folder", "Design info", "Version history", "Share link", "Resize design", "-", "Save", "Download"]);
     a.resizeDesign.run();
     expect(h.resizeDesign).toHaveBeenCalledOnce();
     expect(a.resizeDesign.disabled).toBeUndefined();
@@ -522,6 +555,7 @@ describe("canvas view switches", () => {
       "Zoom in",
       "Zoom out",
       "Fit to screen",
+      "Fit width",
       "Actual size",
       "-",
       "Rulers",
@@ -530,6 +564,8 @@ describe("canvas view switches", () => {
       "-",
       "Snap to objects",
       "Snap to guides",
+      "Safe area",
+      "Margins",
       "Clear guides",
       "-",
       "Fullscreen",

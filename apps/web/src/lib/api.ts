@@ -11,7 +11,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit & { json?: unknown }): Promise<T> {
+export async function request<T>(path: string, init?: RequestInit & { json?: unknown }): Promise<T> {
   let res: Response;
   try {
     res = await fetch(path, {

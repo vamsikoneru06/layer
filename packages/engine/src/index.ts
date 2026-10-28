@@ -12,6 +12,7 @@ export { fontRequests } from "./fonts";
 export { createNode, insertLayer, insertShape, newNodeId, type InsertKind, type ShapeSpec } from "./insert";
 export { CLIPBOARD_PREFIX, planDuplicate } from "./clipboard";
 export { planGroup, planUngroup } from "./structure";
+export { insertGrid, type GridOptions } from "./grid";
 export { planAlign, planDistribute, planFlip, planMoveLayer, planReorder, planToggleLock, lockLabel, type AlignEdge, type Axis, type ReorderTarget } from "./arrange";
 export { STYLE_FIELDS, planPasteStyle, styleOf, type Style } from "./style";
 export {
@@ -39,6 +40,7 @@ export {
 export { topLevelSelection, type Plan } from "./selection-utils";
 export { planResize, resizeDesign, type ArtboardSize } from "./resize";
 export { clampContent, fillPhotos, frameAt, newPhotoFrame, photoTargets, placePhoto, removePhoto, swapPhotos, zoomPhoto } from "./photos";
+export { planReplacePhoto, planResetFilters } from "./photo-ops";
 export { createFilterRenderer, FILTER_KEYS, FILTER_PRESETS, isNeutral, presetFilters, type FilterFn, type FilterValues } from "./filters";
 export { textEditBox, type TextEditBox } from "./text-edit";
 export { checkExport, exportImage, exportPng, EXPORT_MAX_SIDE, PHOTOS_NOT_READY, referencedImages, type ExportCheck, type ExportOptions, type ImageFormat } from "./export";

@@ -70,12 +70,14 @@ export const ACTION_IDS = [
   "moveToFolder",
   "designInfo",
   "versionHistory",
+  "share",
   "resizeDesign",
   "save",
   "download",
   "zoomIn",
   "zoomOut",
   "fit",
+  "fitWidth",
   "actualSize",
   "fullscreen",
   "togglePanels",
@@ -85,6 +87,8 @@ export const ACTION_IDS = [
   "toggleGrid",
   "toggleSnapObjects",
   "toggleSnapGuides",
+  "toggleSafeArea",
+  "toggleMargins",
   "clearGuides",
 ] as const;
 
@@ -121,17 +125,20 @@ export interface ActionHost {
   designInfo(): void;
   /** Opens the version history panel in the side panel. */
   versionHistory(): void;
+  share(): void;
   resizeDesign(): void;
   save(): void;
   download(): void;
   zoomIn(): void;
   zoomOut(): void;
   fit(): void;
+  /** Zooms so the artboard fills the canvas width. */
+  fitWidth(): void;
   actualSize(): void;
   fullscreen(): void;
   togglePanels(): void;
   shortcuts(): void;
-  /** The canvas view switches (rulers, guides, grid, snapping). */
+  /** The canvas view switches (rulers, guides, grid, snapping, safe area, margins). */
   view: ViewSettings;
   /** How many guides the design has, so Clear guides can say there are none. */
   guideCount: number;
@@ -140,6 +147,8 @@ export interface ActionHost {
   toggleGrid(): void;
   toggleSnapObjects(): void;
   toggleSnapGuides(): void;
+  toggleSafeArea(): void;
+  toggleMargins(): void;
   clearGuides(): void;
 }
 
@@ -208,12 +217,14 @@ export function buildActions(state: ActionState, core: EditorCore, host: ActionH
     { id: "moveToFolder", label: "Move to folder", disabled: host.local ? "Folders need an account. Use Save to account first." : undefined, run: host.moveToFolder },
     { id: "designInfo", label: "Design info", run: host.designInfo },
     { id: "versionHistory", label: "Version history", run: host.versionHistory },
+    { id: "share", label: "Share link", disabled: host.local ? "Share links need an account. Use Save to account first." : undefined, run: host.share },
     { id: "resizeDesign", label: "Resize design", run: host.resizeDesign },
     { id: "save", label: "Save", shortcut: "mod+s", run: host.save },
     { id: "download", label: "Download", run: host.download },
     { id: "zoomIn", label: "Zoom in", shortcut: "mod+=", disabled: state.viewport.zoom >= ZOOM_MAX - 1e-9 ? "Already at the largest zoom." : undefined, run: host.zoomIn },
     { id: "zoomOut", label: "Zoom out", shortcut: "mod+-", disabled: state.viewport.zoom <= ZOOM_MIN + 1e-9 ? "Already at the smallest zoom." : undefined, run: host.zoomOut },
     { id: "fit", label: "Fit to screen", shortcut: "mod+0", run: host.fit },
+    { id: "fitWidth", label: "Fit width", run: host.fitWidth },
     { id: "actualSize", label: "Actual size", shortcut: "mod+1", run: host.actualSize },
     { id: "fullscreen", label: "Fullscreen", hidden: !host.canFullscreen, run: host.fullscreen },
     { id: "togglePanels", label: host.panelsHidden ? "Show panels" : "Hide panels", run: host.togglePanels },
@@ -223,6 +234,8 @@ export function buildActions(state: ActionState, core: EditorCore, host: ActionH
     { id: "toggleGrid", label: "Grid", checked: host.view.grid, run: host.toggleGrid },
     { id: "toggleSnapObjects", label: "Snap to objects", checked: host.view.snapObjects, run: host.toggleSnapObjects },
     { id: "toggleSnapGuides", label: "Snap to guides", checked: host.view.snapGuides, run: host.toggleSnapGuides },
+    { id: "toggleSafeArea", label: "Safe area", checked: host.view.safeArea, run: host.toggleSafeArea },
+    { id: "toggleMargins", label: "Margins", checked: host.view.margins, run: host.toggleMargins },
     { id: "clearGuides", label: "Clear guides", disabled: host.guideCount === 0 ? "No guides to clear." : undefined, run: host.clearGuides },
   ];
   return Object.fromEntries(list.map((a) => [a.id, a])) as Record<ActionId, Action>;
@@ -231,7 +244,7 @@ export function buildActions(state: ActionState, core: EditorCore, host: ActionH
 type Layout = readonly (ActionId | "separator")[];
 
 export const MENUS = {
-  file: ["newDesign", "open", "makeCopy", "separator", "rename", "moveToFolder", "designInfo", "versionHistory", "resizeDesign", "separator", "save", "download"],
+  file: ["newDesign", "open", "makeCopy", "separator", "rename", "moveToFolder", "designInfo", "versionHistory", "share", "resizeDesign", "separator", "save", "download"],
   edit: ["undo", "redo", "separator", "cut", "copy", "paste", "copyStyle", "pasteStyle", "duplicate", "delete", "separator", "selectAll", "group", "ungroup"],
   arrange: [
     "bringForward",
@@ -258,6 +271,7 @@ export const MENUS = {
     "zoomIn",
     "zoomOut",
     "fit",
+    "fitWidth",
     "actualSize",
     "separator",
     "toggleRulers",
@@ -266,6 +280,8 @@ export const MENUS = {
     "separator",
     "toggleSnapObjects",
     "toggleSnapGuides",
+    "toggleSafeArea",
+    "toggleMargins",
     "clearGuides",
     "separator",
     "fullscreen",

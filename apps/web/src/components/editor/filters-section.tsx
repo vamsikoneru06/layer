@@ -2,6 +2,7 @@
 
 import { FILTER_PRESETS, isNeutral, presetFilters, type FilterValues } from "@vash/engine";
 import { defaultFilters, type FrameNode } from "@vash/schema";
+import { Button } from "@/components/ui/button";
 import { ColorField, Row, Section, Slider, Switch } from "./fields";
 
 type Update = (patch: Record<string, unknown>, final?: boolean) => void;
@@ -23,7 +24,8 @@ const SLIDERS: readonly { key: keyof FilterValues; label: string; signed: boolea
 /** The colours a duotone starts with when the switch turns on. */
 const DUOTONE_START = { light: "#F5E6C8", dark: "#2B2D42" };
 
-export function FiltersSection({ node, disabled, update }: { node: FrameNode; disabled: boolean; update: Update }) {
+/** `resetReason` is why "Reset adjustments" is off (null when it can run); `onReset` runs it. */
+export function FiltersSection({ node, disabled, update, resetReason, onReset }: { node: FrameNode; disabled: boolean; update: Update; resetReason: string | null; onReset: () => void }) {
   const f = node.filters;
   const duotone = f.duotone ?? null;
   const chip = (selected: boolean) =>
@@ -84,6 +86,12 @@ export function FiltersSection({ node, disabled, update }: { node: FrameNode; di
             </Row>
           </>
         )}
+        <div className="flex flex-col items-start gap-1.5">
+          <Button variant="secondary" size="sm" disabled={resetReason !== null} onClick={onReset}>
+            Reset adjustments
+          </Button>
+          {resetReason && <p className="text-[12px] text-muted">{resetReason}</p>}
+        </div>
       </div>
     </Section>
   );

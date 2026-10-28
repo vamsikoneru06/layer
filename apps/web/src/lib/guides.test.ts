@@ -138,10 +138,28 @@ describe("view storage", () => {
   });
 
   it("round-trips the view settings under vash:view", () => {
-    const view = { ...DEFAULT_VIEW, rulers: true, grid: true, snapGuides: false };
+    const view = { ...DEFAULT_VIEW, rulers: true, grid: true, snapGuides: false, safeArea: true, margins: true };
     saveView(view);
     expect(store.items.has("vash:view")).toBe(true);
     expect(loadView()).toEqual(view);
+  });
+
+  it("keeps the safe area and margins off by default", () => {
+    expect(DEFAULT_VIEW.safeArea).toBe(false);
+    expect(DEFAULT_VIEW.margins).toBe(false);
+    expect(loadView()).toMatchObject({ safeArea: false, margins: false });
+  });
+
+  it("loads settings saved before the safe area and margins existed, with both off", () => {
+    store.items.set("vash:view", JSON.stringify({ rulers: true, guides: false, grid: false, snapObjects: true, snapGuides: true }));
+    expect(loadView()).toEqual({ ...DEFAULT_VIEW, rulers: true, guides: false, safeArea: false, margins: false });
+  });
+
+  it("keeps the safe area and margins only when they are saved as booleans", () => {
+    store.items.set("vash:view", JSON.stringify({ safeArea: true, margins: "yes" }));
+    expect(loadView()).toMatchObject({ safeArea: true, margins: false });
+    store.items.set("vash:view", JSON.stringify({ safeArea: 1, margins: true }));
+    expect(loadView()).toMatchObject({ safeArea: false, margins: true });
   });
 
   it("keeps valid booleans and defaults the rest", () => {

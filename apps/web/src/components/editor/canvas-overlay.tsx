@@ -13,6 +13,8 @@ export interface CanvasOverlayProps {
   guides: Guides;
   showGuides: boolean;
   showGrid: boolean;
+  showSafeArea: boolean;
+  showMargins: boolean;
   onMoveGuide: (axis: GuideAxis, index: number, at: number) => void;
   onRemoveGuide: (axis: GuideAxis, index: number) => void;
 }
@@ -34,7 +36,7 @@ function multiples(step: number, start: number, end: number): number[] {
   return out;
 }
 
-export function CanvasOverlay({ viewport, size, page, guides, showGuides, showGrid, onMoveGuide, onRemoveGuide }: CanvasOverlayProps) {
+export function CanvasOverlay({ viewport, size, page, guides, showGuides, showGrid, showSafeArea, showMargins, onMoveGuide, onRemoveGuide }: CanvasOverlayProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
   const { zoom, panX, panY } = viewport;
@@ -73,6 +75,15 @@ export function CanvasOverlay({ viewport, size, page, guides, showGuides, showGr
       .join("");
 
   const gridPath = (lines: { x: number[]; y: number[] }) => linesPath("x", lines.x) + linesPath("y", lines.y);
+
+  // A rectangle inset by `fraction` of the page on every side, in screen px, on whole pixels so the dashes stay crisp.
+  const insetBox = (fraction: number) => {
+    const x1 = Math.round(toScreen(page.width * fraction, zoom, panX)) + 0.5;
+    const x2 = Math.round(toScreen(page.width * (1 - fraction), zoom, panX)) + 0.5;
+    const y1 = Math.round(toScreen(page.height * fraction, zoom, panY)) + 0.5;
+    const y2 = Math.round(toScreen(page.height * (1 - fraction), zoom, panY)) + 0.5;
+    return { x: x1, y: y1, width: x2 - x1, height: y2 - y1 };
+  };
 
   const localPoint = (e: PointerEvent<SVGLineElement>) => {
     const rect = rootRef.current?.getBoundingClientRect();
@@ -137,6 +148,8 @@ export function CanvasOverlay({ viewport, size, page, guides, showGuides, showGr
             <path d={gridPath(major)} style={{ stroke: "var(--muted)" }} strokeOpacity={0.28} />
           </g>
         )}
+        {showSafeArea && <rect {...insetBox(0.1)} fill="none" strokeWidth={1} strokeDasharray="1 3" strokeLinecap="round" style={{ stroke: "var(--line)" }} />}
+        {showMargins && <rect {...insetBox(0.05)} fill="none" strokeWidth={1} strokeDasharray="4 3" style={{ stroke: "var(--muted)" }} />}
         {showGuides && (
           <g>
             {guides.x.map((at, i) => guideLine("x", i, at))}
