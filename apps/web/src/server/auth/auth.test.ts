@@ -237,3 +237,19 @@ describe("sign-in state is not a magic-link token", () => {
     expect(row).toBeDefined();
   });
 });
+
+describe("password reset stays off", () => {
+  // "/reset-password/:token" is in disabledPaths, but that list matches exact paths only, so the route guards the prefix.
+  it("answers 404 for the reset callback with any token, on GET and POST", async () => {
+    const get = await route.GET(new Request(`${origin}/api/auth/reset-password/some-token`));
+    expect(get.status).toBe(404);
+    const post = await route.POST(
+      new Request(`${origin}/api/auth/reset-password/some-token`, {
+        method: "POST",
+        headers: { "content-type": "application/json", origin, "x-forwarded-for": "198.51.100.170" },
+        body: JSON.stringify({ newPassword: "x".repeat(12) }),
+      }),
+    );
+    expect(post.status).toBe(404);
+  });
+});
