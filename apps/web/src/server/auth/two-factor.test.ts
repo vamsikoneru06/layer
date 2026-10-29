@@ -4,7 +4,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { testConfig } from "../../../tests/support/config";
 import { createTestDb, type TestDb } from "../../../tests/support/db";
 import { captureMailer } from "../../../tests/support/mailer";
-import { session, twoFactor, user } from "../db/schema";
+import { auditLog, session, twoFactor, user } from "../db/schema";
+import { silentLogger } from "../logging";
 import { createAuth, createAuthRoute, type Auth } from "./auth";
 import { createAuthenticator } from "./current-user";
 
@@ -17,7 +18,7 @@ const origin = testConfig.appOrigin;
 beforeAll(async () => {
   t = await createTestDb();
   auth = createAuth({ db: t.db, config: testConfig, mailer, now: () => new Date() });
-  route = createAuthRoute(auth, { db: t.db, config: testConfig, now: () => new Date() });
+  route = createAuthRoute(auth, { db: t.db, config: testConfig, now: () => new Date(), mailer, logger: silentLogger });
 });
 afterAll(() => t.close());
 
@@ -167,5 +168,77 @@ describe("two-step verification", () => {
     for (const path of ["/two-factor/get-totp-uri", "/two-factor/send-otp", "/two-factor/verify-otp"]) {
       expect((await post(path, cookie)).status, path).toBe(404);
     }
+  });
+});
+
+describe("two-step verification records and notifications", () => {
+  const auditFor = async (email: string) => {
+    const [row] = await t.db.select({ id: user.id }).from(user).where(eq(user.email, email));
+    return (await t.db.select().from(auditLog).where(eq(auditLog.actorId, row!.id))).map((a) => ({ action: a.action, meta: a.meta }));
+  };
+  const mailTo = (email: string) => mailer.sent.filter((m) => m.to === email && !/sign-in link/.test(m.subject)).map((m) => m.subject);
+
+  it("logs and emails setup, new codes and turning off; logs each unlock without emailing", async () => {
+    const email = "audited@example.test";
+    const { cookie } = await enrolledAdmin(email);
+    const { backupCodes } = (await (await post("/two-factor/generate-backup-codes", cookie)).json()) as { backupCodes: string[] };
+    const laptop = await signIn(email);
+    expect((await post("/two-factor/verify-backup-code", laptop, { code: backupCodes[0] })).status).toBe(200);
+    expect((await post("/two-factor/disable", laptop)).status).toBe(200);
+
+    expect(await auditFor(email)).toEqual([
+      { action: "two_factor.enable", meta: {} },
+      { action: "two_factor.backup_codes", meta: {} },
+      { action: "two_factor.verify", meta: { method: "backup_code" } },
+      { action: "two_factor.disable", meta: {} },
+    ]);
+    expect(mailTo(email)).toEqual([
+      "Two-step verification is on for your VASH account",
+      "New backup codes for your VASH account",
+      "Two-step verification is off for your VASH account",
+    ]);
+    const off = mailer.sent.findLast((m) => m.to === email)!;
+    expect(off.text).toMatch(/^Two-step verification was turned off for your VASH account on \d{1,2} \w+ \d{4}(,| at) \d{2}:\d{2} UTC\./);
+    expect(off.text).not.toMatch(/—/);
+  });
+
+  it("logs nothing for a wrong code, or for setup that was never confirmed", async () => {
+    const email = "unconfirmed@example.test";
+    const cookie = await signIn(email);
+    expect((await post("/two-factor/enable", cookie)).status).toBe(200);
+    expect((await post("/two-factor/verify-totp", cookie, { code: "000000" })).status).toBe(401);
+    expect(await auditFor(email)).toEqual([]);
+    expect(mailTo(email)).toEqual([]);
+  });
+
+  it("still succeeds when the notification can't be sent", async () => {
+    const warnings: string[] = [];
+    const broken = createAuthRoute(auth, {
+      db: t.db,
+      config: testConfig,
+      now: () => new Date(),
+      mailer: { send: () => Promise.reject(new Error("mail is down")) },
+      logger: { ...silentLogger, warn: (event) => warnings.push(event) },
+    });
+    const email = "mailless@example.test";
+    const { cookie } = await enrolledAdmin(email);
+    await setVerifiedAt(cookie, new Date());
+    const res = await broken.POST(
+      new Request(`${origin}/api/auth/two-factor/disable`, {
+        method: "POST",
+        headers: { "content-type": "application/json", origin, "x-forwarded-for": nextIp(), cookie },
+        body: "{}",
+      }),
+    );
+    expect(res.status).toBe(200);
+    expect(warnings).toEqual(["two_factor.notify_failed"]);
+    expect((await auditFor(email)).at(-1)?.action).toBe("two_factor.disable");
+  });
+
+  it("can't be switched on without an authenticator (email codes aren't configured)", async () => {
+    const res = await post("/two-factor/enable", await signIn("otp@example.test"), { method: "otp" });
+    expect(res.status).toBe(400);
+    const [row] = await t.db.select({ on: user.twoFactorEnabled }).from(user).where(eq(user.email, "otp@example.test"));
+    expect(row!.on).toBe(false);
   });
 });

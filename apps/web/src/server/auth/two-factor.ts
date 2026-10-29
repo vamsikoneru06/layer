@@ -1,15 +1,20 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import type { AppConfig } from "../config";
-import { session as sessions } from "../db/schema";
+import { auditLog, session as sessions } from "../db/schema";
 import type { Db } from "../db/types";
 import type { CurrentUser } from "../deps";
 import { HttpError, problem } from "../http/problem";
+import type { Logger } from "../logging";
 import { consume } from "../rate-limit/limiter";
 import { RATE_LIMITS } from "../rate-limit/rules";
 import type { Auth } from "./auth";
 import { sessionCookieName } from "./cookies";
 import { loadCurrentUser } from "./current-user";
+import { twoFactorChangeEmail, type Mailer, type TwoFactorChange } from "./mailer";
+
+/** What the audit log records: the changes the owner is emailed about, plus each code that unlocks admin tools. */
+type TwoFactorEvent = TwoFactorChange | "verify";
 
 const MINUTE = 60_000;
 /** How long one code unlocks admin tools on a session. */
@@ -49,7 +54,21 @@ export function assertAdminStepUp(user: CurrentUser, now: Date): void {
  * authenticator (needs a fresh sign-in) or turn two-factor off (needs a recent code); and a correct code is recorded on
  * the session, which is what admin tools check.
  */
-export function twoFactorGuard({ auth, db, config, now }: { auth: Pick<Auth, "api">; db: Db; config: AppConfig; now: () => Date }) {
+export function twoFactorGuard({
+  auth,
+  db,
+  config,
+  now,
+  mailer,
+  logger,
+}: {
+  auth: Pick<Auth, "api">;
+  db: Db;
+  config: AppConfig;
+  now: () => Date;
+  mailer: Mailer;
+  logger: Logger;
+}) {
   const deny = (status: number, title: string, detail: string, extra?: Record<string, unknown>, headers?: Record<string, string>) =>
     problem(status, title, detail, randomUUID(), extra, headers);
 
@@ -84,16 +103,49 @@ export function twoFactorGuard({ auth, db, config, now }: { auth: Pick<Auth, "ap
       return null;
     },
 
-    /** Records a correct code on the session that sent it (or on its replacement, when setting up rotates the session). */
+    /**
+     * After a successful change: records a correct code on the session that sent it (or on its replacement, when setting
+     * up or turning off rotates the session), writes the audit log, and emails the owner about setup, turn-off and new codes.
+     */
     async after(req: Request, path: string, res: Response): Promise<void> {
-      if (!VERIFY_PATHS.has(path) || !res.ok) return;
+      if (!res.ok || !(VERIFY_PATHS.has(path) || MANAGE_PATHS.has(path))) return;
       const name = sessionCookieName(config);
       const rotated = res.headers
         .getSetCookie()
         .map((c) => c.split(";")[0]!)
         .find((pair) => pair.startsWith(`${name}=`) && pair.length > name.length + 1);
       const found = await auth.api.getSession({ headers: rotated ? new Headers({ cookie: rotated }) : req.headers });
-      if (found) await db.update(sessions).set({ twoFactorVerifiedAt: now() }).where(eq(sessions.id, found.session.id));
+      if (!found) return;
+      const at = now();
+
+      // Only the code that confirms a new setup replaces the session; later codes keep it.
+      const event: TwoFactorEvent | null =
+        path === "/two-factor/disable"
+          ? "disable"
+          : path === "/two-factor/generate-backup-codes"
+            ? "backup_codes"
+            : path === "/two-factor/enable"
+              ? null // Not on yet: it's on once a code confirms it.
+              : rotated
+                ? "enable"
+                : "verify";
+      if (!event) return;
+      if (VERIFY_PATHS.has(path)) await db.update(sessions).set({ twoFactorVerifiedAt: at }).where(eq(sessions.id, found.session.id));
+      await db.insert(auditLog).values({
+        actorId: found.user.id,
+        action: `two_factor.${event}`,
+        targetType: "user",
+        targetId: found.user.id,
+        meta: event === "verify" ? { method: path === "/two-factor/verify-backup-code" ? "backup_code" : "totp" } : {},
+        createdAt: at,
+      });
+      if (event === "verify") return;
+      try {
+        await mailer.send(twoFactorChangeEmail(found.user.email, event, at));
+      } catch (err) {
+        // The change itself succeeded; a mail outage shouldn't undo or hide it.
+        logger.warn("two_factor.notify_failed", { event, err });
+      }
     },
   };
 }

@@ -25,6 +25,26 @@ export function magicLinkEmail(to: string, url: string): MailMessage {
   };
 }
 
+export type TwoFactorChange = "enable" | "disable" | "backup_codes";
+
+const TWO_FACTOR_CHANGES: Record<TwoFactorChange, { subject: string; what: string }> = {
+  enable: { subject: "Two-step verification is on for your VASH account", what: "Two-step verification was turned on for your VASH account" },
+  disable: { subject: "Two-step verification is off for your VASH account", what: "Two-step verification was turned off for your VASH account" },
+  backup_codes: { subject: "New backup codes for your VASH account", what: "New two-step verification backup codes were made for your VASH account. The old codes no longer work" },
+};
+
+/** Tells the owner their two-step verification changed, so a change they didn't make doesn't go unnoticed. */
+export function twoFactorChangeEmail(to: string, change: TwoFactorChange, at: Date): MailMessage {
+  const { subject, what } = TWO_FACTOR_CHANGES[change];
+  const when = `${at.toLocaleString("en-GB", { timeZone: "UTC", dateStyle: "long", timeStyle: "short" })} UTC`;
+  const lines = [
+    `${what} on ${when}.`,
+    "If you did this, there's nothing else to do.",
+    "If you didn't, someone else may be signed in to your account. Sign in to VASH and check Settings, Two-step verification.",
+  ];
+  return { to, subject, text: lines.join("\n\n"), html: lines.map((l) => `<p>${escapeHtml(l)}</p>`).join("") };
+}
+
 /** Development only (config refuses to boot production without Resend). */
 export function consoleMailer(logger: Logger): Mailer {
   return {

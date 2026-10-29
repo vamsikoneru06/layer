@@ -10,6 +10,7 @@ import type { AppConfig } from "../config";
 import { authSchema } from "../db/schema";
 import type { Db } from "../db/types";
 import { readText } from "../http/body";
+import type { Logger } from "../logging";
 import { clientIp, rateLimitSubject } from "../http/client-ip";
 import { HttpError, problem } from "../http/problem";
 import { betterAuthRateLimitStorage, consume } from "../rate-limit/limiter";
@@ -173,9 +174,10 @@ const isPasswordResetPath = (req: Request): boolean => /^\/reset-password(\/|$)/
 const notFoundResponse = () => problem(404, "Not Found", "The requested resource does not exist.", randomUUID());
 
 /** Better Auth's handler behind the same strict Origin check, a small body cap and VASH's two-factor rules. */
-export function createAuthRoute(auth: Auth, { db, config, now }: Pick<AuthDeps, "db" | "config" | "now">) {
+export function createAuthRoute(auth: Auth, deps: AuthDeps & { logger: Logger }) {
+  const { config } = deps;
   const http = toNextJsHandler(auth);
-  const guard = twoFactorGuard({ auth, db, config, now });
+  const guard = twoFactorGuard({ auth, ...deps });
   return {
     GET: async (req: Request): Promise<Response> => (isPasswordResetPath(req) ? notFoundResponse() : http.GET(req)),
     async POST(req: Request): Promise<Response> {
