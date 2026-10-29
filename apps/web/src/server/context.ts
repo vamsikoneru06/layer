@@ -22,6 +22,8 @@ import { shareHandlers } from "./shares/handlers";
 import { databaseStorage } from "./storage/database";
 import { storageFileHandlers } from "./storage/handlers";
 import { s3Storage } from "./storage/s3";
+import { stockHandlers } from "./stock/handlers";
+import { pexelsClient } from "./stock/pexels";
 import { templateHandlers } from "./templates/handlers";
 import { publicTemplate } from "./templates/public";
 import { userHandlers } from "./users/handlers";
@@ -54,6 +56,7 @@ function build() {
     storageFiles: storageFileHandlers(deps, !config.storage),
     publicTemplate: (id: string) => publicTemplate(db, id),
     monitoring: monitoringHandlers(deps),
+    stock: stockHandlers(deps, config.pexelsApiKey ? pexelsClient(config.pexelsApiKey) : null),
   };
 }
 

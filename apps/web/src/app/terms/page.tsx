@@ -5,7 +5,7 @@ export const metadata = { title: "Terms · VASH" };
 
 export default function TermsPage() {
   return (
-    <LegalPage title="Terms and Conditions" updated="4 October 2026">
+    <LegalPage title="Terms and Conditions" updated="9 October 2026">
       <p>
         These terms are an agreement between you and the operator of VASH (&ldquo;we&rdquo;, &ldquo;us&rdquo;), an individual based in
         India. They cover your use of VASH, a free photo design editor. By creating an account or using VASH, you agree to them and to
@@ -36,6 +36,10 @@ export default function TermsPage() {
           time; designs people already made from it stay theirs.
         </li>
         <li>Only upload or publish content you have the right to use. If a photo shows other people, make sure they agree to it.</li>
+        <li>
+          Stock photos from Pexels are covered by the <a href="https://www.pexels.com/license/">Pexels license</a>: free to use and
+          change, but not to sell unaltered or to imply the people in them endorse you.
+        </li>
       </ul>
 
       <h2>What you can&apos;t upload, publish or share</h2>
