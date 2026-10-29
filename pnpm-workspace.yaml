@@ -10,3 +10,7 @@ overrides:
   # GHSA-wq5f-xc86-pv6w (librsvg in sharp) and GHSA-68fv-2mgg-jv7q (source-map-js), both pulled in by next and vite.
   sharp: "^0.35.5"
   source-map-js: "^1.2.2"
+  # Zod memory exhaustion on oversized constrained collections (fixed in 4.6.6), pulled in by @vercel/functions;
+  # the Vite dev-server and launch-editor advisories (fixed in 8.3.3), pulled in by vitest.
+  zod: "^4.6.7"
+  vite: "^8.3.5"
