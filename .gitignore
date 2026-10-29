@@ -14,3 +14,7 @@ playwright-report/
 test-results/
 next-env.d.ts
 apps/web/templates/preview.html
+# End-to-end runs: server log, traces and report
+apps/web/e2e/.server.log
+apps/web/e2e/.results/
+apps/web/e2e/.report/
