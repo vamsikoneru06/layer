@@ -21,8 +21,7 @@ function save(blob: Blob, name: string) {
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
-export function ExportPopover({ editor, doc }: { editor: Editor | null; doc: Doc }) {
-  const [open, setOpen] = useState(false);
+export function ExportPopover({ editor, doc, open, onOpenChange }: { editor: Editor | null; doc: Doc; open: boolean; onOpenChange: (open: boolean) => void }) {
   const [scale, setScale] = useState<number>(2);
   const [transparent, setTransparent] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
@@ -33,11 +32,23 @@ export function ExportPopover({ editor, doc }: { editor: Editor | null; doc: Doc
   useEffect(() => {
     if (!open) return;
     const onDown = (e: PointerEvent) => {
-      if (!root.current?.contains(e.target as Node)) setOpen(false);
+      if (!root.current?.contains(e.target as Node)) onOpenChange(false);
+    };
+    // Escape works wherever focus is (opening from the File menu leaves it on the page), and in the
+    // capture phase so the editor's own key handler never sees it and deselects the layer.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.stopPropagation();
+      onOpenChange(false);
+      root.current?.querySelector<HTMLElement>("[aria-haspopup]")?.focus();
     };
     document.addEventListener("pointerdown", onDown);
-    return () => document.removeEventListener("pointerdown", onDown);
-  }, [open]);
+    document.addEventListener("keydown", onKey, true);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey, true);
+    };
+  }, [open, onOpenChange]);
 
   useEffect(() => {
     if (phase !== "done") return;
@@ -62,16 +73,8 @@ export function ExportPopover({ editor, doc }: { editor: Editor | null; doc: Doc
   }
 
   return (
-    <div
-      ref={root}
-      className="relative"
-      onKeyDown={(e) => {
-        if (e.key !== "Escape") return;
-        setOpen(false);
-        root.current?.querySelector<HTMLElement>("[aria-haspopup]")?.focus();
-      }}
-    >
-      <button type="button" className={buttonClass("primary", "sm")} aria-haspopup="dialog" aria-expanded={open} aria-controls={id} onClick={() => setOpen((o) => !o)}>
+    <div ref={root} className="relative">
+      <button type="button" className={buttonClass("primary", "sm")} aria-haspopup="dialog" aria-expanded={open} aria-controls={id} onClick={() => onOpenChange(!open)}>
         <span className="glass-label">Export</span>
         <ChevronDown aria-hidden className="size-3.5" />
       </button>
