@@ -137,6 +137,7 @@ export function DesignCard({ design: d, selected, selecting, renaming, setRenami
           width={d.width}
           height={d.height}
           box={{ width: 190, height: 160 }}
+          assetId={d.thumbnailAssetId}
           className={cn("h-[200px]", selected && "shadow-[inset_0_0_0_2px_var(--text)]")}
         />
         <div className="absolute top-2.5 left-2.5">
@@ -165,7 +166,7 @@ export function DesignRow({ design: d, selected, selecting, renaming, setRenamin
     >
       <Checkbox checked={selected} visible={selecting} onClick={(e) => actions.toggle(d, e)} label={`Select ${d.title}`} />
       <button type="button" onClick={(e) => (selecting ? actions.toggle(d, e) : actions.open(d))} className="flex-none rounded-lg" aria-label={`Open ${d.title}`}>
-        <DesignThumb width={d.width} height={d.height} box={{ width: 36, height: 36 }} className="size-12 rounded-lg" />
+        <DesignThumb width={d.width} height={d.height} box={{ width: 36, height: 36 }} assetId={d.thumbnailAssetId} className="size-12 rounded-lg" />
       </button>
       <div className="min-w-0 flex-1">
         {renaming ? (

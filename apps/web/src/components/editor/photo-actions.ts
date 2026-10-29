@@ -1,6 +1,7 @@
 import { fillPhotos, type Editor } from "@vash/engine";
 import type { AssetMime, AssetRef, NodeId } from "@vash/schema";
 import { ApiError, uploadPhoto, type Photo } from "@/lib/api";
+import { addLocalPhoto } from "@/lib/local-photos";
 
 /** Fired on window after photos are uploaded, so an open Photos panel can show them. */
 export const PHOTOS_UPLOADED = "vash:photos-uploaded";
@@ -30,22 +31,52 @@ export function placePhotos(editor: Editor, photos: readonly AssetRef[], target?
   return true;
 }
 
-/** Uploads files one at a time, reporting progress; returns what uploaded and a message per failure. */
-export async function uploadAll(files: readonly File[], onProgress: (done: number, total: number) => void): Promise<{ photos: AssetRef[]; errors: string[] }> {
-  const photos: AssetRef[] = [];
-  const errors: string[] = [];
+export type UploadResult = {
+  photos: AssetRef[];
+  /** Why files didn't upload, each reason once (one for the rest once storage is full). */
+  errors: string[];
+  /** Files that failed for a reason that may pass on a second try (connection, server trouble). */
+  retry: File[];
+  /** Storage is full: the rest weren't tried, and trying again won't help until photos are deleted. */
+  full: boolean;
+};
+
+/** A dropped connection, a busy server or a rate limit; not a file the server refused. */
+const retryable = (err: unknown) => !(err instanceof ApiError) || err.status === 0 || err.status === 429 || err.status >= 500;
+const overQuota = (err: unknown) => err instanceof ApiError && err.status === 422 && typeof err.details.limitBytes === "number";
+
+/**
+ * Uploads files one at a time, reporting progress; returns what uploaded and what didn't, and why.
+ * With `local` (a design kept in this browser, made without an account) photos stay on the device instead.
+ */
+export async function uploadAll(files: readonly File[], onProgress: (done: number, total: number) => void, local = false): Promise<UploadResult> {
+  const result: UploadResult = { photos: [], errors: [], retry: [], full: false };
   for (const [i, file] of files.entries()) {
     onProgress(i, files.length);
     try {
-      const ref = toAssetRef(await uploadPhoto(file));
-      if (ref) photos.push(ref);
+      const ref = local ? await addLocalPhoto(file) : toAssetRef(await uploadPhoto(file));
+      if (ref) result.photos.push(ref);
     } catch (err) {
-      errors.push(err instanceof ApiError ? err.message : `${file.name} couldn't be uploaded.`);
+      // Keeping a photo in this browser failed (storage full, private browsing). Retrying the same file won't help.
+      if (local && !(err instanceof ApiError)) {
+        result.errors.push("This browser couldn't keep the photos. Check that it has room for them and that site storage is allowed.");
+        break;
+      }
+      if (overQuota(err)) {
+        const left = files.length - i;
+        result.errors.push(`${(err as Error).message}${left > 1 ? ` ${left} photos weren't uploaded.` : ""}`);
+        result.full = true;
+        break;
+      }
+      // A lost connection fails every file with the same words; say it once.
+      const message = err instanceof ApiError ? err.message : `${file.name} couldn't be uploaded.`;
+      if (!result.errors.includes(message)) result.errors.push(message);
+      if (retryable(err)) result.retry.push(file);
     }
   }
   onProgress(files.length, files.length);
-  if (photos.length) window.dispatchEvent(new Event(PHOTOS_UPLOADED));
-  return { photos, errors };
+  if (result.photos.length) window.dispatchEvent(new Event(PHOTOS_UPLOADED));
+  return result;
 }
 
 const ID = /^[A-Za-z0-9_-]{1,64}$/;

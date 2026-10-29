@@ -6,6 +6,7 @@ import { AlignCenter, AlignJustify, AlignLeft, AlignRight, Lock } from "lucide-r
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { docColors } from "@/lib/color";
+import { fitNote, textLayout } from "@/lib/text-fit";
 import { DocColorsContext } from "./color-picker";
 import { ColorField, NumberField, Row, Section, Segmented, SelectField, Slider, Switch } from "./fields";
 import { FillField } from "./fill-field";
@@ -175,6 +176,7 @@ function TextSection({
 }) {
   const limit = node.maxChars ?? LIMITS.textChars;
   const face = FONT_FACES[node.font.family] ?? { weights: [400], italic: false };
+  const note = useMemo(() => fitNote(node, textLayout(node)), [node]);
   const setFont = (patch: Partial<TextNode["font"]>) => {
     const font = { ...node.font, ...patch };
     font.weight = nearestWeight(font.family, font.weight);
@@ -276,6 +278,10 @@ function TextSection({
       <Row label="Shrink text to fit">
         <Switch label="Shrink text to fit" checked={node.fit === "shrink"} disabled={disabled} onChange={(on) => update({ fit: on ? "shrink" : "none" })} />
       </Row>
+      {/* Always mounted: screen readers announce text that changes inside a live region that already exists. */}
+      <p aria-live="polite" className={note?.tone === "warn" ? "text-[12px] text-[var(--warn)]" : "text-[12px] text-muted"}>
+        {note?.text}
+      </p>
     </Section>
   );
 }

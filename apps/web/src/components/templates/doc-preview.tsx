@@ -5,6 +5,7 @@ import type { Doc } from "@vash/schema";
 import { useEffect, useRef } from "react";
 import { fitBox } from "@/lib/designs";
 import { createImageLoader } from "@/lib/images";
+import { localPhotoBlob } from "@/lib/local-photos";
 import { cn } from "@/lib/utils";
 // Template text uses the self-hosted editor fonts.
 import "@/components/editor/fonts.css";
@@ -20,7 +21,7 @@ function canvasMeasure(): Measure {
 /** One loader for every preview on the page, so a photo used by several templates loads once. */
 const redraws = new Set<() => void>();
 let shared: ReturnType<typeof createImageLoader> | null = null;
-const images = () => (shared ??= createImageLoader(() => redraws.forEach((r) => r())));
+const images = () => (shared ??= createImageLoader(() => redraws.forEach((r) => r()), { local: localPhotoBlob }));
 
 /**
  * A design drawn by the editor's own renderer. It fills its parent's width or height (whichever the

@@ -5,7 +5,7 @@ export const metadata = { title: "Privacy · VASH" };
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Privacy Policy" updated="8 October 2026">
+    <LegalPage title="Privacy Policy" updated="29 October 2026">
       <p>
         VASH is a free photo design editor run by an individual based in India, who is responsible for your personal data here (the
         &ldquo;Data Fiduciary&rdquo; under India&apos;s Digital Personal Data Protection Act, 2023). This page explains what we collect,
@@ -21,11 +21,14 @@ export default function PrivacyPage() {
         </li>
         <li>
           <strong>Your work:</strong> the designs, folders and photos you create or upload, to save them and show them only to you.
+          Your browser also makes a small preview image of each design you save, so your design list can show it.
         </li>
         <li>
-          <strong>Designs made without signing in:</strong> kept only in your browser&apos;s storage on your device. We don&apos;t
-          receive them. When you sign in, VASH moves them to your account and deletes them from the browser. Until then, clearing
-          your browser&apos;s site data deletes them, and you can delete each one on the Designs page.
+          <strong>Designs and photos added without signing in:</strong> kept only in your browser&apos;s storage on your device.
+          We don&apos;t receive them. When you sign in or choose Save to account, VASH uploads the photos those designs use, moves
+          the designs to your account, and removes photos from the browser that are uploaded and no longer used by a design there.
+          Deleting a design doesn&apos;t delete its photos, so they stay in the browser until the next sign-in or Save to account,
+          or until you clear its site data. Photos that were never uploaded stay in the browser until then too.
         </li>
         <li>
           <strong>Sign-in sessions:</strong> a record for each device you sign in on, which can include its IP address and browser name,
@@ -65,10 +68,11 @@ export default function PrivacyPage() {
       <h2>Cookies</h2>
       <ul>
         <li>A session cookie that keeps you signed in. It&apos;s required for the app to work.</li>
+        <li>Short-lived cookies used only while you sign in with Google. They expire within 10 minutes.</li>
         <li>An appearance cookie, only if you choose Light or Dark in Settings, so the app opens in your chosen theme.</li>
       </ul>
       <p>
-        If you make designs without signing in, they&apos;re kept in this site&apos;s storage in your browser (IndexedDB). That
+        If you make designs or add photos without signing in, they&apos;re kept in this site&apos;s storage in your browser (IndexedDB). That
         storage isn&apos;t a cookie and isn&apos;t sent to us. There are no advertising or analytics cookies, so there&apos;s no cookie
         banner.
       </p>
@@ -77,8 +81,8 @@ export default function PrivacyPage() {
       <p>These service providers process data for us, only to provide VASH:</p>
       <ul>
         <li>Vercel hosts the website.</li>
-        <li>Neon hosts the database with your account and designs, and the photos you upload unless a separate photo store is set up.</li>
-        <li>Supabase stores the photos you upload, when it&apos;s set up as that photo store.</li>
+        <li>Neon hosts the database with your account and designs, and the photos and design previews you upload unless a separate photo store is set up.</li>
+        <li>Supabase stores the photos and design previews you upload, when it&apos;s set up as that photo store.</li>
         <li>Google handles &ldquo;Sign in with Google&rdquo; and sends our sign-in emails.</li>
         <li>Sentry receives the error reports described above.</li>
         <li>GitHub stores encrypted copies of the database, as backups.</li>
@@ -91,8 +95,10 @@ export default function PrivacyPage() {
 
       <h2>Who can see your designs</h2>
       <p>
-        Your designs and photos are private to your account. Uploaded photos are kept in private storage and are only shown to you
-        through links that expire within an hour. A design becomes public only if you choose to publish it as a template.
+        Your designs and photos are private to your account. Uploaded photos and design previews are kept in private storage and are only shown to you
+        through links that expire within an hour. A design is public only if you choose to publish it as a template. Publishing copies its
+        photos and preview into public storage, where anyone with the link can see them. Hiding the template later does not remove those
+        copies; they stay until your account is deleted.
       </p>
 
       <h2>How long we keep it</h2>
@@ -104,7 +110,8 @@ export default function PrivacyPage() {
         <li>Error reports: up to 90 days, then Sentry deletes them.</li>
         <li>Encrypted database backups: 7 days.</li>
         <li>
-          After you delete your account: your data is removed at once and photo files are deleted from storage shortly after. We keep a
+          After you delete your account: your data is removed at once. Photo files are removed from storage by a daily cleanup job, and a
+          failed removal is retried for up to a week. We keep a
           single record that an account with a given internal id was deleted, with no name or email, to show we acted on the request.
         </li>
         <li>Our providers&apos; backups and logs may hold copies for a short time before they expire under their own policies.</li>

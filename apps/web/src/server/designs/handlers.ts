@@ -7,8 +7,10 @@ import { endpoint } from "../http/endpoint";
 import { parseId } from "../http/ids";
 import { notFound } from "../http/problem";
 import { RATE_LIMITS } from "../rate-limit/rules";
+import type { ObjectStorage } from "../storage/types";
 import * as repo from "./repository";
 import * as service from "./service";
+import { deleteDesignAndThumbnail, setDesignThumbnail } from "./thumbnails";
 
 const Title = z.string().trim().min(1).max(LIMITS.titleChars);
 const FolderId = z.uuid().nullable();
@@ -21,6 +23,7 @@ const PatchBody = z
   .strict()
   .refine((b) => b.title !== undefined || b.folderId !== undefined, "Provide title or folderId.");
 const ListQuery = pageQuery.extend({ folderId: z.uuid().optional() });
+const ThumbnailBody = z.object({ assetId: z.uuid().transform((s) => s.toLowerCase()) }).strict();
 const createLimit = { name: "designCreate", rule: RATE_LIMITS.designCreate, by: "user" } as const;
 const writeLimit = { name: "userWrite", rule: RATE_LIMITS.userWrite, by: "user" } as const;
 const readLimit = { name: "userRead", rule: RATE_LIMITS.userRead, by: "user" } as const;
@@ -37,7 +40,7 @@ const summary = (d: Omit<repo.DesignSummary, "format" | "width" | "height">) => 
 const listItem = (d: repo.DesignSummary) => ({ ...summary(d), format: d.format, width: d.width, height: d.height });
 export const toDesignJson = (d: repo.DesignRow) => ({ ...summary(d), doc: d.doc, sourceTemplateId: d.sourceTemplateId, sourceTemplateVersion: d.sourceTemplateVersion });
 
-export function designHandlers(deps: Deps) {
+export function designHandlers(deps: Deps, storage?: ObjectStorage) {
   const ctx = { db: deps.db, now: deps.now };
   return {
     list: endpoint(deps, { auth: "user", rateLimit: readLimit }, async ({ req, user }) => {
@@ -71,7 +74,17 @@ export function designHandlers(deps: Deps) {
     }),
 
     remove: endpoint(deps, { auth: "user", rateLimit: writeLimit }, async ({ user, params }) => {
-      if (!(await repo.deleteDesign(deps.db, user.id, parseId(params.id)))) throw notFound();
+      const id = parseId(params.id);
+      const deleted = storage ? await deleteDesignAndThumbnail({ ...ctx, storage }, user.id, id) : await repo.deleteDesign(deps.db, user.id, id);
+      if (!deleted) throw notFound();
+      return new Response(null, { status: 204 });
+    }),
+
+    // The editor renders a small preview after saving and points the design at it, for design lists.
+    setThumbnail: endpoint(deps, { auth: "user", rateLimit: writeLimit }, async ({ req, user, params }) => {
+      if (!storage) throw notFound();
+      const { assetId } = await readJson(req, ThumbnailBody);
+      await setDesignThumbnail({ ...ctx, storage }, user.id, parseId(params.id), assetId);
       return new Response(null, { status: 204 });
     }),
 

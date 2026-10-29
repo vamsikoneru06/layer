@@ -84,11 +84,15 @@ export async function moveToAccount(store: LocalDesignStore, create: Create): Pr
 
 const DB_NAME = "vash";
 const STORE = "designs";
+/** Guest photos (lib/local-photos.ts) share the database, so one upgrade adds both stores. */
+export const PHOTO_STORE = "photos";
 
 function open(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1);
-    req.onupgradeneeded = () => req.result.createObjectStore(STORE, { keyPath: "id" });
+    const req = indexedDB.open(DB_NAME, 2);
+    req.onupgradeneeded = () => {
+      for (const name of [STORE, PHOTO_STORE]) if (!req.result.objectStoreNames.contains(name)) req.result.createObjectStore(name, { keyPath: "id" });
+    };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
@@ -96,12 +100,13 @@ function open(): Promise<IDBDatabase> {
 
 const unavailable = () => new Error("Couldn’t save on this device. Your browser may be blocking site storage, for example in a private window.");
 
-async function run<T>(mode: IDBTransactionMode, op: (s: IDBObjectStore) => IDBRequest<T>): Promise<T> {
+/** Runs one request against a store, opening and closing the database around it. */
+export async function runStore<T>(store: string, mode: IDBTransactionMode, op: (s: IDBObjectStore) => IDBRequest<T>): Promise<T> {
   const db = await open().catch(() => Promise.reject(unavailable()));
   try {
     return await new Promise<T>((resolve, reject) => {
-      const tx = db.transaction(STORE, mode);
-      const req = op(tx.objectStore(STORE));
+      const tx = db.transaction(store, mode);
+      const req = op(tx.objectStore(store));
       tx.oncomplete = () => resolve(req.result);
       tx.onerror = () => reject(tx.error ?? unavailable());
       tx.onabort = () => reject(tx.error ?? unavailable());
@@ -110,6 +115,8 @@ async function run<T>(mode: IDBTransactionMode, op: (s: IDBObjectStore) => IDBRe
     db.close();
   }
 }
+
+const run = <T,>(mode: IDBTransactionMode, op: (s: IDBObjectStore) => IDBRequest<T>) => runStore(STORE, mode, op);
 
 /** The browser's store. Every call opens and closes the database, so no connection blocks a later upgrade. */
 export const localDesigns: LocalDesignStore = {

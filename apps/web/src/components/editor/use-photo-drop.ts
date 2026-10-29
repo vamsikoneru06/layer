@@ -11,7 +11,7 @@ const accepts = (e: DragEvent) => e.dataTransfer.types.includes(PHOTO_DRAG_TYPE)
  * (uploaded first). The frame under the pointer is outlined and gets the first photo; the rest fill
  * empty frames in reading order. Progress and errors show as the editor's notice.
  */
-export function usePhotoDrop(editor: Editor | null) {
+export function usePhotoDrop(editor: Editor | null, local = false) {
   const notice = (text: string | null) => editor?.core.setChrome({ notice: text });
   return {
     onDragOver(e: DragEvent) {
@@ -36,7 +36,7 @@ export function usePhotoDrop(editor: Editor | null) {
       }
       const files = [...e.dataTransfer.files].filter((f) => f.type.startsWith("image/"));
       if (files.length === 0) return notice("Drop JPEG, PNG or WebP photos.");
-      const { photos, errors } = await uploadAll(files, (done, total) => done < total && notice(`Uploading ${done + 1} of ${total}…`));
+      const { photos, errors } = await uploadAll(files, (done, total) => done < total && notice(`${local ? "Adding" : "Uploading"} ${done + 1} of ${total}…`), local);
       notice(errors.length ? errors.join(" ") : null);
       placePhotos(editor, photos, target);
     },

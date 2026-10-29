@@ -7,9 +7,11 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "reac
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
-import { duplicateDesign, getDesign, saveDesign, saveDesignAsCopy, type Design } from "@/lib/api";
+import { duplicateDesign, getDesign, saveDesign, saveDesignAsCopy, uploadDesignThumbnail, type Design } from "@/lib/api";
 import { copyLocalDesign, localDesigns } from "@/lib/local-designs";
+import { localPhotoBlob } from "@/lib/local-photos";
 import { createAutosaver, type Autosaver, type SaveStatus } from "@/lib/autosave";
+import { createThumbnailer, THUMBNAIL_SIDE, toThumbnail } from "@/lib/thumbnailer";
 import { createImageLoader } from "@/lib/images";
 import { BottomBar } from "./bottom-bar";
 import { DesignInfoDialog } from "./design-info-dialog";
@@ -74,20 +76,37 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
   useEffect(() => {
     // Photos load in the background; the canvas redraws as each arrives.
     let e: Editor | null = null;
-    const images = createImageLoader(() => e?.invalidate());
+    const images = createImageLoader(() => e?.invalidate(), { local: localPhotoBlob });
     e = createEditor({ container: container.current!, scene: scene.current!, overlay: overlay.current!, doc: design.doc, image: images.image, imagesReady: images.ready });
     setEditor(e);
+    // Account designs get a fresh preview image for the design lists once editing pauses after a save.
+    const thumbs = createThumbnailer<Doc>({
+      delayMs: 2000,
+      make: async (doc) => {
+        const scale = Math.min(1, THUMBNAIL_SIDE / Math.max(doc.artboard.width, doc.artboard.height));
+        const { blob, width, height } = await toThumbnail(await e.exportPng({ scale, transparent: false }));
+        await uploadDesignThumbnail(design.id, blob, { width, height });
+      },
+    });
     const s = createAutosaver<Doc>({
       version: design.version,
       delayMs: 1500,
       retryMs: 5000,
-      save: local ? saveLocal(design.id) : (doc, v) => saveDesign(design.id, doc, v),
+      save: local
+        ? saveLocal(design.id)
+        : async (doc, v) => {
+            const saved = await saveDesign(design.id, doc, v);
+            thumbs.saved(doc);
+            return saved;
+          },
       onStatus: (st) => {
         statusRef.current = st;
         setStatus(st);
       },
     });
     saver.current = s;
+    // Designs made before previews existed, or copied from a template, get one without waiting for an edit.
+    if (!local && !design.thumbnailAssetId) thumbs.saved(design.doc);
     let last = e.getState().doc;
     const off = e.subscribe(() => {
       const doc = e.getState().doc;
@@ -109,13 +128,14 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
       window.removeEventListener("beforeunload", warn);
       document.removeEventListener("visibilitychange", resume);
       off();
+      thumbs.dispose();
       // Leaving within the app: send whatever is pending, then stop.
       void s.flush().finally(() => s.dispose());
       e.destroy();
     };
   }, [design, local]);
 
-  const photoDrop = usePhotoDrop(editor);
+  const photoDrop = usePhotoDrop(editor, local);
 
   // Refusals ("Layout locked by the template.") and other engine messages show as a toast, then clear.
   const notice = state?.notice ?? null;
@@ -305,7 +325,7 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
       />
 
       <div className="flex min-h-0 flex-1">
-        {!panelsHidden && <InsertRail editor={editor} />}
+        {!panelsHidden && <InsertRail editor={editor} local={local} />}
         <div className="relative flex min-w-0 flex-1 flex-col">
           <div ref={container} {...photoDrop} className="relative min-h-0 flex-1 overflow-hidden bg-bg2">
             <canvas ref={scene} className="absolute inset-0" aria-hidden />

@@ -6,6 +6,8 @@ export class ApiError extends Error {
   constructor(
     readonly status: number,
     message: string,
+    /** Extra members of the problem response, such as `limitBytes` when storage is full. */
+    readonly details: Record<string, unknown> = {},
   ) {
     super(message);
   }
@@ -24,8 +26,8 @@ async function request<T>(path: string, init?: RequestInit & { json?: unknown })
   }
   if (!res.ok) {
     // Our API sends problem+json ("detail"); Better Auth's routes send { message }.
-    const problem = (await res.json().catch(() => null)) as { detail?: string; message?: string } | null;
-    throw new ApiError(res.status, problem?.detail ?? problem?.message ?? "Something went wrong. Please try again.");
+    const problem = (await res.json().catch(() => null)) as ({ detail?: string; message?: string } & Record<string, unknown>) | null;
+    throw new ApiError(res.status, problem?.detail ?? problem?.message ?? "Something went wrong. Please try again.", problem ?? {});
   }
   return (res.status === 204 ? undefined : await res.json()) as T;
 }
@@ -48,6 +50,7 @@ export type DesignItem = {
   id: string;
   title: string;
   folderId: string | null;
+  thumbnailAssetId: string | null;
   version: number;
   format: string;
   width: number;
@@ -84,7 +87,7 @@ export function createDesign(format: FormatKey, size?: { width: number; height: 
 /** Saves a document made on this device to the account. With `id`, a repeat returns the design already saved. */
 export const createDesignFromDoc = (doc: Doc, id?: string) => request<{ id: string }>("/api/designs", { method: "POST", json: id ? { id, doc } : { doc } });
 
-export type Design = { id: string; title: string; version: number; folderId: string | null; doc: Doc; updatedAt: string };
+export type Design = { id: string; title: string; version: number; folderId: string | null; thumbnailAssetId?: string | null; doc: Doc; updatedAt: string };
 
 export const getDesign = (id: string) => request<Design>(`/api/designs/${id}`);
 
@@ -221,18 +224,16 @@ async function prepareUpload(file: File, bitmap: ImageBitmap): Promise<{ blob: B
 }
 
 /**
- * Uploads one photo: ask the API for a short-lived upload URL, send the file straight to storage,
- * then confirm it with its pixel size. Large photos are resized first. Throws an ApiError with a
- * readable message on any failure.
+ * Checks a photo file and readies it for storage: the original when it's small enough, otherwise a
+ * resized copy, with its pixel size. Throws an ApiError with a readable message for anything unusable.
  */
-export async function uploadPhoto(file: File): Promise<Photo> {
+export async function preparePhoto(file: File): Promise<{ blob: Blob; width: number; height: number }> {
   if (!(UPLOAD_TYPES as readonly string[]).includes(file.type)) throw new ApiError(415, `${file.name}: use a JPEG, PNG or WebP photo.`);
   if (file.size > UPLOAD_MAX_BYTES) throw new ApiError(413, `${file.name} is larger than 15 MB.`);
-  let prepared: { blob: Blob; width: number; height: number };
   try {
     const bitmap = await createImageBitmap(file);
     try {
-      prepared = await prepareUpload(file, bitmap);
+      return await prepareUpload(file, bitmap);
     } finally {
       bitmap.close();
     }
@@ -240,14 +241,33 @@ export async function uploadPhoto(file: File): Promise<Photo> {
     if (err instanceof ApiError) throw err;
     throw new ApiError(422, `${file.name} couldn't be read as an image.`);
   }
-  const { blob, width, height } = prepared;
-  const ticket = await request<UploadTicket>("/api/assets/uploads", { method: "POST", json: { kind: "photo", mime: blob.type, bytes: blob.size } });
+}
+
+/**
+ * Uploads one photo: ask the API for a short-lived upload URL, send the file straight to storage,
+ * then confirm it with its pixel size. Large photos are resized first. Throws an ApiError with a
+ * readable message on any failure.
+ */
+export async function uploadPhoto(file: File): Promise<Photo> {
+  const { blob, width, height } = await preparePhoto(file);
+  return uploadAsset(blob, "photo", { width, height }, file.name);
+}
+
+/** Sends a ready file to storage through a short-lived upload URL and confirms it with its pixel size. */
+async function uploadAsset(blob: Blob, kind: "photo" | "thumbnail", size: { width: number; height: number }, name = "The file"): Promise<Photo> {
+  const ticket = await request<UploadTicket>("/api/assets/uploads", { method: "POST", json: { kind, mime: blob.type, bytes: blob.size } });
   let put: Response;
   try {
     put = await fetch(ticket.upload.url, { method: ticket.upload.method, headers: ticket.upload.headers, body: blob });
   } catch {
-    throw new ApiError(0, `${file.name} couldn't be uploaded. Check your connection and try again.`);
+    throw new ApiError(0, `${name} couldn't be uploaded. Check your connection and try again.`);
   }
-  if (!put.ok) throw new ApiError(put.status, `${file.name} couldn't be uploaded (storage answered ${put.status}).`);
-  return request<Photo>(`/api/assets/${ticket.asset.id}/complete`, { method: "POST", json: { width, height } });
+  if (!put.ok) throw new ApiError(put.status, `${name} couldn't be uploaded (storage answered ${put.status}).`);
+  return request<Photo>(`/api/assets/${ticket.asset.id}/complete`, { method: "POST", json: size });
+}
+
+/** Uploads a design's preview image and points the design at it (the server removes the old one). */
+export async function uploadDesignThumbnail(designId: string, blob: Blob, size: { width: number; height: number }): Promise<void> {
+  const asset = await uploadAsset(blob, "thumbnail", size, "The preview");
+  await request<void>(`/api/designs/${designId}/thumbnail`, { method: "PUT", json: { assetId: asset.id } });
 }

@@ -4,9 +4,10 @@ import type { Doc } from "@vash/schema";
 import { useRouter } from "next/navigation";
 import { useState, type RefObject } from "react";
 import { Button } from "@/components/ui/button";
-import { createDesignFromDoc, getMe } from "@/lib/api";
+import { createDesignFromDoc, getMe, uploadPhoto } from "@/lib/api";
 import type { Autosaver } from "@/lib/autosave";
 import { localDesigns, moveDesign } from "@/lib/local-designs";
+import { forgetUnusedPhotos, localPhotos, withUploadedPhotos } from "@/lib/local-photos";
 
 /**
  * For a design kept in this browser: signed in, it moves the design to the account and reopens it there;
@@ -30,7 +31,8 @@ export function SaveToAccount({ id, saver }: { id: string; saver: RefObject<Auto
       if (!(await getMe())) return router.push("/signin");
       const design = await localDesigns.get(id);
       if (!design) throw new Error("This design is no longer in this browser.");
-      const to = await moveDesign(localDesigns, design, createDesignFromDoc);
+      const to = await moveDesign(localDesigns, design, withUploadedPhotos(createDesignFromDoc, uploadPhoto));
+      await forgetUnusedPhotos(localPhotos, (await localDesigns.list()).map((d) => d.doc)).catch(() => {});
       // Nothing left to write locally; a full load opens the account's copy.
       s?.reset(s.version);
       window.location.replace(`/edit/${to}`);

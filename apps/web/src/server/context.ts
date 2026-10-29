@@ -42,7 +42,7 @@ function build() {
     auth: createAuthRoute(auth, { db, config, now }),
     health: healthHandlers(deps),
     folders: folderHandlers(deps),
-    designs: designHandlers(deps),
+    designs: designHandlers(deps, storage),
     me: meHandlers(deps),
     templates: templateHandlers(deps, storage),
     shares: shareHandlers(deps, storage),

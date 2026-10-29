@@ -54,6 +54,7 @@ export function LocalDesignsGrid({ designs, onDelete }: { designs: LocalDesign[]
               width={d.doc.artboard.width}
               height={d.doc.artboard.height}
               box={{ width: 190, height: 150 }}
+              doc={d.doc}
               className="h-[180px] transition-[transform,box-shadow] duration-200 ease-(--ease) group-hover:-translate-y-[3px] group-hover:shadow-[0_14px_30px_rgba(0,0,0,.12),inset_0_0_0_.5px_var(--line)]"
             />
             <span className="flex flex-col gap-0.5 px-0.5 pr-9">
