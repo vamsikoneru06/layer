@@ -19,6 +19,8 @@ export function PhotosPanel({ editor, frameTiles, local = false }: { editor: Edi
   const [cursor, setCursor] = useState<string | null>(null);
   const [progress, setProgress] = useState<string | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
+  // Why the photo list couldn't load. Kept apart from upload errors so a load never hides them.
+  const [loadError, setLoadError] = useState<string | null>(null);
   // What the last upload couldn't do: files worth another try, and whether storage is full.
   const [failed, setFailed] = useState<Pick<UploadResult, "retry" | "full">>({ retry: [], full: false });
   const input = useRef<HTMLInputElement>(null);
@@ -41,9 +43,10 @@ export function PhotosPanel({ editor, frameTiles, local = false }: { editor: Edi
       objectUrls.current = list.map((p) => URL.createObjectURL(p.blob));
       setUrls(Object.fromEntries(list.map((p, i) => [p.id, objectUrls.current[i]!])));
       setPhotos(list.map((p) => ({ id: p.id, kind: "photo", mime: p.mime, bytes: p.blob.size, width: p.width, height: p.height, createdAt: p.createdAt })));
+      setLoadError(null);
     } catch (err) {
       setPhotos((p) => p ?? []);
-      setErrors([err instanceof Error ? err.message : "Photos on this device couldn't be read."]);
+      setLoadError(err instanceof Error ? err.message : "Photos on this device couldn't be read.");
     }
   }
 
@@ -53,10 +56,11 @@ export function PhotosPanel({ editor, frameTiles, local = false }: { editor: Edi
       const page = await listPhotos(next);
       setPhotos((p) => [...(next ? (p ?? []) : []), ...page.items]);
       setCursor(page.nextCursor);
+      setLoadError(null);
       void show(page.items);
     } catch (err) {
       setPhotos((p) => p ?? []);
-      setErrors([err instanceof ApiError ? err.message : "Your photos couldn't be loaded."]);
+      setLoadError(err instanceof ApiError ? err.message : "Your photos couldn't be loaded.");
     }
   }
 
@@ -80,6 +84,7 @@ export function PhotosPanel({ editor, frameTiles, local = false }: { editor: Edi
     placePhotos(editor, result.photos);
   }
 
+  const alerts = [...(loadError ? [loadError] : []), ...errors];
   const ready = (photos ?? []).filter((p) => toAssetRef(p));
 
   return (
@@ -105,9 +110,9 @@ export function PhotosPanel({ editor, frameTiles, local = false }: { editor: Edi
         <Upload aria-hidden className="size-4" />
         <span className="glass-label">{progress ?? (local ? "Add photos" : "Upload photos")}</span>
       </button>
-      {errors.length > 0 && (
+      {alerts.length > 0 && (
         <ul role="alert" className="flex flex-col gap-1 text-[12px] text-[#c2410c]">
-          {errors.map((e) => (
+          {alerts.map((e) => (
             <li key={e}>{e}</li>
           ))}
         </ul>

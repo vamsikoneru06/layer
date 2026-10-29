@@ -34,10 +34,13 @@ export function usePhotoDrop(editor: Editor | null, local = false) {
         if (photo) placePhotos(editor, [photo], target);
         return;
       }
-      const files = [...e.dataTransfer.files].filter((f) => f.type.startsWith("image/"));
+      const dropped = [...e.dataTransfer.files];
+      const files = dropped.filter((f) => f.type.startsWith("image/"));
       if (files.length === 0) return notice("Drop JPEG, PNG or WebP photos.");
+      const skipped = dropped.length - files.length;
       const { photos, errors } = await uploadAll(files, (done, total) => done < total && notice(`${local ? "Adding" : "Uploading"} ${done + 1} of ${total}…`), local);
-      notice(errors.length ? errors.join(" ") : null);
+      const notes = skipped > 0 ? [`${skipped} ${skipped === 1 ? "file wasn't a photo and was" : "files weren't photos and were"} skipped.`, ...errors] : errors;
+      notice(notes.length ? notes.join(" ") : null);
       placePhotos(editor, photos, target);
     },
   };
