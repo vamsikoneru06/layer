@@ -9,11 +9,14 @@ let browser: Measure | null = null;
  */
 export function browserMeasure(): Measure {
   if (!browser) {
-    const ctx = document.createElement("canvas").getContext("2d")!;
-    browser = (text, font, size) => {
-      ctx.font = `${font.style} ${font.weight} ${size}px "${font.family}", system-ui, sans-serif`;
-      return ctx.measureText(text).width;
-    };
+    const ctx = document.createElement("canvas").getContext("2d");
+    // Without a 2D context (rare), estimate half an em per character rather than failing the editor page.
+    browser = ctx
+      ? (text, font, size) => {
+          ctx.font = `${font.style} ${font.weight} ${size}px "${font.family}", system-ui, sans-serif`;
+          return ctx.measureText(text).width;
+        }
+      : (text, _font, size) => text.length * size * 0.5;
   }
   return browser;
 }

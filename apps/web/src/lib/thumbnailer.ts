@@ -8,10 +8,11 @@ export function createThumbnailer<D>(o: { delayMs: number; make: (doc: D) => Pro
   let pending: D | null = null;
   let done: D | null = null;
   let running = false;
+  let disposed = false;
 
   async function run() {
     timer = null;
-    if (running || pending === null || pending === done) return;
+    if (disposed || running || pending === null || pending === done) return;
     const doc = pending;
     running = true;
     try {
@@ -21,7 +22,7 @@ export function createThumbnailer<D>(o: { delayMs: number; make: (doc: D) => Pro
       // Best effort: the next save tries again.
     } finally {
       running = false;
-      if (pending !== done && pending !== doc) schedule();
+      if (!disposed && pending !== done && pending !== doc) schedule();
     }
   }
 
@@ -33,10 +34,12 @@ export function createThumbnailer<D>(o: { delayMs: number; make: (doc: D) => Pro
   return {
     /** The document as just saved. */
     saved(doc: D) {
+      if (disposed) return;
       pending = doc;
       schedule();
     },
     dispose() {
+      disposed = true;
       if (timer) clearTimeout(timer);
       timer = null;
     },

@@ -278,11 +278,10 @@ function TextSection({
       <Row label="Shrink text to fit">
         <Switch label="Shrink text to fit" checked={node.fit === "shrink"} disabled={disabled} onChange={(on) => update({ fit: on ? "shrink" : "none" })} />
       </Row>
-      {note && (
-        <p aria-live="polite" className={note.tone === "warn" ? "text-[12px] text-[var(--warn)]" : "text-[12px] text-muted"}>
-          {note.text}
-        </p>
-      )}
+      {/* Always mounted: screen readers announce text that changes inside a live region that already exists. */}
+      <p aria-live="polite" className={note?.tone === "warn" ? "text-[12px] text-[var(--warn)]" : "text-[12px] text-muted"}>
+        {note?.text}
+      </p>
     </Section>
   );
 }

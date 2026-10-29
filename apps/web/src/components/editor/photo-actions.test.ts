@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError, uploadPhoto } from "@/lib/api";
+import { addLocalPhoto } from "@/lib/local-photos";
 import { parseDraggedPhoto, toAssetRef, uploadAll } from "./photo-actions";
 
 vi.mock("@/lib/api", async (real) => ({ ...(await real<object>()), uploadPhoto: vi.fn() }));
+vi.mock("@/lib/local-photos", () => ({ addLocalPhoto: vi.fn() }));
 
 const ref = { id: "a1", kind: "photo", mime: "image/jpeg", width: 40, height: 30 };
 
@@ -57,5 +59,15 @@ describe("uploadAll", () => {
     expect(r.full).toBe(true);
     expect(r.retry).toEqual([]);
     expect(r.errors).toEqual(["This upload would go over your 50 MB of storage. Delete some photos to make room. 3 photos weren't uploaded."]);
+  });
+
+  it("stops and says so when this browser can't keep the photos, instead of offering a retry", async () => {
+    vi.mocked(addLocalPhoto).mockRejectedValue(new DOMException("full", "QuotaExceededError"));
+    const files = [file("a.jpg"), file("b.jpg"), file("c.jpg")];
+    const r = await uploadAll(files, () => {}, true);
+    expect(addLocalPhoto).toHaveBeenCalledTimes(1);
+    expect(r.retry).toEqual([]);
+    expect(r.full).toBe(false);
+    expect(r.errors).toEqual(["This browser couldn't keep the photos. Check that it has room for them and that site storage is allowed."]);
   });
 });

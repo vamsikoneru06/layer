@@ -49,4 +49,14 @@ describe("createThumbnailer", () => {
     await vi.advanceTimersByTimeAsync(20);
     expect(make.mock.calls.map((c) => c[0])).toEqual(["a", "b", "c"]);
   });
+
+  it("does nothing after dispose, even for a save that lands later", async () => {
+    const make = vi.fn(async () => {});
+    const t = createThumbnailer({ delayMs: 10, make });
+    t.saved("a");
+    t.dispose();
+    t.saved("b");
+    await vi.advanceTimersByTimeAsync(50);
+    expect(make).not.toHaveBeenCalled();
+  });
 });

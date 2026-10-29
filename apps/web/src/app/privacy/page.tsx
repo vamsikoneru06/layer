@@ -26,9 +26,9 @@ export default function PrivacyPage() {
         <li>
           <strong>Designs and photos added without signing in:</strong> kept only in your browser&apos;s storage on your device.
           We don&apos;t receive them. When you sign in or choose Save to account, VASH uploads the photos those designs use, moves
-          the designs to your account and removes the uploaded photos from the browser once no design there uses them. Photos
-          that were never uploaded, or that no design still uses, stay in the browser until you clear its site data. Deleting a
-          design on the Designs page doesn&apos;t delete its photos.
+          the designs to your account, and removes photos from the browser that are uploaded and no longer used by a design there.
+          Deleting a design doesn&apos;t delete its photos, so they stay in the browser until the next sign-in or Save to account,
+          or until you clear its site data. Photos that were never uploaded stay in the browser until then too.
         </li>
         <li>
           <strong>Sign-in sessions:</strong> a record for each device you sign in on, which can include its IP address and browser name,

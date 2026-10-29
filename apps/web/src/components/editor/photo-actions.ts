@@ -57,6 +57,11 @@ export async function uploadAll(files: readonly File[], onProgress: (done: numbe
       const ref = local ? await addLocalPhoto(file) : toAssetRef(await uploadPhoto(file));
       if (ref) result.photos.push(ref);
     } catch (err) {
+      // Keeping a photo in this browser failed (storage full, private browsing). Retrying the same file won't help.
+      if (local && !(err instanceof ApiError)) {
+        result.errors.push("This browser couldn't keep the photos. Check that it has room for them and that site storage is allowed.");
+        break;
+      }
       if (overQuota(err)) {
         const left = files.length - i;
         result.errors.push(`${(err as Error).message}${left > 1 ? ` ${left} photos weren't uploaded.` : ""}`);
