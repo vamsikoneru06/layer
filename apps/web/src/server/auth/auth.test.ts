@@ -76,6 +76,19 @@ describe("magic-link sign-in", () => {
     expect(sessionCookie(await verify(link))).toBeNull();
   });
 
+  it("reads the role and handle from the database on every request, in the one session query", async () => {
+    const email = "admin-to-be@example.test";
+    await requestLink({ email });
+    const cookie = sessionCookie(await verify(linkSentTo(email)))!;
+    const authenticate = createAuthenticator(auth, t.db);
+    const me = () => authenticate(new Request(`${origin}/api/me`, { headers: { cookie } }));
+    expect(await me()).toMatchObject({ email, role: "user", handle: null });
+    await t.db.update(user).set({ role: "admin", handle: "maya" }).where(eq(user.email, email));
+    expect(await me()).toMatchObject({ email, role: "admin", handle: "maya" });
+    await t.db.delete(user).where(eq(user.email, email));
+    expect(await me()).toBeNull();
+  });
+
   it("never lets a sign-up body set the role", async () => {
     const email = "sneaky@example.test";
     await requestLink({ email, name: "Sneaky", role: "admin" });

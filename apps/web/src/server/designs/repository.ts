@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, getTableColumns, sql } from "drizzle-orm";
 import type { Doc } from "@vash/schema";
 import { designs } from "../db/schema";
 import type { Db } from "../db/types";
@@ -20,9 +20,10 @@ const summaryColumns = {
   version: designs.version,
   createdAt: designs.createdAt,
   updatedAt: designs.updatedAt,
-  format: sql<string>`${designs.doc}->'meta'->>'format'`,
-  width: sql<number>`(${designs.doc}->'artboard'->>'width')::int`,
-  height: sql<number>`(${designs.doc}->'artboard'->>'height')::int`,
+  // Stored generated columns (migration 0007): reading them never loads the document itself.
+  format: sql<string>`${designs.format}`,
+  width: sql<number>`${designs.width}`,
+  height: sql<number>`${designs.height}`,
 };
 
 const owned = (ownerId: string, id: string) => and(eq(designs.id, id), eq(designs.ownerId, ownerId));
@@ -52,18 +53,24 @@ export async function getDesignVersion(db: Db, ownerId: string, id: string): Pro
   return row?.version;
 }
 
+/** Every column but the document: writes hand the document back from memory instead of reading it from Postgres. */
+const { doc: _doc, ...withoutDoc } = getTableColumns(designs);
+
 export async function insertDesign(db: Db, values: typeof designs.$inferInsert): Promise<DesignRow> {
-  const [row] = await db.insert(designs).values(values).returning();
-  return row!;
+  const [row] = await db.insert(designs).values(values).returning(withoutDoc);
+  return { ...row!, doc: values.doc };
 }
 
-/** Compare-and-swap on `version`: the WHERE clause makes concurrent saves of one version mutually exclusive. */
-export async function updateDesignDoc(db: Db, ownerId: string, id: string, expectedVersion: number, doc: Doc, now: Date): Promise<DesignRow | undefined> {
+/**
+ * Compare-and-swap on `version`: the WHERE clause makes concurrent saves of one version mutually exclusive.
+ * Returns everything but the document, which the caller already has (it can be hundreds of KB).
+ */
+export async function updateDesignDoc(db: Db, ownerId: string, id: string, expectedVersion: number, doc: Doc, now: Date): Promise<Omit<DesignRow, "doc"> | undefined> {
   const [row] = await db
     .update(designs)
     .set({ doc, title: doc.meta.title, version: sql`${designs.version} + 1`, updatedAt: now })
     .where(and(owned(ownerId, id), eq(designs.version, expectedVersion)))
-    .returning();
+    .returning(withoutDoc);
   return row;
 }
 
@@ -73,7 +80,8 @@ export async function updateDesignMeta(
   id: string,
   patch: { title?: string; folderId?: string | null },
   now: Date,
-): Promise<DesignRow | undefined> {
+  opts: { withDoc: boolean } = { withDoc: true },
+): Promise<(Omit<DesignRow, "doc"> & { doc?: Doc }) | undefined> {
   const [row] = await db
     .update(designs)
     .set({
@@ -88,7 +96,7 @@ export async function updateDesignMeta(
         : {}),
     })
     .where(owned(ownerId, id))
-    .returning();
+    .returning(opts.withDoc ? getTableColumns(designs) : withoutDoc);
   return row;
 }
 

@@ -30,10 +30,19 @@ export function scopeStatements(userId: string): string {
   return `SET LOCAL ROLE vash_app; SELECT set_config('vash.user_id', '${userId}', true)`;
 }
 
-const isBegin = (config: unknown): boolean => {
+const statementText = (config: unknown): string | undefined => {
   const text = typeof config === "string" ? config : (config as { text?: unknown } | null)?.text;
-  return typeof text === "string" && /^\s*begin\b/i.test(text);
+  return typeof text === "string" ? text : undefined;
 };
+
+/**
+ * A statement that only reads: Drizzle's selects start with "select". Anything else (including a "with" query, which
+ * can hide a delete) is treated as a write. The read path also opens the transaction READ ONLY, so a statement
+ * misjudged as a read fails instead of writing.
+ */
+const isPlainRead = (config: unknown): boolean => /^\s*select\b/i.test(statementText(config) ?? "");
+
+const isBegin = (config: unknown): boolean => /^\s*begin\b/i.test(statementText(config) ?? "");
 
 /**
  * What Drizzle sees in place of the pg Pool. Drizzle treats anything whose class name contains "Pool" as a pool:
@@ -46,18 +55,28 @@ export class UserScopedPool {
     const userId = scopedUserId();
     if (!userId) return this.pool.query(config, values);
     const client = await this.pool.connect();
-    let broken: Error | undefined;
+    const read = isPlainRead(config);
     try {
-      await client.query(`BEGIN; ${scopeStatements(userId)}`);
+      await client.query(`BEGIN${read ? " READ ONLY" : ""}; ${scopeStatements(userId)}`);
       const result = await client.query(config, values);
+      if (read) {
+        // A read-only transaction has nothing to commit, so the rows are final now: answer without waiting a round
+        // trip, and finish the transaction before the client goes back to the pool (a failure discards the client).
+        client.query("COMMIT").then(
+          () => client.release(),
+          (err: Error) => client.release(err),
+        );
+        return result;
+      }
       await client.query("COMMIT");
+      client.release();
       return result;
     } catch (err) {
-      await client.query("ROLLBACK").catch((rollbackErr: Error) => (broken = rollbackErr));
-      throw err;
-    } finally {
       // A client that can't roll back is in an unknown state; passing the error makes the pool discard it.
+      let broken: Error | undefined;
+      await client.query("ROLLBACK").catch((rollbackErr: Error) => (broken = rollbackErr));
       client.release(broken);
+      throw err;
     }
   }
 

@@ -1,6 +1,6 @@
 import type { Db } from "../db/types";
 import { isUuid } from "../http/ids";
-import { getTemplateCard, getTemplateVersion } from "./repository";
+import { getTemplateWithDoc } from "./repository";
 import { toTemplateJson } from "./view";
 
 /**
@@ -9,8 +9,8 @@ import { toTemplateJson } from "./view";
  */
 export async function publicTemplate(db: Db, id: string) {
   if (!isUuid(id)) return null;
-  const card = await getTemplateCard(db, id.toLowerCase());
-  if (!card || card.status !== "published") return null;
-  const version = await getTemplateVersion(db, card.id, card.currentVersion);
-  return version ? { ...toTemplateJson(card), doc: version.doc } : null;
+  const row = await getTemplateWithDoc(db, id.toLowerCase());
+  if (!row || row.status !== "published" || !row.doc) return null;
+  const { doc, ...card } = row;
+  return { ...toTemplateJson(card), doc };
 }

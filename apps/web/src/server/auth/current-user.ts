@@ -23,10 +23,24 @@ export async function loadCurrentUser(db: Db, id: string, sessionId: string | nu
   return { ...rest, twoFactor: { enabled: twoFactorEnabled, verifiedAt } };
 }
 
-/** Session from Better Auth; role, handle and two-factor state from our own columns (Better Auth never sees them). */
+type SessionUser = { id: string; email: string; role?: string | null; handle?: string | null; twoFactorEnabled?: boolean | null };
+
+/**
+ * The signed-in user on every request from Better Auth's session: one joined query (session + user), since role,
+ * handle and twoFactorEnabled are read-only fields Better Auth returns. Only users with two-factor on (admins) need
+ * a second query, for when this session last passed a code.
+ */
 export function createAuthenticator(auth: Pick<Auth, "api">, db: Db) {
   return async (req: Request): Promise<CurrentUser | null> => {
     const found = await auth.api.getSession({ headers: req.headers });
-    return found ? loadCurrentUser(db, found.user.id, found.session.id) : null;
+    if (!found) return null;
+    const u = found.user as SessionUser;
+    const enabled = u.twoFactorEnabled === true;
+    let verifiedAt: Date | null = null;
+    if (enabled) {
+      const [row] = await db.select({ at: session.twoFactorVerifiedAt }).from(session).where(eq(session.id, found.session.id));
+      verifiedAt = row?.at ?? null;
+    }
+    return { id: u.id, email: u.email, role: u.role === "admin" ? "admin" : "user", handle: u.handle ?? null, twoFactor: { enabled, verifiedAt } };
   };
 }

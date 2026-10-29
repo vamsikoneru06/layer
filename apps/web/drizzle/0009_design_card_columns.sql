@@ -1,0 +1,3 @@
+ALTER TABLE "designs" ADD COLUMN "format" text GENERATED ALWAYS AS ("designs"."doc" -> 'meta' ->> 'format') STORED;--> statement-breakpoint
+ALTER TABLE "designs" ADD COLUMN "width" integer GENERATED ALWAYS AS (round(("designs"."doc" -> 'artboard' ->> 'width')::numeric)::int) STORED;--> statement-breakpoint
+ALTER TABLE "designs" ADD COLUMN "height" integer GENERATED ALWAYS AS (round(("designs"."doc" -> 'artboard' ->> 'height')::numeric)::int) STORED;

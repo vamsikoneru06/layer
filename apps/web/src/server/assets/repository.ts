@@ -88,17 +88,19 @@ export async function markAssetReady(db: Db, ownerId: string, id: string, dims: 
  * public copies of every template the owner published.
  */
 export async function storageUsedBytes(db: Db, ownerId: string): Promise<number> {
-  const [row] = await db.select({ used: sql<string>`coalesce(sum(${assets.bytes}), 0)` }).from(assets).where(eq(assets.ownerId, ownerId));
-  const [queued] = await db
+  // One round trip: the three totals are scalar subqueries of a single statement.
+  const owned = db.select({ used: sql<string>`coalesce(sum(${assets.bytes}), 0)` }).from(assets).where(eq(assets.ownerId, ownerId));
+  const queued = db
     .select({ used: sql<string>`coalesce(sum(${storageDeletions.bytes}), 0)` })
     .from(storageDeletions)
     .where(and(eq(storageDeletions.ownerId, ownerId), sql`not exists (select 1 from ${assets} where ${assets.id} = ${storageDeletions.assetId})`));
-  const [published] = await db
+  const published = db
     .select({ used: sql<string>`coalesce(sum(${assets.bytes}), 0)` })
     .from(assets)
     .innerJoin(templates, eq(templates.id, assets.templateId))
     .where(eq(templates.authorId, ownerId));
-  return Number(row?.used ?? 0) + Number(queued?.used ?? 0) + Number(published?.used ?? 0);
+  const [row] = await db.select({ used: sql<string>`(${owned}) + (${queued}) + (${published})` }).from(sql`(select 1) as one`);
+  return Number(row?.used ?? 0);
 }
 
 export function listReadyAssets(db: Db, ownerId: string, q: { kind?: AssetRow["kind"]; cursor?: Cursor; limit: number }): Promise<AssetRow[]> {

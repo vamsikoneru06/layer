@@ -1,4 +1,5 @@
 import { and, desc, eq, sql } from "drizzle-orm";
+import type { Doc } from "@vash/schema";
 import { templates, templateVersions, user } from "../db/schema";
 import type { Db } from "../db/types";
 import type { Cursor } from "../http/cursor";
@@ -72,6 +73,20 @@ const cards = (db: Db) =>
     .from(templates)
     .leftJoin(user, eq(user.id, templates.authorId))
     .leftJoin(templateVersions, and(eq(templateVersions.templateId, templates.id), eq(templateVersions.version, templates.currentVersion)));
+
+/**
+ * The card plus its current version's document, in one query (the card already joins that version for the
+ * thumbnail). `doc` is null only if the version row is missing.
+ */
+export async function getTemplateWithDoc(db: Db, id: string): Promise<(TemplateCard & { doc: Doc | null }) | undefined> {
+  const [row] = await db
+    .select({ ...cardColumns, doc: templateVersions.doc })
+    .from(templates)
+    .leftJoin(user, eq(user.id, templates.authorId))
+    .leftJoin(templateVersions, and(eq(templateVersions.templateId, templates.id), eq(templateVersions.version, templates.currentVersion)))
+    .where(eq(templates.id, id));
+  return row;
+}
 
 export async function getTemplateCard(db: Db, id: string): Promise<TemplateCard | undefined> {
   const [row] = await cards(db).where(eq(templates.id, id));
