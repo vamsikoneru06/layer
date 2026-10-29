@@ -28,7 +28,7 @@ export interface AuthDeps {
 const DAY_SECONDS = 60 * 60 * 24;
 const AUTH_BODY_LIMIT = 8 * 1024;
 
-/** Where each route takes the caller's post-sign-in redirects from. Better Auth doesn't check them on magic links. */
+/** Where each route takes the caller's post-sign-in redirects from. Better Auth checks them against trusted origins too, and this app checks them below. */
 const REDIRECT_SOURCES: Record<string, "body" | "query"> = {
   "/sign-in/magic-link": "body",
   "/magic-link/verify": "query",
