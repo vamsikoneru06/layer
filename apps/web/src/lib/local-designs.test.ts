@@ -1,7 +1,7 @@
 import { createEmptyDoc, LIMITS } from "@vash/schema";
 import { describe, expect, it } from "vitest";
 import { templateDoc } from "../../tests/support/docs";
-import { copyLocalDesign, docFromTemplate, moveToAccount, newLocalDesign, type LocalDesign, type LocalDesignStore } from "./local-designs";
+import { copyLocalDesign, docFromTemplate, moveDesign, moveToAccount, newLocalDesign, type LocalDesign, type LocalDesignStore } from "./local-designs";
 
 function memoryStore(designs: LocalDesign[] = []): LocalDesignStore & { ids(): string[] } {
   const rows = new Map(designs.map((d) => [d.id, d]));
@@ -10,6 +10,11 @@ function memoryStore(designs: LocalDesign[] = []): LocalDesignStore & { ids(): s
     get: async (id) => rows.get(id),
     put: async (d) => void rows.set(d.id, d),
     delete: async (id) => void rows.delete(id),
+    deleteIfVersion: async (id, version) => {
+      if (rows.get(id)?.version !== version) return false;
+      rows.delete(id);
+      return true;
+    },
     ids: () => [...rows.keys()],
   };
 }
@@ -86,6 +91,17 @@ describe("moveToAccount", () => {
     });
     expect(result.failed).toBe(1);
     expect(store.ids()).toEqual([a.id]);
+  });
+
+  it("keeps the device copy when it was edited while the account copy was being created", async () => {
+    const a = design("A", "2026-10-01T00:00:00Z");
+    const store = memoryStore([a]);
+    const moved = await moveDesign(store, a, async (_doc, id) => {
+      await store.put({ ...a, version: a.version + 1, updatedAt: "2026-10-03T00:00:00.000Z" });
+      return { id: id! };
+    });
+    expect(moved).toEqual({ id: a.id, kept: true });
+    expect(await store.get(a.id)).toMatchObject({ version: 2 });
   });
 
   it("falls back to a new id when its id is taken", async () => {

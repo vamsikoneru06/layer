@@ -18,6 +18,8 @@ export interface LocalDesignStore {
   get(id: string): Promise<LocalDesign | undefined>;
   put(design: LocalDesign): Promise<void>;
   delete(id: string): Promise<void>;
+  /** Deletes the design only if it still has this version. Returns false, and keeps it, if it changed. */
+  deleteIfVersion(id: string, version: number): Promise<boolean>;
 }
 
 export function newLocalDesign(doc: Doc, now = new Date()): LocalDesign {
@@ -54,9 +56,11 @@ type Create = (doc: Doc, id?: string) => Promise<{ id: string }>;
 /**
  * Moves one local design into the signed-in account and returns its id there. It keeps its id, so a move
  * cut short (a closed tab, a lost response) can run again without making a copy; the local copy is deleted
- * only once the account has it. If the id is taken (status 409), the design is created under a new one.
+ * only once the account has it, and only if it still has the version that was sent. An edit made since
+ * (another tab, the autosaver) keeps the local copy, and `kept` is true. If the id is taken (status 409),
+ * the design is created under a new one.
  */
-export async function moveDesign(store: LocalDesignStore, design: LocalDesign, create: Create): Promise<string> {
+export async function moveDesign(store: LocalDesignStore, design: LocalDesign, create: Create): Promise<{ id: string; kept: boolean }> {
   let saved: { id: string };
   try {
     saved = await create(design.doc, design.id);
@@ -64,8 +68,8 @@ export async function moveDesign(store: LocalDesignStore, design: LocalDesign, c
     if ((err as { status?: number }).status !== 409) throw err;
     saved = await create(design.doc);
   }
-  await store.delete(design.id);
-  return saved.id;
+  const deleted = await store.deleteIfVersion(design.id, design.version);
+  return { id: saved.id, kept: !deleted };
 }
 
 /** Moves every local design, oldest first; any the account refuses stay on the device. */
@@ -74,7 +78,7 @@ export async function moveToAccount(store: LocalDesignStore, create: Create): Pr
   let failed = 0;
   for (const design of (await store.list()).sort(byUpdated).reverse()) {
     try {
-      moved.push({ from: design.id, to: await moveDesign(store, design, create) });
+      moved.push({ from: design.id, to: (await moveDesign(store, design, create)).id });
     } catch {
       failed++;
     }
@@ -118,6 +122,29 @@ export async function runStore<T>(store: string, mode: IDBTransactionMode, op: (
 
 const run = <T,>(mode: IDBTransactionMode, op: (s: IDBObjectStore) => IDBRequest<T>) => runStore(STORE, mode, op);
 
+/** The read and the delete share one transaction, so no edit can land between them. */
+async function removeIfVersion(id: string, version: number): Promise<boolean> {
+  const db = await open().catch(() => Promise.reject(unavailable()));
+  try {
+    return await new Promise<boolean>((resolve, reject) => {
+      const tx = db.transaction(STORE, "readwrite");
+      const s = tx.objectStore(STORE);
+      const get = s.get(id);
+      let deleted = false;
+      get.onsuccess = () => {
+        if ((get.result as LocalDesign | undefined)?.version !== version) return;
+        s.delete(id);
+        deleted = true;
+      };
+      tx.oncomplete = () => resolve(deleted);
+      tx.onerror = () => reject(tx.error ?? unavailable());
+      tx.onabort = () => reject(tx.error ?? unavailable());
+    });
+  } finally {
+    db.close();
+  }
+}
+
 /** The browser's store. Every call opens and closes the database, so no connection blocks a later upgrade. */
 export const localDesigns: LocalDesignStore = {
   list: () => run("readonly", (s) => s.getAll() as IDBRequest<LocalDesign[]>),
@@ -128,5 +155,6 @@ export const localDesigns: LocalDesignStore = {
   delete: async (id) => {
     await run("readwrite", (s) => s.delete(id));
   },
+  deleteIfVersion: removeIfVersion,
 };
 

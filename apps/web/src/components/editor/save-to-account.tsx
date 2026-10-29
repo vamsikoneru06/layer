@@ -31,7 +31,7 @@ export function SaveToAccount({ id, saver }: { id: string; saver: RefObject<Auto
       if (!(await getMe())) return router.push("/signin");
       const design = await localDesigns.get(id);
       if (!design) throw new Error("This design is no longer in this browser.");
-      const to = await moveDesign(localDesigns, design, withUploadedPhotos(createDesignFromDoc, uploadPhoto));
+      const { id: to } = await moveDesign(localDesigns, design, withUploadedPhotos(createDesignFromDoc, uploadPhoto));
       await forgetUnusedPhotos(localPhotos, (await localDesigns.list()).map((d) => d.doc)).catch(() => {});
       // Nothing left to write locally; a full load opens the account's copy.
       s?.reset(s.version);

@@ -48,14 +48,34 @@ export async function addLocalPhoto(file: File, store: LocalPhotoStore = localPh
   return toLocalRef(photo);
 }
 
+/** Uploads in progress in this tab, by device photo id, so two saves running at once (a remount, a double click) share one upload. */
+const uploading = new Map<string, Promise<string>>();
+
+/** Uploads one device photo and records the account id on it. Re-reads the photo first: another tab may have uploaded it while this one waited. */
+async function uploadPhoto(photo: LocalPhoto, store: LocalPhotoStore, upload: (file: File) => Promise<{ id: string }>): Promise<string> {
+  const current = (await store.get(photo.id)) ?? photo;
+  if (current.uploadedAs) return current.uploadedAs;
+  const ext = photo.mime === "image/png" ? "png" : photo.mime === "image/webp" ? "webp" : "jpg";
+  const { id: uploadedAs } = await upload(new File([photo.blob], `photo.${ext}`, { type: photo.mime }));
+  await store.put({ ...current, uploadedAs });
+  return uploadedAs;
+}
+
+/**
+ * Runs `uploadPhoto` under a Web Lock named for the photo, so two tabs of this browser upload it one after the
+ * other. Without Web Locks (old browsers, Node) it runs unlocked, and only the in-tab map above applies.
+ */
+function uploadPhotoLocked(photo: LocalPhoto, store: LocalPhotoStore, upload: (file: File) => Promise<{ id: string }>): Promise<string> {
+  const locks: LockManager | undefined = globalThis.navigator?.locks;
+  if (!locks) return uploadPhoto(photo, store, upload);
+  return locks.request(`vash-photo-${photo.id}`, () => uploadPhoto(photo, store, upload));
+}
+
 /**
  * Uploads the design's photos that are still only on this device and returns the design pointing at the
  * uploaded copies. Each upload is recorded on the device photo first, so running it again after a lost
  * response reuses it. Photos that aren't on the device (account or sample photos) are left as they are.
  */
-/** Uploads in progress, by device photo id, so two saves running at once (two tabs, a remount) share one upload. */
-const uploading = new Map<string, Promise<string>>();
-
 export async function uploadDocPhotos(doc: Doc, store: LocalPhotoStore, upload: (file: File) => Promise<{ id: string }>): Promise<Doc> {
   const renames = new Map<string, string>();
   for (const id of referencedAssetIds(doc)) {
@@ -64,13 +84,7 @@ export async function uploadDocPhotos(doc: Doc, store: LocalPhotoStore, upload: 
     if (!photo.uploadedAs) {
       let pending = uploading.get(id);
       if (!pending) {
-        const ext = photo.mime === "image/png" ? "png" : photo.mime === "image/webp" ? "webp" : "jpg";
-        pending = upload(new File([photo.blob], `photo.${ext}`, { type: photo.mime }))
-          .then(async ({ id: uploadedAs }) => {
-            await store.put({ ...photo, uploadedAs });
-            return uploadedAs;
-          })
-          .finally(() => uploading.delete(id));
+        pending = uploadPhotoLocked(photo, store, upload).finally(() => uploading.delete(id));
         uploading.set(id, pending);
       }
       photo.uploadedAs = await pending;

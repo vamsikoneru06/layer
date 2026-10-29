@@ -32,6 +32,18 @@ function docWith(assetId: string): Doc {
   return doc;
 }
 
+/** A lock manager that runs each request after the previous one with the same name has finished. */
+function fakeLocks() {
+  const tails = new Map<string, Promise<unknown>>();
+  return {
+    request: <T>(name: string, cb: () => Promise<T>): Promise<T> => {
+      const run = (tails.get(name) ?? Promise.resolve()).then(cb);
+      tails.set(name, run.catch(() => undefined));
+      return run;
+    },
+  };
+}
+
 describe("uploadDocPhotos", () => {
   it("uploads the design's device photos and points the design at the uploaded copies", async () => {
     const store = memoryStore([photo("local-1")]);
@@ -104,5 +116,25 @@ describe("uploads running at once", () => {
     expect(upload).toHaveBeenCalledTimes(1);
     expect(Object.keys(da.assets)).toEqual(["server-1"]);
     expect(Object.keys(db.assets)).toEqual(["server-1"]);
+  });
+
+  it("share one upload across two tabs through the Web Locks API", async () => {
+    // Tab B is a fresh module instance, so it has its own in-tab map; only the lock can stop it uploading again.
+    // Both tabs read the same records, like two tabs on one IndexedDB.
+    const backing = memoryStore([photo("local-1")]);
+    const tabA: LocalPhotoStore = backing;
+    const tabB: LocalPhotoStore = { ...backing };
+    const upload = vi.fn(() => new Promise<{ id: string }>((r) => setTimeout(() => r({ id: "server-1" }), 10)));
+    vi.stubGlobal("navigator", { locks: fakeLocks() });
+    try {
+      vi.resetModules();
+      const second = await import("./local-photos");
+      const [a, b] = await Promise.all([uploadDocPhotos(docWith("local-1"), tabA, upload), second.uploadDocPhotos(docWith("local-1"), tabB, upload)]);
+      expect(upload).toHaveBeenCalledTimes(1);
+      expect(Object.keys(a.assets)).toEqual(["server-1"]);
+      expect(Object.keys(b.assets)).toEqual(["server-1"]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
