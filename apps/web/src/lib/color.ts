@@ -42,17 +42,26 @@ export function hsvToHex({ h, s, v, a }: Hsv): string {
 /** CSS for a fill, matching how the canvas draws it (0° points up, 90° right). */
 export function fillCss(fill: Fill): string {
   if (fill.type === "solid") return fill.color;
+  // A photo has no single colour for CSS, so its preview is a neutral grey.
+  if (fill.type === "image") return "#E5E5EA";
   const stops = fill.stops.map((s) => `${s.color} ${Math.round(s.offset * 100)}%`).join(", ");
   return `linear-gradient(${fill.angle}deg, ${stops})`;
 }
 
 type Linear = Extract<Fill, { type: "linear" }>;
 
-/** Switches a fill between solid and linear, keeping its main colour. */
-export function convertFill(fill: Fill, type: Fill["type"]): Fill {
+/** The colour a fill keeps when it changes type: a solid's colour, a gradient's first stop, or white for a photo. */
+function mainColor(fill: Fill): string {
+  if (fill.type === "solid") return fill.color;
+  if (fill.type === "linear") return fill.stops[0]!.color;
+  return "#FFFFFF";
+}
+
+/** Switches a fill between solid and linear, keeping its main colour. A photo becomes white (a photo is set with the Image choice). */
+export function convertFill(fill: Fill, type: "solid" | "linear"): Fill {
   if (fill.type === type) return fill;
-  if (type === "solid") return { type: "solid", color: fill.type === "linear" ? fill.stops[0]!.color : "#000000" };
-  const from = fill.type === "solid" ? fill.color : "#000000";
+  if (type === "solid") return { type: "solid", color: mainColor(fill) };
+  const from = mainColor(fill);
   const to = from.slice(0, 7).toUpperCase() === "#FFFFFF" ? "#1D1D1F" : "#FFFFFF";
   return { type: "linear", angle: 90, stops: [{ offset: 0, color: from }, { offset: 1, color: to }] };
 }

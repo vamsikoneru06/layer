@@ -32,7 +32,7 @@ export function designColors(doc: Doc, max = 16): string[] {
   const useFill = (fill: Fill | null | undefined) => {
     if (!fill) return;
     if (fill.type === "solid") use(fill.color);
-    else for (const stop of fill.stops) use(stop.color);
+    else if (fill.type === "linear") for (const stop of fill.stops) use(stop.color);
   };
 
   useFill(doc.artboard.background);

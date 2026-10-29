@@ -365,6 +365,8 @@ export const SHORTCUT_NAMES: Partial<Record<ActionId, string>> = { toggleLock: "
 /** Keys and gestures the canvas handles itself, so they are not actions. */
 export const OTHER_SHORTCUTS: readonly { spec: string; does: string }[] = [
   { spec: "arrows", does: "Move the selection 1 px" },
+  { spec: "v", does: "Select tool" },
+  { spec: "h", does: "Hand tool (drag to move around)" },
   { spec: "shift+arrows", does: "Move the selection 10 px" },
   { spec: "enter", does: "Edit the selected text" },
   { spec: "escape", does: "Deselect, or show the panels again" },

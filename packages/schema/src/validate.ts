@@ -145,12 +145,18 @@ function checkAlt(c: Checker, v: unknown, path: string): void {
   if (hasControlChar(v)) c.fail(path, "must not contain control characters");
 }
 
-function checkFill(c: Checker, v: unknown, path: string): boolean {
+/** `allowImage` is set only for the artboard background: shape fills are colours and gradients. */
+function checkFill(c: Checker, v: unknown, path: string, allowImage = false): boolean {
   if (typeof v !== "object" || v === null) return c.fail(path, "expected fill object");
   const type = (v as Obj).type;
   if (type === "solid") {
     if (!c.object(v, path, ["type", "color"])) return false;
     return c.color(v.color, join(path, "color"));
+  }
+  if (type === "image" && allowImage) {
+    if (!c.object(v, path, ["type", "assetId", "fit"])) return false;
+    c.id(v.assetId, join(path, "assetId"));
+    return c.oneOf(v.fit, join(path, "fit"), ["cover"] as const);
   }
   if (type === "linear") {
     if (!c.object(v, path, ["type", "angle", "stops"])) return false;
@@ -166,7 +172,7 @@ function checkFill(c: Checker, v: unknown, path: string): boolean {
     }
     return true;
   }
-  return c.fail(join(path, "type"), "must be one of: solid, linear");
+  return c.fail(join(path, "type"), allowImage ? "must be one of: solid, linear, image" : "must be one of: solid, linear");
 }
 
 function checkPath(c: Checker, d: unknown, path: string): void {
@@ -381,6 +387,8 @@ function checkStructure(c: Checker, doc: Doc): void {
     if (node.type === "frame" && node.content) assetKind(node.content.assetId, "photo", `nodes.${node.id}.content.assetId`);
     if (node.type === "sticker") assetKind(node.assetId, "sticker", `nodes.${node.id}.assetId`);
   }
+  const background = doc.artboard.background;
+  if (background.type === "image") assetKind(background.assetId, "photo", "artboard.background.assetId");
 }
 
 export interface ValidateOptions {
@@ -425,7 +433,7 @@ export function validateDoc(input: unknown, options: ValidateOptions = {}): Vali
   if (c.object(input.artboard, "artboard", ["width", "height", "background"])) {
     c.integer(input.artboard.width, "artboard.width", LIMITS.artboardMin, LIMITS.artboardMax);
     c.integer(input.artboard.height, "artboard.height", LIMITS.artboardMin, LIMITS.artboardMax);
-    checkFill(c, input.artboard.background, "artboard.background");
+    checkFill(c, input.artboard.background, "artboard.background", true);
   }
 
   const maxNodes = input.kind === "template" ? LIMITS.templateNodes : LIMITS.designNodes;

@@ -1,6 +1,7 @@
 import type { Command } from "./commands";
 import { copyStyleOfSelection, duplicateSelection, groupSelection, pasteStyleToSelection, reorderSelection, toggleLockSelection, ungroupSelection } from "./edit-ops";
 import type { EditorCore } from "./editor-core";
+import type { Tool } from "./interaction";
 
 /** A key press; `mod` is ⌘ on macOS and Ctrl elsewhere. */
 export interface KeyInput {
@@ -12,8 +13,11 @@ export interface KeyInput {
 
 const NUDGE: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
 
-/** Editor shortcuts. Returns true when the key was used (the caller then prevents the browser default). */
-export function handleKey(core: EditorCore, e: KeyInput): boolean {
+/**
+ * Editor shortcuts. Returns true when the key was used (the caller then prevents the browser default).
+ * `setTool` is the pointer tool setter; without it the tool keys (V, H) are not handled.
+ */
+export function handleKey(core: EditorCore, e: KeyInput, setTool?: (tool: Tool) => void): boolean {
   const { selection, doc } = core.getState();
   const k = e.key.toLowerCase();
 
@@ -59,6 +63,11 @@ export function handleKey(core: EditorCore, e: KeyInput): boolean {
   }
   if (e.mod && e.alt && !e.shift && k === "v") {
     pasteStyleToSelection(core);
+    return true;
+  }
+  // Tool keys work with or without a selection. Ctrl, Cmd and Alt combinations are left alone.
+  if (setTool && !e.mod && !e.alt && (k === "v" || k === "h")) {
+    setTool(k === "v" ? "select" : "hand");
     return true;
   }
   if (e.key === "Escape") {

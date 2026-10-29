@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createSnapper, DEFAULT_SNAP } from "./snapping";
-import { docWith, rect } from "./test-docs";
+import { createSnapper, DEFAULT_SNAP, spacingSnap } from "./snapping";
+import { docWith, group, rect } from "./test-docs";
 
 // 1000×1000 artboard, one other 100×100 layer centred at (700, 300): edges x 650/750, y 250/350.
 const doc = docWith([rect("other", { x: 700, y: 300 }), rect("moving", { x: 100, y: 100 })]);
@@ -87,5 +87,61 @@ describe("snap options", () => {
 
   it("uses object snapping by default", () => {
     expect(createSnapper(doc, new Set(["moving"]), DEFAULT_SNAP).snapBox(box(647, 800), 6).dx).toBe(3);
+  });
+});
+
+describe("spacingSnap", () => {
+  const bx = (x: number, y: number, w: number, h: number) => ({ minX: x, minY: y, maxX: x + w, maxY: y + h });
+  // Two 100-wide boxes in one row, 50 apart: x 0-100 and 150-250.
+  const row = [bx(0, 0, 100, 100), bx(150, 0, 100, 100)];
+
+  it("snaps the gap to a neighbour on x to an existing gap", () => {
+    // Moving box at x 303-403 is 53 from the box ending at 250; it moves 3 left to make the gap 50.
+    const r = spacingSnap(bx(303, 0, 100, 100), row, 6);
+    expect(r.dx).toBe(-3);
+    expect(r.dy).toBe(0);
+  });
+
+  it("snaps the gap to a neighbour on y the same way", () => {
+    const column = [bx(0, 0, 100, 100), bx(0, 150, 100, 100)];
+    expect(spacingSnap(bx(0, 303, 100, 100), column, 6)).toMatchObject({ dx: 0, dy: -3 });
+  });
+
+  it("does not snap beyond the threshold", () => {
+    expect(spacingSnap(bx(303, 0, 100, 100), row, 2)).toEqual({ dx: 0, dy: 0, indicators: [] });
+  });
+
+  it("reports the moving gap and the matched gap as indicators", () => {
+    expect(spacingSnap(bx(303, 0, 100, 100), row, 6).indicators).toEqual([
+      { axis: "x", from: 250, to: 300, at: 50 },
+      { axis: "x", from: 100, to: 150, at: 50 },
+    ]);
+  });
+
+  it("leaves a box whose gap is already equal in place, and still reports it", () => {
+    const r = spacingSnap(bx(300, 0, 100, 100), row, 6);
+    expect(r.dx).toBe(0);
+    expect(r.dy).toBe(0);
+    expect(r.indicators).toHaveLength(2);
+  });
+
+  it("picks the smallest shift when several gaps are candidates", () => {
+    // Gaps between the others: 50, 150, 218, 300, 468, 618. The moving box (646-666) is 146 from the box at 400-500
+    // (shift 4 to make it 150) and 52 from the box at 718 (shift 2 to make it 50). The smaller shift wins.
+    const boxes = [bx(0, 0, 100, 100), bx(150, 0, 100, 100), bx(400, 0, 100, 100), bx(718, 0, 100, 100)];
+    expect(spacingSnap(bx(646, 0, 20, 100), boxes, 6).dx).toBe(2);
+  });
+
+  it("returns no shift for an empty list of others", () => {
+    expect(spacingSnap(bx(0, 0, 10, 10), [], 6)).toEqual({ dx: 0, dy: 0, indicators: [] });
+  });
+
+  it("ignores the children of a dragged group, so the group does not snap back to its own edges", () => {
+    // A 100 px group centred at (300, 300) with one child filling it; the artboard edges are far from the box.
+    const doc = docWith([group("g", { x: 300, y: 300 }, ["a"], 100, 100)], [rect("a", { x: 0, y: 0 }, 100, 100)]);
+    const s = createSnapper(doc, new Set(["g"]), DEFAULT_SNAP);
+    const snap = s.snapBox({ minX: 253, minY: 253, maxX: 353, maxY: 353 }, 6);
+    expect(snap.dx).toBe(0);
+    expect(snap.dy).toBe(0);
   });
 });

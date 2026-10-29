@@ -30,6 +30,7 @@ import { MoveDialog } from "./move-dialog";
 import { PropertiesPanel } from "./properties-panel";
 import { ShortcutsDialog } from "./shortcuts-dialog";
 import { TextEditor } from "./text-editor";
+import { ToolSwitch } from "./tool-switch";
 import { useClipboard } from "./use-clipboard";
 import { useElementSize } from "./use-element-size";
 import { useFullscreen } from "./use-fullscreen";
@@ -554,6 +555,7 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
                   size={size}
                   page={{ width: artboard.width, height: artboard.height }}
                   guides={guides}
+                  spacing={state.spacing}
                   showGuides={view.guides}
                   showGrid={view.grid}
                   showSafeArea={view.safeArea}
@@ -564,6 +566,12 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
               )}
               {state && editor && <TextEditor editor={editor} state={state} />}
               {state && editor && actions && <FloatingToolbar core={editor.core} state={state} actions={actions} mac={mac} container={container} focusCanvas={() => overlay.current?.focus()} />}
+              {/* Bottom-left of the canvas, just above the zoom bar. V and H switch the tool from the keyboard too. */}
+              {state && editor && (
+                <div className="absolute bottom-3 left-3 z-10">
+                  <ToolSwitch tool={editor.tool()} onChange={(tool) => editor.setTool(tool)} />
+                </div>
+              )}
               {panelsHidden && (
                 <button type="button" onClick={() => setPanelsHidden(false)} className="glass-btn glass-secondary absolute top-3 right-3 h-8 rounded-lg px-3 text-[13px]">
                   <span className="glass-label">Show panels</span>

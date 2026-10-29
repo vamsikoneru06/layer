@@ -4,6 +4,7 @@ import type { AssetId, Doc, FrameNode, ValidationIssue } from "./types";
 /** Asset IDs actually referenced by nodes (unreferenced entries in `assets` are ignored). */
 export function referencedAssetIds(doc: Doc): Set<AssetId> {
   const ids = new Set<AssetId>();
+  if (doc.artboard.background.type === "image") ids.add(doc.artboard.background.assetId);
   for (const node of Object.values(doc.nodes)) {
     if (node.type === "frame" && node.content) ids.add(node.content.assetId);
     if (node.type === "sticker") ids.add(node.assetId);

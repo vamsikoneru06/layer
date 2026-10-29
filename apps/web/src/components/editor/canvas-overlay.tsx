@@ -4,6 +4,14 @@ import { GUIDE_COLOR, type Viewport } from "@vash/engine";
 import { useRef, useState, type PointerEvent } from "react";
 import { type GuideAxis, type Guides, toDesign, toScreen } from "@/lib/guides";
 
+/** A spacing marker in design px, structurally the same as the engine's `SpacingIndicator`. */
+export interface SpacingLine {
+  axis: GuideAxis;
+  from: number;
+  to: number;
+  at: number;
+}
+
 export interface CanvasOverlayProps {
   viewport: Viewport;
   /** Canvas element size in screen px. */
@@ -15,6 +23,8 @@ export interface CanvasOverlayProps {
   showGrid: boolean;
   showSafeArea: boolean;
   showMargins: boolean;
+  /** Equal-spacing markers shown while dragging a layer. */
+  spacing?: SpacingLine[];
   onMoveGuide: (axis: GuideAxis, index: number, at: number) => void;
   onRemoveGuide: (axis: GuideAxis, index: number) => void;
 }
@@ -28,6 +38,8 @@ interface Drag {
 const GRID_MAJOR = 50;
 const GRID_MINOR = 10;
 const HIT_WIDTH = 8;
+/** Half the length of the tick caps on a spacing marker, in screen px. */
+const SPACING_TICK = 4;
 
 /** Multiples of `step` between `start` and `end`, inclusive. */
 function multiples(step: number, start: number, end: number): number[] {
@@ -36,7 +48,7 @@ function multiples(step: number, start: number, end: number): number[] {
   return out;
 }
 
-export function CanvasOverlay({ viewport, size, page, guides, showGuides, showGrid, showSafeArea, showMargins, onMoveGuide, onRemoveGuide }: CanvasOverlayProps) {
+export function CanvasOverlay({ viewport, size, page, guides, showGuides, showGrid, showSafeArea, showMargins, spacing = [], onMoveGuide, onRemoveGuide }: CanvasOverlayProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
   const { zoom, panX, panY } = viewport;
@@ -75,6 +87,18 @@ export function CanvasOverlay({ viewport, size, page, guides, showGuides, showGr
       .join("");
 
   const gridPath = (lines: { x: number[]; y: number[] }) => linesPath("x", lines.x) + linesPath("y", lines.y);
+
+  // A spacing marker: a line between two edges with a tick cap at each end, in screen px.
+  const spacingPath = (s: SpacingLine) => {
+    const horizontal = s.axis === "x";
+    const edge = (v: number) => Math.round(toScreen(v, zoom, horizontal ? panX : panY)) + 0.5;
+    const across = Math.round(toScreen(s.at, zoom, horizontal ? panY : panX)) + 0.5;
+    const a = edge(Math.min(s.from, s.to));
+    const b = edge(Math.max(s.from, s.to));
+    const cap = (v: number) => (horizontal ? `M${v} ${across - SPACING_TICK}V${across + SPACING_TICK}` : `M${across - SPACING_TICK} ${v}H${across + SPACING_TICK}`);
+    const line = horizontal ? `M${a} ${across}H${b}` : `M${across} ${a}V${b}`;
+    return `${line}${cap(a)}${cap(b)}`;
+  };
 
   // A rectangle inset by `fraction` of the page on every side, in screen px, on whole pixels so the dashes stay crisp.
   const insetBox = (fraction: number) => {
@@ -156,6 +180,7 @@ export function CanvasOverlay({ viewport, size, page, guides, showGuides, showGr
             {guides.y.map((at, i) => guideLine("y", i, at))}
           </g>
         )}
+        {spacing.length > 0 && <path d={spacing.map(spacingPath).join("")} fill="none" strokeWidth={1} stroke={GUIDE_COLOR} />}
       </svg>
       {drag && (
         <div

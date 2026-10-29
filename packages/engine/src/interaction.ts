@@ -1,12 +1,12 @@
-import type { FrameContent, NodeId, Transform } from "@vash/schema";
+import type { Doc, FrameContent, NodeId, Transform } from "@vash/schema";
 import type { Command } from "./commands";
 import type { EditorCore } from "./editor-core";
 import { handleAt, HANDLE_DIRECTIONS, selectionFrame, type Handle, type ResizeHandle } from "./handles";
-import { hitTest, nodesInBox } from "./hit-test";
+import { hitTest, nodesInBox, worldBounds } from "./hit-test";
 import { aabb, apply, boxCorners, invert, rotation as rotationMat, type Box, type Mat, type Point } from "./math";
 import { frameAt, inFrame, swapPhotos, zoomPhoto } from "./photos";
-import { parentOf, topLevelOf, worldMatrix } from "./scene";
-import { createSnapper, type Guide, type Snapper } from "./snapping";
+import { drawOrder, parentOf, topLevelOf, worldMatrix } from "./scene";
+import { createSnapper, spacingSnap, type Guide, type SpacingIndicator, type Snapper } from "./snapping";
 import { toWorld, zoomAt } from "./viewport";
 
 /** A pointer event in CSS px relative to the canvas. `button`: 0 primary, 1 middle. */
@@ -27,6 +27,12 @@ export interface WheelInput {
   zoom: boolean;
 }
 
+/**
+ * What a primary drag does. `select` (the default) selects, moves and resizes layers; `hand` only pans the view.
+ * A view setting like the viewport: not part of the document, so not in the undo history.
+ */
+export type Tool = "select" | "hand";
+
 export interface Interaction {
   pointerDown(e: PointerInput): void;
   pointerMove(e: PointerInput): void;
@@ -34,6 +40,9 @@ export interface Interaction {
   wheel(e: WheelInput): void;
   /** Space held: primary drags pan the canvas. */
   setSpace(held: boolean): void;
+  /** The pointer tool. Changing it ends nothing in progress; it applies to the next press. */
+  setTool(tool: Tool): void;
+  tool(): Tool;
   cancel(): void;
   /** CSS cursor for the current pointer position / drag. */
   cursor(): string;
@@ -43,6 +52,8 @@ export interface Interaction {
 const DRAG_THRESHOLD = 3;
 const SNAP_PX = 6;
 const MIN_SIZE = 1;
+/** Tolerance for "exactly equal" spacing once a move has been placed, in design px. */
+const SPACING_EXACT = 1e-6;
 
 interface Start {
   transform: Transform;
@@ -55,7 +66,7 @@ interface Start {
 
 type Drag =
   | { kind: "press"; at: Point; ids: NodeId[] }
-  | { kind: "move"; at: Point; ids: NodeId[]; starts: Map<NodeId, Start>; box: Box; snapper: Snapper }
+  | { kind: "move"; at: Point; ids: NodeId[]; starts: Map<NodeId, Start>; box: Box; snapper: Snapper; others: Box[] | null }
   | { kind: "resize"; handle: ResizeHandle; id: NodeId; start: Start; snapper: Snapper | null }
   | { kind: "rotate"; id: NodeId; start: Start; centre: Point; fromAngle: number }
   | { kind: "marquee"; from: Point; base: NodeId[] }
@@ -68,9 +79,32 @@ const WHEEL_COMMIT_MS = 400;
 
 const CURSORS: Record<ResizeHandle, string> = { n: "ns-resize", s: "ns-resize", e: "ew-resize", w: "ew-resize", nw: "nwse-resize", se: "nwse-resize", ne: "nesw-resize", sw: "nesw-resize" };
 
+const shiftBox = (b: Box, dx: number, dy: number): Box => ({ minX: b.minX + dx, minY: b.minY + dy, maxX: b.maxX + dx, maxY: b.maxY + dy });
+
+/**
+ * World bounds of each visible top-level layer that is not being dragged. A group's visible children are merged
+ * into one box, so the group is measured as a whole (the same leaves the snapper uses for its targets).
+ */
+function otherLayerBounds(doc: Doc, dragged: readonly NodeId[]): Box[] {
+  const skip = new Set(dragged);
+  const byTop = new Map<NodeId, Box>();
+  for (const id of drawOrder(doc)) {
+    const top = topLevelOf(doc, id);
+    const b = skip.has(top) ? null : worldBounds(doc, id);
+    if (!b) continue;
+    const seen = byTop.get(top);
+    byTop.set(
+      top,
+      seen ? { minX: Math.min(seen.minX, b.minX), minY: Math.min(seen.minY, b.minY), maxX: Math.max(seen.maxX, b.maxX), maxY: Math.max(seen.maxY, b.maxY) } : b,
+    );
+  }
+  return [...byTop.values()];
+}
+
 export function createInteraction(core: EditorCore): Interaction {
   let drag: Drag | null = null;
   let space = false;
+  let tool: Tool = "select";
   let hoverHandle: Handle | null = null;
   let hoverPhoto = false;
   let wheelTimer: ReturnType<typeof setTimeout> | null = null;
@@ -127,23 +161,37 @@ export function createInteraction(core: EditorCore): Interaction {
     const corners = d.ids.flatMap((id) => boxCorners(doc.nodes[id]!.width, doc.nodes[id]!.height, worldMatrix(doc, id)));
     core.beginTransaction();
     core.setChrome({ dragging: true, hover: null });
-    return { kind: "move", at: d.at, ids: d.ids, starts, box: aabb(corners), snapper: createSnapper(doc, new Set(d.ids), core.snapOptions) };
+    // Equal spacing is part of object snapping, so it is off when objects snapping is off.
+    const others = core.snapOptions.objects ? otherLayerBounds(doc, d.ids) : null;
+    return { kind: "move", at: d.at, ids: d.ids, starts, box: aabb(corners), snapper: createSnapper(doc, new Set(d.ids), core.snapOptions), others };
   }
 
   function moveTo(d: Extract<Drag, { kind: "move" }>, e: PointerInput): void {
     const p = world(e);
+    const threshold = SNAP_PX / view().zoom;
     let dx = p.x - d.at.x;
     let dy = p.y - d.at.y;
-    const snap = d.snapper.snapBox({ minX: d.box.minX + dx, minY: d.box.minY + dy, maxX: d.box.maxX + dx, maxY: d.box.maxY + dy }, SNAP_PX / view().zoom);
+    const snap = d.snapper.snapBox(shiftBox(d.box, dx, dy), threshold);
     dx += snap.dx;
     dy += snap.dy;
+    let spacing: SpacingIndicator[] = [];
+    if (d.others) {
+      // Equal spacing only fills the axes that snapBox left free: an axis with a guide has already snapped.
+      const freeX = snap.guides.every((g) => g.axis !== "x");
+      const freeY = snap.guides.every((g) => g.axis !== "y");
+      const equal = spacingSnap(shiftBox(d.box, dx, dy), d.others, threshold);
+      dx += freeX ? equal.dx : 0;
+      dy += freeY ? equal.dy : 0;
+      // Mark the gaps where the layer finally lands, so a refused axis never shows a marker it did not use.
+      spacing = spacingSnap(shiftBox(d.box, dx, dy), d.others, SPACING_EXACT).indicators;
+    }
     const commands: Command[] = [];
     for (const [id, s] of d.starts) {
       const local = apply(s.parentInverse, { x: dx, y: dy });
       commands.push({ type: "update", id, patch: { transform: { ...s.transform, x: s.transform.x + local.x, y: s.transform.y + local.y } } });
     }
     if (!core.preview({ type: "batch", commands })) return finish(false);
-    core.setChrome({ guides: snap.guides });
+    core.setChrome({ guides: snap.guides, spacing });
   }
 
   function resizeTo(d: Extract<Drag, { kind: "resize" }>, e: PointerInput): void {
@@ -202,12 +250,13 @@ export function createInteraction(core: EditorCore): Interaction {
       if (commit) core.commitTransaction();
       else core.cancelTransaction();
     }
-    core.setChrome({ dragging: false, guides: [], marquee: null });
+    core.setChrome({ dragging: false, guides: [], spacing: [], marquee: null });
   }
 
   return {
     pointerDown(e) {
-      if (e.button === 1 || (e.button === 0 && space)) {
+      // The hand tool and Space both turn a primary drag into a pan, so nothing below sees the press.
+      if (e.button === 1 || (e.button === 0 && (space || tool === "hand"))) {
         drag = { kind: "pan", last: { x: e.x, y: e.y } };
         return;
       }
@@ -256,6 +305,13 @@ export function createInteraction(core: EditorCore): Interaction {
       const d = drag;
       if (!d) {
         const s = core.getState();
+        if (tool === "hand") {
+          // Nothing is hit or hovered with the hand, so the canvas shows no selection feedback.
+          hoverHandle = null;
+          hoverPhoto = false;
+          if (s.hover) core.setChrome({ hover: null });
+          return;
+        }
         if (s.cropping) {
           hoverPhoto = inFrame(s.doc, s.cropping, world(e));
           hoverHandle = null;
@@ -338,13 +394,24 @@ export function createInteraction(core: EditorCore): Interaction {
       space = held;
     },
 
+    setTool(next) {
+      if (next === tool) return;
+      tool = next;
+      hoverHandle = null;
+      // Publishes the change, so the toolbar and the cursor update.
+      core.setChrome({ hover: null });
+    },
+
+    tool: () => tool,
+
     cancel() {
       flushWheel();
       finish(false);
     },
 
     cursor() {
-      if (drag?.kind === "pan" || space) return drag?.kind === "pan" ? "grabbing" : "grab";
+      if (drag?.kind === "pan") return "grabbing";
+      if (space || tool === "hand") return "grab";
       if (drag?.kind === "photo") return "grabbing";
       if (core.getState().cropping && hoverPhoto) return "grab";
       const h = drag?.kind === "resize" ? drag.handle : drag?.kind === "rotate" ? "rotate" : hoverHandle;

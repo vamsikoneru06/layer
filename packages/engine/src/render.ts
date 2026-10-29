@@ -34,6 +34,8 @@ export const fontString = (n: TextNode, size: number) => `${n.font.style} ${n.fo
 
 function paint(ctx: Ctx, fill: Fill, w: number, h: number): string | CanvasGradient {
   if (fill.type === "solid") return fill.color;
+  // An image fill is drawn over this white base (see drawBackgroundImage). Only the artboard background holds one.
+  if (fill.type === "image") return "#FFFFFF";
   // CSS convention: 0° points up, 90° right, across the node's box.
   const a = ((fill.angle - 90) * Math.PI) / 180;
   const dx = (Math.cos(a) * w) / 2;
@@ -414,6 +416,23 @@ function effectiveShadow(doc: Doc, id: string): Shadow | null {
 }
 
 /**
+ * Covers the artboard with a background photo, centred, with the same cover fit as a frame. Drawn from the centre of
+ * the artboard (the caller has translated there). The photo can overhang the artboard on one side, so it is clipped.
+ * While it loads, or if it is missing, the white base painted by `paint` stays.
+ */
+function drawBackgroundImage(ctx: Ctx, assetId: string, w: number, h: number, o: RenderOptions): void {
+  const state = o.image(assetId);
+  if (typeof state !== "object") return;
+  const scale = Math.max(w / state.width, h / state.height);
+  const dw = state.width * scale;
+  const dh = state.height * scale;
+  ctx.beginPath();
+  ctx.rect(-w / 2, -h / 2, w, h);
+  ctx.clip();
+  ctx.drawImage(state.source, -dw / 2, -dh / 2, dw, dh);
+}
+
+/**
  * Paints the artboard and its layers. `base` maps artboard units to device pixels
  * (viewport × dpr on screen; a plain scale for export).
  */
@@ -431,6 +450,11 @@ export function renderDoc(ctx: Ctx, doc: Doc, base: Mat, o: RenderOptions, opts:
     // Gradients are built around the origin; draw the background centred, then move back.
     ctx.translate(width / 2, height / 2);
     ctx.fillRect(-width / 2, -height / 2, width, height);
+    if (background.type === "image") {
+      // The white base above already casts the artboard's shadow; the photo must not cast a second one.
+      clearShadow(ctx);
+      drawBackgroundImage(ctx, background.assetId, width, height, o);
+    }
     ctx.restore();
   }
 

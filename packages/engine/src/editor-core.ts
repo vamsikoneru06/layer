@@ -3,7 +3,7 @@ import type { Command } from "./commands";
 import { History } from "./history";
 import type { Box } from "./math";
 import { checkPolicy, LOCKED, type EditMode } from "./policy";
-import { DEFAULT_SNAP, type Guide, type SnapOptions } from "./snapping";
+import { DEFAULT_SNAP, type Guide, type SnapOptions, type SpacingIndicator } from "./snapping";
 import { limitText } from "./text";
 import type { Viewport } from "./viewport";
 
@@ -15,6 +15,8 @@ export interface EditorState {
   hover: NodeId | null;
   viewport: Viewport;
   guides: readonly Guide[];
+  /** Equal-spacing markers shown while a move snaps to an equal gap. Empty outside a move. */
+  spacing: SpacingIndicator[];
   marquee: Box | null;
   dragging: boolean;
   /** Any selected layer is content-only (and we're not in Author Mode): no move/resize. */
@@ -29,14 +31,14 @@ export interface EditorState {
   cropping: NodeId | null;
 }
 
-type Chrome = Pick<EditorState, "hover" | "guides" | "marquee" | "dragging" | "viewport" | "notice" | "editing" | "cropping">;
+type Chrome = Pick<EditorState, "hover" | "guides" | "spacing" | "marquee" | "dragging" | "viewport" | "notice" | "editing" | "cropping">;
 
 /** The editor's state and its only write path: every document change passes the lock policy and the history. */
 export class EditorCore {
   readonly history: History;
   readonly mode: EditMode;
   #selection: readonly NodeId[] = [];
-  #chrome: Chrome = { hover: null, guides: [], marquee: null, dragging: false, viewport: { zoom: 1, panX: 0, panY: 0 }, notice: null, editing: null, cropping: null };
+  #chrome: Chrome = { hover: null, guides: [], spacing: [], marquee: null, dragging: false, viewport: { zoom: 1, panX: 0, panY: 0 }, notice: null, editing: null, cropping: null };
   #state: EditorState;
   #listeners = new Set<() => void>();
   #txRefused = false;

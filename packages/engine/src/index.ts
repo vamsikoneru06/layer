@@ -43,10 +43,11 @@ export { clampContent, fillPhotos, frameAt, newPhotoFrame, photoTargets, placePh
 export { planReplacePhoto, planResetFilters } from "./photo-ops";
 export { createFilterRenderer, FILTER_KEYS, FILTER_PRESETS, isNeutral, presetFilters, type FilterFn, type FilterValues } from "./filters";
 export { textEditBox, type TextEditBox } from "./text-edit";
-export { checkExport, exportImage, exportPng, EXPORT_MAX_SIDE, PHOTOS_NOT_READY, referencedImages, type ExportCheck, type ExportOptions, type ImageFormat } from "./export";
+export { checkExport, exportLayout, exportImage, exportPng, EXPORT_MAX_SIDE, PHOTOS_NOT_READY, referencedImages, type ExportCheck, type ExportOptions, type ImageFormat } from "./export";
 export { drawNode, renderDoc, renderScene, fontString, type ImageState, type LoadedImage, type RenderOptions } from "./render";
 export { renderOverlay, GUIDE_COLOR, type OverlayState } from "./overlay";
 export { selectionFrame, handlePositions, handleAt, type Handle, type SelectionFrame } from "./handles";
 export { createSnapper, DEFAULT_SNAP, type Guide, type SnapOptions, type Snapper } from "./snapping";
 export { fitViewport, toScreen, toWorld, zoomAt, ZOOM_MAX, ZOOM_MIN, type Viewport } from "./viewport";
 export * from "./math";
+export { spacingSnap, type SpacingIndicator, type SpacingSnap } from "./snapping";

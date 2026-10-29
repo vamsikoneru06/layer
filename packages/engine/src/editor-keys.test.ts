@@ -126,3 +126,13 @@ describe("keyInputOf", () => {
     expect(keyInputOf(press({ key: "¡", code: "Digit1", altKey: true }), true).key).toBe("¡");
   });
 });
+
+describe("tool keys", () => {
+  it("are not read in fields, editable text, dialogs or open menus", () => {
+    for (const target of [el({ tag: "INPUT" }), el({ tag: "TEXTAREA" }), el({ editable: true }), el({ ancestors: ["dialog"] }), el({ ancestors: ["[role=menu]"] })]) {
+      expect(isTyping(target)).toBe(true);
+    }
+    // A focused toolbar button is not typing, so V and H still reach the canvas.
+    expect(isTyping(el({ tag: "BUTTON", ancestors: ["button"] }))).toBe(false);
+  });
+});

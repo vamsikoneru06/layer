@@ -26,6 +26,7 @@ import {
 import { useMemo, useRef, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { UPLOAD_TYPES } from "@/lib/api";
+import { backgroundCommand, imageFill } from "@/lib/background-image";
 import { designColors } from "@/lib/design-colors";
 import { DocColorsContext } from "./color-picker";
 import { ColorField, NumberField, Row, Section, Segmented, SelectField, Slider, Switch } from "./fields";
@@ -156,9 +157,7 @@ function PanelBody({ state, core, actions, mac }: { state: EditorState; core: Ed
           </div>
           {!resizable && <p className="text-[12px] text-muted">The template sets this design&apos;s size.</p>}
         </Section>
-        <Section title="Background">
-          <FillField name="Background" value={art.background} onChange={(background, final) => change({ type: "artboard", patch: { background } }, final)} />
-        </Section>
+        <BackgroundSection core={core} doc={doc} change={change} />
       </div>
     );
   }
@@ -206,7 +205,7 @@ function PanelBody({ state, core, actions, mac }: { state: EditorState; core: Ed
       {node.type === "text" && (
         <TextEffectsSection
           node={node}
-          page={doc.artboard.background.type === "solid" ? doc.artboard.background.color : (doc.artboard.background.stops[0]?.color ?? null)}
+          page={doc.artboard.background.type === "linear" ? (doc.artboard.background.stops[0]?.color ?? null) : doc.artboard.background.type === "solid" ? doc.artboard.background.color : null}
           disabled={locked}
           update={update}
         />
@@ -449,6 +448,44 @@ function ShapeSection({ node, disabled, update }: { node: ShapeNode; disabled: b
           onCommit={(cornerRadius) => update({ geometry: { ...g, cornerRadius } })}
         />
       )}
+    </Section>
+  );
+}
+
+/**
+ * The artboard background: a solid, a gradient, or a photo that covers the design. Choosing Image picks a photo
+ * from the computer, uploads it and sets it as the background (one undo step).
+ */
+function BackgroundSection({ core, doc, change }: { core: EditorCore; doc: EditorState["doc"]; change: (cmd: Command, final?: boolean) => void }) {
+  const input = useRef<HTMLInputElement>(null);
+  const pick = async (files: File[]) => {
+    if (files.length === 0) return;
+    core.setChrome({ notice: "Uploading photo…" });
+    const { photos, errors } = await uploadAll(files.slice(0, 1), () => undefined);
+    const [asset] = photos;
+    if (!asset) return core.setChrome({ notice: errors.join(" ") || "That photo couldn't be uploaded." });
+    change(backgroundCommand(core.doc, imageFill(asset.id), asset));
+    core.setChrome({ notice: null });
+  };
+  return (
+    <Section title="Background">
+      <input
+        ref={input}
+        type="file"
+        accept={UPLOAD_TYPES.join(",")}
+        hidden
+        onChange={(e) => {
+          const files = [...(e.target.files ?? [])];
+          e.target.value = "";
+          void pick(files);
+        }}
+      />
+      <FillField
+        name="Background"
+        value={doc.artboard.background}
+        onChange={(background, final) => change(backgroundCommand(doc, background), final)}
+        onPickImage={() => input.current?.click()}
+      />
     </Section>
   );
 }

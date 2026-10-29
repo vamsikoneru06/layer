@@ -422,3 +422,57 @@ describe("optional filter duotone and pixelate, text curve", () => {
     expect(issues).toContainEqual({ path: "nodes.photo1.curve", message: "is not allowed" });
   });
 });
+
+describe("artboard background image fill", () => {
+  const withBackground = (background: unknown): Doc => mutate((d) => { d.artboard.background = background; });
+
+  it("accepts a background that covers the artboard with a photo in the asset list", () => {
+    expect(validateDoc(withBackground({ type: "image", assetId: "asset1", fit: "cover" })).ok).toBe(true);
+  });
+
+  it("keeps solid and linear backgrounds valid", () => {
+    expect(validateDoc(withBackground({ type: "solid", color: "#112233" })).ok).toBe(true);
+    expect(validateDoc(withBackground({
+      type: "linear", angle: 90, stops: [{ offset: 0, color: "#000000" }, { offset: 1, color: "#FFFFFF" }],
+    })).ok).toBe(true);
+  });
+
+  it("rejects an image fill whose photo is not in the asset list", () => {
+    expect(issuesOf(withBackground({ type: "image", assetId: "nope", fit: "cover" })))
+      .toEqual([{ path: "artboard.background.assetId", message: "references missing asset 'nope'" }]);
+  });
+
+  it("rejects an image fill that points at a sticker", () => {
+    const doc = mutate((d) => {
+      d.assets.logo = { id: "logo", kind: "sticker", mime: "image/png", width: 100, height: 100 };
+      d.artboard.background = { type: "image", assetId: "logo", fit: "cover" };
+    });
+    expect(issuesOf(doc)).toEqual([{ path: "artboard.background.assetId", message: "asset 'logo' must be a photo" }]);
+  });
+
+  it("rejects a fill kind outside the allowlist, and lists image among the choices", () => {
+    expect(issuesOf(withBackground({ type: "pattern", assetId: "asset1", fit: "cover" })))
+      .toEqual([{ path: "artboard.background.type", message: "must be one of: solid, linear, image" }]);
+  });
+
+  it("rejects a fit other than cover, an id that is not a string, and extra keys", () => {
+    expect(issuesOf(withBackground({ type: "image", assetId: "asset1", fit: "contain" })))
+      .toEqual([{ path: "artboard.background.fit", message: "must be one of: cover" }]);
+    expect(issuesOf(withBackground({ type: "image", assetId: 42, fit: "cover" })))
+      .toEqual([{ path: "artboard.background.assetId", message: "expected id [A-Za-z0-9_-]{1,64}" }]);
+    expect(issuesOf(withBackground({ type: "image", assetId: "asset1", fit: "cover", url: "https://evil.example/a.jpg" })))
+      .toEqual([{ path: "artboard.background.url", message: "is not allowed" }]);
+  });
+
+  it("does not allow an image fill on a shape", () => {
+    const issues = issuesOf(mutate((d) => {
+      d.nodes.box = {
+        id: "box", type: "shape", name: "Box", transform: { x: 200, y: 200, rotation: 0, scaleX: 1, scaleY: 1 },
+        width: 200, height: 100, opacity: 1, visible: true, lock: "free",
+        geometry: { kind: "rect", cornerRadius: 0 }, fill: { type: "image", assetId: "asset1", fit: "cover" }, stroke: null,
+      };
+      d.root.push("box");
+    }));
+    expect(issues).toEqual([{ path: "nodes.box.fill.type", message: "must be one of: solid, linear" }]);
+  });
+});
