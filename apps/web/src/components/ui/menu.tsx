@@ -3,7 +3,18 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-export type MenuItem = { label: string; icon?: ReactNode; onSelect: () => void; danger?: boolean } | "separator";
+export type MenuItem =
+  | {
+      label: string;
+      icon?: ReactNode;
+      onSelect: () => void;
+      danger?: boolean;
+      /** Shown on the right, for example "Ctrl+D". */
+      shortcut?: string;
+      /** Why the item can't be used right now. The item stays visible, dimmed, and does nothing. */
+      disabled?: string;
+    }
+  | "separator";
 
 type TriggerProps = {
   "aria-haspopup": "menu";
@@ -11,6 +22,53 @@ type TriggerProps = {
   "aria-controls": string;
   onClick: () => void;
 };
+
+/** The look shared by dropdown menus and the right-click menu. */
+export const MENU_PANEL = "min-w-[220px] rounded-2xl bg-bg p-1.5 shadow-[0_0_0_.5px_var(--line),0_12px_32px_rgba(0,0,0,.16)]";
+
+/** Up and Down arrows move focus between the items of an open menu, wrapping around. */
+export function moveMenuFocus(e: KeyboardEvent, list: HTMLElement | null): void {
+  if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+  e.preventDefault();
+  const all = [...(list?.querySelectorAll<HTMLElement>("[role=menuitem]") ?? [])];
+  const at = all.indexOf(document.activeElement as HTMLElement);
+  all[(at + (e.key === "ArrowDown" ? 1 : -1) + all.length) % all.length]?.focus();
+}
+
+/** The rows of a menu. `onDone` runs before an enabled item's action, to close the menu. */
+export function MenuItems({ items, onDone }: { items: MenuItem[]; onDone: () => void }) {
+  return (
+    <>
+      {items.map((item, i) =>
+        item === "separator" ? (
+          <div key={`sep-${i}`} role="separator" className="mx-2 my-1 h-[.5px] bg-line" />
+        ) : (
+          <button
+            key={item.label}
+            type="button"
+            role="menuitem"
+            aria-disabled={item.disabled ? true : undefined}
+            title={item.disabled}
+            onClick={() => {
+              if (item.disabled) return;
+              onDone();
+              item.onSelect();
+            }}
+            className={cn(
+              "flex h-9 w-full items-center gap-2.5 rounded-[10px] px-2.5 text-left text-sm outline-none hover:bg-field focus-visible:bg-field",
+              item.danger && "text-danger",
+              item.disabled && "opacity-45 hover:bg-transparent",
+            )}
+          >
+            {item.icon}
+            <span className="flex-1">{item.label}</span>
+            {item.shortcut && <span className="text-[12px] text-muted">{item.shortcut}</span>}
+          </button>
+        ),
+      )}
+    </>
+  );
+}
 
 /** A small dropdown menu: Escape or an outside click closes it, arrow keys move between items. */
 export function Menu({
@@ -47,11 +105,7 @@ export function Menu({
       root.current?.querySelector<HTMLElement>("[aria-haspopup]")?.focus();
       return;
     }
-    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
-    e.preventDefault();
-    const all = [...(list.current?.querySelectorAll<HTMLElement>("[role=menuitem]") ?? [])];
-    const at = all.indexOf(document.activeElement as HTMLElement);
-    all[(at + (e.key === "ArrowDown" ? 1 : -1) + all.length) % all.length]?.focus();
+    moveMenuFocus(e, list.current);
   };
 
   return (
@@ -62,34 +116,9 @@ export function Menu({
           ref={list}
           id={id}
           role="menu"
-          className={cn(
-            "absolute z-40 min-w-[200px] rounded-2xl bg-bg p-1.5 shadow-[0_0_0_.5px_var(--line),0_12px_32px_rgba(0,0,0,.16)]",
-            align === "end" ? "right-0" : "left-0",
-            side === "bottom" ? "top-full mt-1.5" : "bottom-full mb-1.5",
-          )}
+          className={cn("absolute z-40", MENU_PANEL, align === "end" ? "right-0" : "left-0", side === "bottom" ? "top-full mt-1.5" : "bottom-full mb-1.5")}
         >
-          {items.map((item, i) =>
-            item === "separator" ? (
-              <div key={`sep-${i}`} role="separator" className="mx-2 my-1 h-[.5px] bg-line" />
-            ) : (
-              <button
-                key={item.label}
-                type="button"
-                role="menuitem"
-                onClick={() => {
-                  setOpen(false);
-                  item.onSelect();
-                }}
-                className={cn(
-                  "flex h-9 w-full items-center gap-2.5 rounded-[10px] px-2.5 text-left text-sm outline-none hover:bg-field focus-visible:bg-field",
-                  item.danger && "text-danger",
-                )}
-              >
-                {item.icon}
-                {item.label}
-              </button>
-            ),
-          )}
+          <MenuItems items={items} onDone={() => setOpen(false)} />
         </div>
       )}
     </div>
