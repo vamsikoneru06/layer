@@ -121,15 +121,14 @@ never log or report tokens, signed URLs or emails (`src/lib/monitoring/scrub.ts`
 
 ## What's next
 
-1. **Photos in the editor**: uploading, the Photos panel, dropping onto frames and filling empty frames in
-   reading order, double-click to move and zoom a photo, and swapping by dragging onto another frame all work
-   (`packages/engine/src/photos.ts`, `interaction.ts`, `components/editor/photos-panel.tsx`). Still to do: Pexels
-   search (`PEXELS_API_KEY`, credit the photographer). The storage backend exists (`apps/web/src/server/storage`, `server/assets`,
-   `docs/superpowers/plans/2026-09-26-storage-and-uploads.md`). In development uploads work without setup: with no `STORAGE_*` keys, photos are
-   stored in the database (`src/server/storage/database.ts`, 50 MB per user). Production requires the Supabase keys
-   (Vercel caps request bodies near 4.5 MB and the free database is 0.5 GB in total).
-2. **Missing pages** linked from the side bar: `/media`, `/templates`, `/settings`. Account export and deletion
-   already exist as API endpoints (`apps/web/src/server/me`); Settings needs the UI.
-3. **Later phases** (spec §2.3): Author Mode, publishing, share links, creator profiles, moderation.
-4. **Owner decisions pending:** the public `CONTACT_EMAIL` for the legal pages, and a custom domain (costs money
-   unless a free source is found; the free fallback is a `vercel.app` address).
+1. The order of work is in `docs/roadmap.md` (sections 1 and 3). Work the milestones in order. Every item must fit `docs/free-stack.md`.
+2. Open items, by milestone:
+   - M1 item 2: guest photos stay on the device (Blobs in IndexedDB, uploaded only after sign-in). Moved to M3 because it needs photo placement.
+   - M3: replace and crop a photo inside its frame; clear states for a missing photo, a failed upload (with retry) and an over-quota upload; Photos panel with your media plus Pexels search (`PEXELS_API_KEY`) with photographer credit.
+   - M4: brand kit; make the set (post, story, thumbnail, flyer from one design); recurring fields (date, price, venue).
+   - M5: recipes. VASH generates checked variations and offers only those that pass validation (text fits, nothing off the canvas, contrast OK). Authors contribute through Author Mode.
+   - M6: text-fit feedback while typing; performance budget in `/dev/bench`; accessibility pass on the editor.
+3. Owner decisions pending:
+   - The public `CONTACT_EMAIL` for the legal pages.
+   - A custom domain. It costs money unless a free source is found; the free fallback is a `vercel.app` address.
+   - Any new service, such as Redis (Upstash) or an observability service (roadmap section 4).
