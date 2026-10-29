@@ -31,7 +31,7 @@ export default function Landing() {
           Templates for posts, stories, posters and invitations.
         </h1>
         <p className="relative before:absolute before:-inset-x-16 before:-inset-y-8 before:-z-10 before:bg-[radial-gradient(closest-side,var(--bg)_55%,transparent)] max-w-[440px] text-[19px] leading-normal text-text/80">
-          Pick a template, change its text, colours and photos, then export a PNG. Free, and you can start without an account. Sign in with an email address to keep your designs.
+          Pick a template, change its text and colours, then export a PNG. Free, and you can start without an account. Add your own photos with an account. Sign in with an email address to keep your designs.
         </p>
         <div className="flex flex-wrap justify-center gap-3">
           {/* The editor needs 1024 px; narrower screens start from Home instead. */}
