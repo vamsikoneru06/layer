@@ -56,11 +56,17 @@ Built (on `feat/object-finish` and `feat/finish-batch`, PR #56 and the batch aft
 - Colours: design colours and recent colours. Resize design. Zoom keys.
 - Version history (earlier versions, restore) and share links (create, copy, revoke).
 
+Built since then (same branch):
+
+- Export: bleed and crop marks (PNG, JPG and PDF).
+- Canvas: smart spacing guides while moving, the hand tool and the select tool (V and H).
+- Background: a photo as the page background (cover fit), with a Remove image action.
+- Grids and tables; photo reset and replace; share links.
+
 Still open:
 
 - Multi-page (S9): needs an owner decision first; changes the document format.
-- Real-time collaboration and comments: needs an owner decision and a free realtime service.
-- Crop marks on export, page background image, smart spacing guides, hand and select tools, bleed.
+- Real-time collaboration and comments: needs a free realtime service chosen first.
 - Pexels search: needs owner approval for a new service (see branch feat/pexels, PR #35).
 
 Not planned: AI tools, video, audio and animation, Canva's own content and brand kit.
