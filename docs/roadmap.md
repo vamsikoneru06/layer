@@ -83,6 +83,8 @@ categories PR (item 2): 9 jobs in 4 groups, documents at schemaVersion 2, stored
 3. Photos panel: your media plus Pexels search with photographer credit (`PEXELS_API_KEY`, free).
 
 ### M4. Coming back next week
+Item 2 (Make the set) has a first version: `resizeDoc` in `packages/engine/src/resize.ts`, offered as "Make other sizes…" on the Designs page, in each design's menu and for designs kept in the browser. Full-bleed layers stretch to cover the new size, and background groups count too: a group that covers the artboard is stretched, and so are its children. Text inside is not resized, only its box is stretched, so it may wrap differently. The rest keeps its composition, scales to fit and spreads along the side that gained room. Text that ends up below 9 pt, measured on a 360 pt wide phone screen (320 pt for YouTube thumbnails), is flagged. Not done yet: reflowing layouts (side by side instead of stacked), which is part of M5.
+
 1. **Brand kit:** saved colours, fonts and logo per account, applied to any template in one step.
 2. **Make the set:** from one design, generate the other formats (post, story, thumbnail, flyer) using
    layout constraints, so text stays readable and photos stay in frame.

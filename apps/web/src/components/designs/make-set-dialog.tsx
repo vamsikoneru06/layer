@@ -1,7 +1,7 @@
 "use client";
 
 import type { Doc, FormatKey } from "@vash/schema";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { otherSizes, planSet, type SetMember } from "@/lib/make-set";
@@ -27,9 +27,13 @@ export function MakeSetDialog({
   const [error, setError] = useState<string | null>(null);
   const [chosen, setChosen] = useState<Set<FormatKey>>(new Set());
   const [busy, setBusy] = useState(false);
+  // Bumped whenever the dialog opens for a design, so a save still running from before (Escape closes
+  // the dialog mid-save) can't close or change the dialog that's open now.
+  const run = useRef(0);
 
   useEffect(() => {
     if (!source) return;
+    run.current++;
     let live = true;
     setDoc(null);
     setError(null);
@@ -40,7 +44,7 @@ export function MakeSetDialog({
         setDoc(d);
         setChosen(new Set(otherSizes(d).map((s) => s.format)));
       },
-      (err: Error) => live && setError(err.message),
+      (err: unknown) => live && setError(err instanceof Error ? err.message : "This design couldn’t be opened."),
     );
     return () => {
       live = false;
@@ -53,13 +57,20 @@ export function MakeSetDialog({
   const picked = plan.filter((m) => chosen.has(m.format));
 
   async function make() {
+    const mine = run.current;
     setBusy(true);
     setError(null);
-    const failed = await save(picked);
+    let failed: FormatKey[];
+    try {
+      failed = await save(picked);
+    } catch {
+      failed = picked.map((m) => m.format);
+    }
+    if (mine !== run.current) return;
     if (failed.length === 0) return onClose();
     // Only what failed stays ticked, so trying again doesn't make the saved ones twice.
     setChosen(new Set(failed));
-    setError(`${failed.length} couldn’t be saved. Try again.`);
+    setError(`Couldn’t save ${failed.length === 1 ? "1 size" : `${failed.length} sizes`}. Try again.`);
     setBusy(false);
   }
 
@@ -76,7 +87,9 @@ export function MakeSetDialog({
       <p className="text-sm text-muted">
         Each size becomes a new design next to “{source?.title}”. The original stays as it is.
       </p>
-      {!doc && !error && <div className="h-40 animate-[shimmer_1.4s_ease-in-out_infinite] rounded-xl bg-field" aria-busy="true" />}
+      {!doc && !error && <div className="h-40 animate-[shimmer_1.4s_ease-in-out_infinite] rounded-xl bg-field" aria-busy="true" role="status">
+          <span className="sr-only">Loading the design</span>
+        </div>}
       {doc && (
         <fieldset className="flex flex-col gap-1">
           <legend className="sr-only">Sizes</legend>
@@ -89,7 +102,7 @@ export function MakeSetDialog({
                   <span className="text-sm font-medium">{s.label}</span>
                   <span className="text-[13px] text-muted">
                     {s.width} × {s.height}
-                    {small > 0 && ` · ${small} text ${small === 1 ? "layer" : "layers"} will be small, check ${small === 1 ? "it" : "them"}`}
+                    {small > 0 && ` · ${small} text ${small === 1 ? "layer" : "layers"} will be too small to read, so check ${small === 1 ? "it" : "them"}`}
                   </span>
                 </span>
               </label>

@@ -104,8 +104,9 @@ function toItem({ doc, ...d }: FullDesign): DesignItem {
 }
 
 /** A new design in the account from a document made here (e.g. another size of one), filed in `folderId`. */
+/** Sends the document's own id, so a retry after a lost response returns the design already made, not a copy. */
 export const createDesignCopy = async (doc: Doc, folderId: string | null) =>
-  toItem(await request<FullDesign>("/api/designs", { method: "POST", json: folderId ? { doc, folderId } : { doc } }));
+  toItem(await request<FullDesign>("/api/designs", { method: "POST", json: folderId ? { id: doc.id, doc, folderId } : { id: doc.id, doc } }));
 
 export const duplicateDesign = async (id: string) => toItem(await request<FullDesign>(`/api/designs/${id}/duplicate`, { method: "POST" }));
 export const deleteDesign = (id: string, keepalive = false) => request<void>(`/api/designs/${id}`, { method: "DELETE", keepalive });

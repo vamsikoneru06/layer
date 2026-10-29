@@ -603,7 +603,7 @@ export function DesignsView() {
         />
       )}
 
-      <MakeSetDialog source={setFrom?.source ?? null} onClose={() => setSetFrom(null)} save={(members) => saveSet(setFrom!.design, members)} />
+      <MakeSetDialog key={setFrom?.design.id ?? "closed"} source={setFrom?.source ?? null} onClose={() => setSetFrom(null)} save={(members) => saveSet(setFrom!.design, members)} />
 
       <MoveDialog
         key={moving?.join() ?? "closed"}

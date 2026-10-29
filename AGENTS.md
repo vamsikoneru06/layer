@@ -118,6 +118,8 @@ never log or report tokens, signed URLs or emails (`src/lib/monitoring/scrub.ts`
 
 ## What's next
 
+The order of work is in `docs/roadmap.md`. These are the items still open:
+
 1. **Photos in the editor**: uploading, the Photos panel, dropping onto frames and filling empty frames in
    reading order work (`packages/engine/src/photos.ts`, `components/editor/photos-panel.tsx`). Still to do (spec
    §8.2): double-click a frame to pan and zoom its photo on the canvas, drag a photo between frames to swap, and
@@ -125,8 +127,7 @@ never log or report tokens, signed URLs or emails (`src/lib/monitoring/scrub.ts`
    `docs/superpowers/plans/2026-09-26-storage-and-uploads.md`). In development uploads work without setup: with no `STORAGE_*` keys, photos are
    stored in the database (`src/server/storage/database.ts`, 50 MB per user). Production requires the Supabase keys
    (Vercel caps request bodies near 4.5 MB and the free database is 0.5 GB in total).
-2. **Missing pages** linked from the side bar: `/media`, `/templates`, `/settings`. Account export and deletion
-   already exist as API endpoints (`apps/web/src/server/me`); Settings needs the UI.
-3. **Later phases** (spec §2.3): Author Mode, publishing, share links, creator profiles, moderation.
-4. **Owner decisions pending:** the public `CONTACT_EMAIL` for the legal pages, and a custom domain (costs money
+2. **Later phases** (spec §2.3): share links, remix, creator profiles, reports and moderation have an API (#25) but
+   no UI yet. Author Mode is M5 in `docs/roadmap.md`.
+3. **Owner decisions pending:** the public `CONTACT_EMAIL` for the legal pages, and a custom domain (costs money
    unless a free source is found; the free fallback is a `vercel.app` address).

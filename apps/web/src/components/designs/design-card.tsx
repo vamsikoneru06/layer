@@ -118,30 +118,34 @@ export function DesignCard({ design: d, selected, selecting, renaming, setRenami
   return (
     <div className="group flex min-w-0 flex-col gap-2.5">
       <div
-        role="button"
-        tabIndex={0}
-        aria-label={selecting ? `${selected ? "Deselect" : "Select"} ${d.title}` : `Open ${d.title}`}
-        draggable
-        onDragStart={(e) => actions.dragStart(d, e)}
-        onClick={(e) => (selecting || e.shiftKey || e.metaKey || e.ctrlKey ? actions.toggle(d, e) : actions.open(d))}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            if (selecting) actions.toggle(d, e as unknown as MouseEvent);
-            else actions.open(d);
-          }
-        }}
         className={cn(
           "relative cursor-pointer rounded-[14px] transition-[transform,box-shadow] duration-200 ease-(--ease)",
           "hover:-translate-y-[3px] hover:shadow-[0_14px_30px_rgba(0,0,0,.12),inset_0_0_0_.5px_var(--line)]",
         )}
       >
-        <DesignThumb
-          width={d.width}
-          height={d.height}
-          box={{ width: 190, height: 160 }}
-          className={cn("h-[200px]", selected && "shadow-[inset_0_0_0_2px_var(--text)]")}
-        />
+        <div
+          role="button"
+          tabIndex={0}
+          aria-label={selecting ? `${selected ? "Deselect" : "Select"} ${d.title}` : `Open ${d.title}`}
+          draggable
+          onDragStart={(e) => actions.dragStart(d, e)}
+          onClick={(e) => (selecting || e.shiftKey || e.metaKey || e.ctrlKey ? actions.toggle(d, e) : actions.open(d))}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              if (selecting) actions.toggle(d, e as unknown as MouseEvent);
+              else actions.open(d);
+            }
+          }}
+          className="rounded-[14px]"
+        >
+          <DesignThumb
+            width={d.width}
+            height={d.height}
+            box={{ width: 190, height: 160 }}
+            className={cn("h-[200px]", selected && "shadow-[inset_0_0_0_2px_var(--text)]")}
+          />
+        </div>
         <div className="absolute top-2.5 left-2.5">
           <Checkbox checked={selected} visible={selecting} onClick={(e) => actions.toggle(d, e)} label={`Select ${d.title}`} />
         </div>

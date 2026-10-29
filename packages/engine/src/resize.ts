@@ -5,7 +5,7 @@ import { clampContent } from "./photos";
 /**
  * "Make the set" (roadmap M4): the same design at another size. Templates carry no layout constraints
  * yet, so the rules are general ones:
- * - Full-bleed layers (an unrotated frame or shape covering the artboard, such as a background photo)
+ * - Full-bleed layers (an unrotated frame, shape or group covering the artboard, such as a background photo)
  *   stretch to cover the new artboard. A frame's photo keeps covering it: its zoom is relative to "cover".
  * - Everything else keeps its composition. Sizes scale by the tight side's factor, so it all fits.
  *   Along the side that gained room, distances from the centre grow by up to SPREAD_MAX more, so a
@@ -38,7 +38,10 @@ const MIN_POINTS = 9;
 
 const round = (v: number) => Math.round(v * 100) / 100;
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
-const dim = (v: number) => Math.max(0.01, round(v));
+// Enlarging a tiny design a lot can pass the format's coordinate limit; keep every value inside it.
+const dim = (v: number) => clamp(round(v), 0.01, LIMITS.coordinate);
+const pos = (v: number) => clamp(round(v), -LIMITS.coordinate, LIMITS.coordinate);
+const radius = (v: number) => clamp(round(v), 0, LIMITS.coordinate);
 
 export function resizeDoc(source: Doc, target: ResizeTarget): { doc: Doc; warnings: ResizeWarning[] } {
   const doc = structuredClone(source);
@@ -66,18 +69,18 @@ export function resizeDoc(source: Doc, target: ResizeTarget): { doc: Doc; warnin
         break;
       }
       case "shape":
-        if (node.geometry.kind === "rect") node.geometry = { ...node.geometry, cornerRadius: round(node.geometry.cornerRadius * s) };
+        if (node.geometry.kind === "rect") node.geometry = { ...node.geometry, cornerRadius: radius(node.geometry.cornerRadius * s) };
         if (node.stroke) node.stroke = { ...node.stroke, width: clamp(round(node.stroke.width * s), 0, LIMITS.strokeWidthMax) };
         break;
       case "frame":
-        if (node.shape.kind === "rect") node.shape = { ...node.shape, cornerRadius: round(node.shape.cornerRadius * s) };
-        if (node.content) node.content = { ...node.content, offsetX: round(node.content.offsetX * s), offsetY: round(node.content.offsetY * s) };
+        if (node.shape.kind === "rect") node.shape = { ...node.shape, cornerRadius: radius(node.shape.cornerRadius * s) };
+        if (node.content) node.content = { ...node.content, offsetX: pos(node.content.offsetX * s), offsetY: pos(node.content.offsetY * s) };
         break;
       case "group":
         for (const child of node.children) {
           const c = doc.nodes[child];
           if (!c) continue;
-          c.transform = { ...c.transform, x: round(c.transform.x * s), y: round(c.transform.y * s) };
+          c.transform = { ...c.transform, x: pos(c.transform.x * s), y: pos(c.transform.y * s) };
           scaleNode(child);
         }
         break;
@@ -87,19 +90,25 @@ export function resizeDoc(source: Doc, target: ResizeTarget): { doc: Doc; warnin
   }
 
   function stretch(node: Node): void {
-    node.transform = { ...node.transform, x: round(node.transform.x * sx), y: round(node.transform.y * sy) };
+    node.transform = { ...node.transform, x: pos(node.transform.x * sx), y: pos(node.transform.y * sy) };
     node.width = dim(node.width * sx);
     node.height = dim(node.height * sy);
     const corner = Math.min(sx, sy);
     if (node.type === "shape") {
-      if (node.geometry.kind === "rect") node.geometry = { ...node.geometry, cornerRadius: round(node.geometry.cornerRadius * corner) };
+      if (node.geometry.kind === "rect") node.geometry = { ...node.geometry, cornerRadius: radius(node.geometry.cornerRadius * corner) };
       if (node.stroke) node.stroke = { ...node.stroke, width: clamp(round(node.stroke.width * corner), 0, LIMITS.strokeWidthMax) };
     } else if (node.type === "frame") {
-      if (node.shape.kind === "rect") node.shape = { ...node.shape, cornerRadius: round(node.shape.cornerRadius * corner) };
+      if (node.shape.kind === "rect") node.shape = { ...node.shape, cornerRadius: radius(node.shape.cornerRadius * corner) };
       if (node.content) {
         const moved = { ...node.content, offsetX: node.content.offsetX * sx, offsetY: node.content.offsetY * sy };
         const photo = doc.assets[node.content.assetId];
-        node.content = { ...node.content, ...(photo ? clampContent(node, photo, moved) : { ...moved, offsetX: round(moved.offsetX), offsetY: round(moved.offsetY) }) };
+        node.content = { ...node.content, ...(photo ? clampContent(node, photo, moved) : { ...moved, offsetX: pos(moved.offsetX), offsetY: pos(moved.offsetY) }) };
+      }
+    } else if (node.type === "group") {
+      // Children are relative to the group centre, so they stretch with it.
+      for (const child of node.children) {
+        const c = doc.nodes[child];
+        if (c) stretch(c);
       }
     }
   }
@@ -113,8 +122,8 @@ export function resizeDoc(source: Doc, target: ResizeTarget): { doc: Doc; warnin
     }
     node.transform = {
       ...node.transform,
-      x: round(target.width / 2 + (node.transform.x - W / 2) * kx),
-      y: round(target.height / 2 + (node.transform.y - H / 2) * ky),
+      x: pos(target.width / 2 + (node.transform.x - W / 2) * kx),
+      y: pos(target.height / 2 + (node.transform.y - H / 2) * ky),
     };
     scaleNode(id);
   }
@@ -124,10 +133,10 @@ export function resizeDoc(source: Doc, target: ResizeTarget): { doc: Doc; warnin
   return { doc, warnings };
 }
 
-/** An unrotated frame or shape whose bounds cover nearly all of the artboard: a background. */
+/** An unrotated frame, shape or group whose bounds cover nearly all of the artboard: a background. */
 function isFullBleed(doc: Doc, id: NodeId): boolean {
   const node = doc.nodes[id];
-  if (!node || (node.type !== "frame" && node.type !== "shape") || node.transform.rotation % 360 !== 0) return false;
+  if (!node || (node.type !== "frame" && node.type !== "shape" && node.type !== "group") || node.transform.rotation % 360 !== 0) return false;
   const b = worldBounds(doc, id);
   if (!b) return false;
   const { width: W, height: H } = doc.artboard;
