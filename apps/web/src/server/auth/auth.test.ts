@@ -215,3 +215,24 @@ describe("magic-link abuse controls", () => {
     },
   );
 });
+
+describe("sign-in state is not a magic-link token", () => {
+  // Regression for the better-auth advisory "OAuth state can be used as a Magic Link to sign in as another user".
+  // An OAuth state row is stored under its raw value; magic-link verification only looks up "magic-link:<hash of token>".
+  it("refuses a raw verification value presented as a magic-link token", async () => {
+    const state = `oauth-state-${crypto.randomUUID()}`;
+    const victim = "victim@example.test";
+    await t.db.insert(user).values({ id: `u_${crypto.randomUUID()}`, name: "Victim", email: victim, emailVerified: true });
+    await t.db.insert(verification).values({
+      id: crypto.randomUUID(),
+      identifier: state,
+      value: JSON.stringify({ callbackURL: "/home" }),
+      expiresAt: new Date(Date.now() + 10 * 60_000),
+    });
+
+    const res = await verify(new URL(`${origin}/api/auth/magic-link/verify?token=${state}&callbackURL=%2Fhome`));
+    expect(sessionCookie(res)).toBeNull();
+    const [row] = await t.db.select().from(verification).where(eq(verification.identifier, state));
+    expect(row).toBeDefined();
+  });
+});
