@@ -28,6 +28,9 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
           <Link href="/privacy" className="hover:text-text">
             Privacy
           </Link>
+          <Link href="/cookies" className="hover:text-text">
+            Cookies
+          </Link>
         </p>
       </section>
       <div className="relative hidden py-3 pr-3 lg:block">

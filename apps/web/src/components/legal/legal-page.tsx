@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Logo } from "@/components/brand/logo";
 
-/** Shared frame for the Terms and Privacy pages: plain, readable text with links between the two. */
+/** Shared frame for the Terms, Privacy and Cookies pages: plain, readable text with links between them. */
 export function LegalPage({ title, updated, children }: { title: string; updated: string; children: ReactNode }) {
   return (
     <main className="min-h-svh bg-bg text-text">
@@ -22,6 +22,9 @@ export function LegalPage({ title, updated, children }: { title: string; updated
         </Link>
         <Link href="/privacy" className="hover:text-text">
           Privacy
+        </Link>
+        <Link href="/cookies" className="hover:text-text">
+          Cookies
         </Link>
       </footer>
     </main>
