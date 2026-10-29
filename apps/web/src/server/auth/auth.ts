@@ -165,12 +165,19 @@ export function createAuth({ db, config, mailer, now }: AuthDeps) {
 
 export type Auth = ReturnType<typeof createAuth>;
 
+/**
+ * Password reset is off (no passwords). `disabledPaths` matches exact paths only, so the parameterised callback
+ * "/reset-password/:token" never matches a real request; this catches the whole prefix instead.
+ */
+const isPasswordResetPath = (req: Request): boolean => /^\/reset-password(\/|$)/.test(new URL(req.url).pathname.replace(/^\/api\/auth/, ""));
+const notFoundResponse = () => problem(404, "Not Found", "The requested resource does not exist.", randomUUID());
+
 /** Better Auth's handler behind the same strict Origin check, a small body cap and VASH's two-factor rules. */
 export function createAuthRoute(auth: Auth, { db, config, now }: Pick<AuthDeps, "db" | "config" | "now">) {
   const http = toNextJsHandler(auth);
   const guard = twoFactorGuard({ auth, db, config, now });
   return {
-    GET: (req: Request) => http.GET(req),
+    GET: async (req: Request): Promise<Response> => (isPasswordResetPath(req) ? notFoundResponse() : http.GET(req)),
     async POST(req: Request): Promise<Response> {
       if (req.headers.get("origin") !== config.appOrigin) {
         return problem(403, "Forbidden", "Cross-origin requests are not allowed.", randomUUID());
@@ -182,6 +189,7 @@ export function createAuthRoute(auth: Auth, { db, config, now }: Pick<AuthDeps, 
         if (err instanceof HttpError) return problem(err.status, err.title, err.detail, randomUUID());
         throw err;
       }
+      if (isPasswordResetPath(req)) return notFoundResponse();
       const path = new URL(req.url).pathname.replace(/^\/api\/auth/, "");
       const refused = await guard.before(req, path);
       if (refused) return refused;
