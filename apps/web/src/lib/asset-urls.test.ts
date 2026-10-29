@@ -33,4 +33,15 @@ describe("createAssetUrls", () => {
     expect(await urls.get("a")).toBeNull();
     expect(await urls.get("a")).toBe("/u/a");
   });
+
+  it("asks again after forget, so a URL that stopped working can be replaced", async () => {
+    const resolve = vi.fn(async (ids: string[]) => answer(ids));
+    const urls = createAssetUrls(resolve);
+    expect(await urls.get("a")).toBe("/u/a");
+    expect(urls.peek("a")).toBe("/u/a");
+    urls.forget("a");
+    expect(urls.peek("a")).toBeUndefined();
+    expect(await urls.get("a")).toBe("/u/a");
+    expect(resolve).toHaveBeenCalledTimes(2);
+  });
 });

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { resolveAssets } from "./api";
 
 /** The resolve endpoint takes at most this many ids per request. */
@@ -58,21 +58,40 @@ export function createAssetUrls(resolve = resolveAssets, now = () => Date.now())
         }
       });
     },
+    /** Drop the cached URL so the next `get` asks the server again. */
+    forget(id: string) {
+      cache.delete(id);
+    },
   };
 }
 
 const shared = createAssetUrls();
 
-/** A signed URL for an asset, or null while it loads and when there is none. */
-export function useAssetUrl(id: string | null | undefined): string | null {
-  const [url, setUrl] = useState<string | null>(() => (id ? (shared.peek(id) ?? null) : null));
+/** Drop a cached URL, e.g. when the image behind it failed to load because the URL expired. */
+export const forgetAssetUrl = (id: string) => shared.forget(id);
+
+type Shown = { id: string | null | undefined; url: string | null };
+
+/**
+ * A signed URL for an asset, or null while it loads and when there is none. `reload` drops the cached
+ * URL and asks again. The URL is only returned for the id it was resolved for, so a new id never shows
+ * the previous asset's image.
+ */
+export function useAssetUrl(id: string | null | undefined): { url: string | null; reload: () => void } {
+  const [shown, setShown] = useState<Shown>(() => ({ id, url: id ? (shared.peek(id) ?? null) : null }));
   useEffect(() => {
-    if (!id) return setUrl(null);
+    if (!id) return;
     let live = true;
-    void shared.get(id).then((u) => live && setUrl(u));
+    void shared.get(id).then((u) => live && setShown({ id, url: u }));
     return () => {
       live = false;
     };
   }, [id]);
-  return url;
+  const reload = useCallback(() => {
+    if (!id) return;
+    forgetAssetUrl(id);
+    void shared.get(id).then((u) => setShown({ id, url: u }));
+  }, [id]);
+  const url = !id ? null : shown.id === id ? shown.url : (shared.peek(id) ?? null);
+  return { url, reload };
 }
