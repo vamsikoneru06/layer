@@ -1,10 +1,10 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "post-editorial-bloom",
   "kind": "template",
   "meta": {
     "title": "Editorial Bloom",
-    "category": "minimal",
+    "category": "photo-posts",
     "tags": [
       "editorial",
       "arch",

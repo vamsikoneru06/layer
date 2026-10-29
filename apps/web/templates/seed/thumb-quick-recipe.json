@@ -1,10 +1,10 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "thumb-quick-recipe",
   "kind": "template",
   "meta": {
     "title": "Quick Recipe",
-    "category": "food",
+    "category": "thumbnails",
     "tags": [
       "recipe",
       "cooking",

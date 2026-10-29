@@ -34,3 +34,11 @@ describe("GET /api/health", () => {
     expect(probes).toBe(2);
   });
 });
+
+describe("GET /api/health/live", () => {
+  it("answers without touching the database, so a 5-minute uptime check lets Neon scale to zero", async () => {
+    const untouchable = new Proxy({}, { get: () => () => Promise.reject(new Error("database used")) }) as Db;
+    const res = await call(healthHandlers(testDeps(untouchable)).live);
+    expect(res).toMatchObject({ status: 200, body: { status: "ok" } });
+  });
+});

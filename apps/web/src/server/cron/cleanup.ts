@@ -8,6 +8,9 @@ import type { ObjectStorage } from "../storage/types";
 const HOUR = 3_600_000;
 
 /** Longest rate-limit window is a day (RATE_LIMITS); keep one extra day of history. */
+/** When Vercel Cron calls the cleanup (UTC); must match vercel.json. Hobby allows one run a day. */
+export const CLEANUP_SCHEDULE = "0 3 * * *";
+
 export const CLEANUP = { pendingUploadMaxAgeMs: 24 * HOUR, rateLimitRetentionMs: 48 * HOUR } as const;
 
 export type CleanupResult = Awaited<ReturnType<typeof runCleanup>>;

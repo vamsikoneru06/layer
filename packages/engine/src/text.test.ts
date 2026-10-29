@@ -59,4 +59,43 @@ describe("layoutText", () => {
     const n = node("cached");
     expect(layoutText(n, measure)).toBe(layoutText(n, measure));
   });
+
+  describe("text beyond plain ASCII", () => {
+    const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+    const graphemes = (s: string) => [...segmenter.segment(s)].map((g) => g.segment);
+    /** Like `measure`, but per visible character (grapheme), as a real font measures them. */
+    const perGlyph: Measure = (s, _font, size) => graphemes(s).length * size * 0.5;
+    const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+
+    /** A font where each code point has width, so half a cluster measures narrower than a whole one (as real fonts can). */
+    const perCodePoint: Measure = (s, _font, size) => Array.from(s).length * size * 0.5;
+
+    it("never splits an emoji when breaking a word wider than the box", () => {
+      const coder = "🧑🏽‍💻"; // person + skin tone + joiner + laptop: one emoji, four code points
+      const l = layoutText(node(coder.repeat(5)), perCodePoint);
+      expect(l.lines.map((x) => x.text)).toEqual([coder.repeat(2), coder.repeat(2), coder]);
+      for (const line of l.lines) expect(line.text).not.toMatch(LONE_SURROGATE);
+      expect(layoutText(node("😀".repeat(15)), perGlyph).lines.map((x) => graphemes(x.text).length)).toEqual([10, 5]);
+    });
+
+    it("keeps Telugu and Devanagari letter clusters whole", () => {
+      const ksha = "క్ష"; // ka + virama + ssa: one cluster, three code points
+      expect(layoutText(node(ksha.repeat(7)), perCodePoint).lines.map((x) => x.text)).toEqual([ksha.repeat(3), ksha.repeat(3), ksha]);
+      const kshaHindi = "क्ष";
+      expect(layoutText(node(kshaHindi.repeat(4)), perCodePoint).lines.map((x) => x.text)).toEqual([kshaHindi.repeat(3), kshaHindi]);
+    });
+
+    it("adds letter spacing once per visible character", () => {
+      expect(layoutText(node("😀😀", { letterSpacing: 5 }), perGlyph).lines[0]!.width).toBe(30);
+      expect(layoutText(node("క్ష", { letterSpacing: 5 }), perGlyph).lines[0]!.width).toBe(15);
+    });
+
+    it("breaks a very long word with a few measurements per line, not one per character", () => {
+      let calls = 0;
+      const counting: Measure = (s, font, size) => (calls++, measure(s, font, size));
+      const l = layoutText(node("x".repeat(400), { fit: "none" }), counting);
+      expect(l.lines).toHaveLength(40);
+      expect(calls).toBeLessThan(1_000);
+    });
+  });
 });

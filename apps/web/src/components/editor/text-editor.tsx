@@ -28,7 +28,8 @@ export function TextEditor({ editor, state }: { editor: Editor; state: EditorSta
       ref={ref}
       aria-label={`Edit text: ${node.name}`}
       value={node.content}
-      maxLength={node.maxChars ?? LIMITS.textChars}
+      // The browser counts UTF-16 units; the layer's maxChars counts visible characters and is applied by editText.
+      maxLength={LIMITS.textChars}
       spellCheck
       autoComplete="off"
       onChange={(e) => editor.core.editText(e.target.value)}

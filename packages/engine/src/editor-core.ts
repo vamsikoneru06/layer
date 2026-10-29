@@ -4,6 +4,7 @@ import { History } from "./history";
 import type { Box } from "./math";
 import { checkPolicy, type EditMode } from "./policy";
 import type { Guide } from "./snapping";
+import { limitText } from "./text";
 import type { Viewport } from "./viewport";
 
 /** Everything the UI reads. A new object is published on every change (for useSyncExternalStore). */
@@ -24,16 +25,18 @@ export interface EditorState {
   notice: string | null;
   /** The text layer being typed into on the canvas, if any. */
   editing: NodeId | null;
+  /** The frame whose photo is being moved and zoomed (after a double-click), if any. */
+  cropping: NodeId | null;
 }
 
-type Chrome = Pick<EditorState, "hover" | "guides" | "marquee" | "dragging" | "viewport" | "notice" | "editing">;
+type Chrome = Pick<EditorState, "hover" | "guides" | "marquee" | "dragging" | "viewport" | "notice" | "editing" | "cropping">;
 
 /** The editor's state and its only write path: every document change passes the lock policy and the history. */
 export class EditorCore {
   readonly history: History;
   readonly mode: EditMode;
   #selection: readonly NodeId[] = [];
-  #chrome: Chrome = { hover: null, guides: [], marquee: null, dragging: false, viewport: { zoom: 1, panX: 0, panY: 0 }, notice: null, editing: null };
+  #chrome: Chrome = { hover: null, guides: [], marquee: null, dragging: false, viewport: { zoom: 1, panX: 0, panY: 0 }, notice: null, editing: null, cropping: null };
   #state: EditorState;
   #listeners = new Set<() => void>();
   #txRefused = false;
@@ -112,12 +115,12 @@ export class EditorCore {
     return true;
   }
 
-  /** Replaces the edited layer's text, cut to its `maxChars`. */
+  /** Replaces the edited layer's text, cut to its `maxChars` visible characters. */
   editText(content: string): boolean {
     const id = this.#chrome.editing;
     const node = id ? (this.history.baseDoc ?? this.doc).nodes[id] : undefined;
     if (!id || node?.type !== "text") return false;
-    return this.preview({ type: "update", id, patch: { content: content.slice(0, node.maxChars ?? LIMITS.textChars) } });
+    return this.preview({ type: "update", id, patch: { content: limitText(content, node.maxChars ?? LIMITS.textChars, LIMITS.textChars) } });
   }
 
   /** Ends typing: keeps the text as one undo step, or restores it (Escape). */
@@ -134,6 +137,23 @@ export class EditorCore {
 
   redo(): void {
     this.history.redo();
+  }
+
+  /** Starts moving and zooming a frame's photo on the canvas. False if it has no photo or is locked. */
+  startCrop(id: NodeId): boolean {
+    const node = this.doc.nodes[id];
+    if (node?.type !== "frame" || !node.content) return false;
+    if (this.mode === "design" && node.lock === "locked") {
+      this.setChrome({ notice: "This layer is locked by the template." });
+      return false;
+    }
+    this.select([id]);
+    this.setChrome({ cropping: id, hover: null, notice: "Drag to move the photo, scroll to zoom. Drop it on another frame to swap. Press Enter when done." });
+    return true;
+  }
+
+  endCrop(): void {
+    if (this.#chrome.cropping) this.setChrome({ cropping: null });
   }
 
   select(ids: readonly NodeId[]): void {
@@ -153,6 +173,10 @@ export class EditorCore {
     const selection = this.#selection.filter((id) => doc.nodes[id]);
     this.#selection = selection;
     const layoutLocked = this.mode === "design" && selection.some((id) => doc.nodes[id]?.lock !== "free");
+    // Crop mode ends by itself when its frame is deselected, deleted or emptied (including by undo).
+    const c = this.#chrome.cropping;
+    const frame = c ? doc.nodes[c] : undefined;
+    if (c && !(selection.length === 1 && selection[0] === c && frame?.type === "frame" && frame.content)) this.#chrome = { ...this.#chrome, cropping: null };
     return { ...this.#chrome, doc, mode: this.mode, selection, layoutLocked, canUndo: this.history.canUndo, canRedo: this.history.canRedo };
   }
 

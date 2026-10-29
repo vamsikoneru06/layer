@@ -1,10 +1,10 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "poster-still-life",
   "kind": "template",
   "meta": {
     "title": "Still Life",
-    "category": "minimal",
+    "category": "events",
     "tags": [
       "exhibition",
       "gallery",

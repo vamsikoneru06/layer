@@ -125,4 +125,45 @@ describe("loadConfig", () => {
     expect(message).toContain("STORAGE_ENDPOINT");
     expect(message).toContain("CRON_SECRET");
   });
+  const production = {
+    ...base,
+    ...storageEnv,
+    NODE_ENV: "production",
+    DATABASE_URL: "postgres://u:p@ep-cool-1-pooler.ap-southeast-1.aws.neon.tech/vash?sslmode=require",
+    APP_ORIGIN: "https://vash.vercel.app",
+    TRUST_PROXY: "true",
+    CRON_SECRET: "c".repeat(32),
+    GMAIL_USER: "vash.app@gmail.com",
+    GMAIL_APP_PASSWORD: "x".repeat(16),
+  };
+
+  it("accepts a complete production environment", () => {
+    expect(loadConfig(production).isProduction).toBe(true);
+  });
+
+  it("refuses the example database login in production", () => {
+    const example = "postgres://vash:vash@db.example.com:5432/vash";
+    expect(errorOf({ ...production, DATABASE_URL: example })).toContain("DATABASE_URL: uses the example login");
+    expect(loadConfig({ ...base, DATABASE_URL: example }).databaseUrl).toBe(example);
+  });
+
+  it("requires Neon's pooled connection string in production, so serverless instances share connections", () => {
+    const direct = "postgres://u:p@ep-cool-1.ap-southeast-1.aws.neon.tech/vash?sslmode=require";
+    const message = errorOf({ ...production, DATABASE_URL: direct });
+    expect(message).toContain("DATABASE_URL: use Neon's pooled connection string");
+    expect(message).not.toContain("ep-cool-1");
+    const pooled = "postgres://u:p@ep-cool-1-pooler.ap-southeast-1.aws.neon.tech/vash?sslmode=require";
+    expect(loadConfig({ ...production, DATABASE_URL: pooled }).databaseUrl).toBe(pooled);
+    expect(loadConfig({ ...base, DATABASE_URL: direct }).databaseUrl).toBe(direct);
+  });
+
+  it("enables Sentry only with an https DSN that names a project", () => {
+    expect(loadConfig(base).sentryDsn).toBeNull();
+    expect(loadConfig({ ...base, NEXT_PUBLIC_SENTRY_DSN: "" }).sentryDsn).toBeNull();
+    const dsn = "https://abc123@o45.ingest.de.sentry.io/678";
+    expect(loadConfig({ ...base, NEXT_PUBLIC_SENTRY_DSN: dsn }).sentryDsn).toBe(dsn);
+    expect(errorOf({ ...base, NEXT_PUBLIC_SENTRY_DSN: "http://abc@o45.ingest.sentry.io/678" })).toContain("NEXT_PUBLIC_SENTRY_DSN");
+    expect(errorOf({ ...base, NEXT_PUBLIC_SENTRY_DSN: "https://o45.ingest.sentry.io/678" })).toContain("NEXT_PUBLIC_SENTRY_DSN");
+    expect(errorOf({ ...base, NEXT_PUBLIC_SENTRY_DSN: "https://abc@o45.ingest.sentry.io/" })).toContain("NEXT_PUBLIC_SENTRY_DSN");
+  });
 });

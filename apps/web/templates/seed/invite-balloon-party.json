@@ -1,10 +1,10 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "invite-balloon-party",
   "kind": "template",
   "meta": {
     "title": "Balloon Party",
-    "category": "birthday",
+    "category": "invitations",
     "tags": [
       "kids",
       "birthday",

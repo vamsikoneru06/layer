@@ -117,6 +117,17 @@ describe("EditorCore text editing", () => {
     expect(c.getState().editing).toBeNull();
   });
 
+  it("counts maxChars in visible characters and never keeps half of an emoji or a conjunct", () => {
+    const c = textCore();
+    c.startTextEdit("co");
+    c.editText("Party 🧑🏽‍💻🎉!"); // 9 visible characters; the 8th is a four-code-point emoji
+    expect(c.getState().doc.nodes.co).toMatchObject({ content: "Party 🧑🏽‍💻🎉" });
+    c.editText("స్వాగతం మిత్రులారా!"); // Telugu: 3 + 1 + 4 + 1 visible characters, 19 code units
+    const kept = (c.getState().doc.nodes.co as { content: string }).content;
+    expect(kept).toBe("స్వాగతం మిత్రులారా");
+    expect(kept).not.toMatch(/[\uD800-\uDFFF]/);
+  });
+
   it("allows locked text in Author Mode", () => {
     const c = new EditorCore(docWith([{ ...text("locked", {}, "Fixed"), lock: "locked" }]), { mode: "template" });
     expect(c.startTextEdit("locked")).toBe(true);

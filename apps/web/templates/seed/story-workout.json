@@ -1,10 +1,10 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "story-workout",
   "kind": "template",
   "meta": {
     "title": "Workout Plan",
-    "category": "minimal",
+    "category": "quotes-tips",
     "tags": [
       "fitness",
       "workout",

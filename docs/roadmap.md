@@ -21,7 +21,7 @@ Every item must fit `docs/free-stack.md`. Anything that needs a new service is m
 | Share links, remix, profiles, reports, moderation API | Done (#25), API only, no UI yet | `server/shares`, `server/admin` |
 | Exact hit testing for polygons, paths, rounded corners | Done in this PR | `packages/engine/src/outline.ts` |
 | sitemap.xml and robots.txt | Done in this PR | `server/seo` |
-| Guest mode (edit and export without an account) | **Not started.** The spec promises it; the code sends guests to sign in | `components/designs/use-create-design.ts:19` |
+| Guest mode (edit and export without an account) | Done (#31); guests' own photos wait for photo placement (M3) | `lib/local-designs.ts` |
 
 The outside review was written against an older local checkout, so it missed #18 to #22. Its main point still
 holds: **the spec's first-use promise (landing to exported PNG in under 2 minutes, no sign-up) is not true yet.**
@@ -49,11 +49,11 @@ Each milestone ends with something a user can do that they couldn't before. Do t
 milestone, the list is in order too.
 
 ### M0. Land what's already built
-1. #23, #24 and #25 are merged.
-2. This branch (roadmap, sitemap, hit testing, timeouts).
-3. Refresh AGENTS.md "What's next" to point at this roadmap.
+Done: #23 to #27, #31 and #37 are merged. Still open: refresh AGENTS.md "What's next" to point at this roadmap.
 
 ### M1. The first result, without an account
+Done in #31 (items 1, 3, 4, 5). Item 2 (guest photos) needs photo placement first, so it moves to M3.
+
 Goal: landing page to exported PNG with your own photos, no sign-up, as spec §1 and flow 1 describe.
 1. **Guest designs in IndexedDB:** `useCreateDesign` and "Use template" create a local design for guests;
    autosave writes to IndexedDB instead of the API. One storage interface, two backends.
@@ -66,12 +66,16 @@ Goal: landing page to exported PNG with your own photos, no sign-up, as spec §1
    the device until you save; "Clear this device" button).
 
 ### M2. Templates people can find
+Done in #40 (items 1, 3 and 4, plus filter URLs such as `/templates?category=menus&format=ig-story`) and in the job
+categories PR (item 2): 9 jobs in 4 groups, documents at schemaVersion 2, stored templates and interests migrated.
+
 1. **Server-rendered template pages** with the template's title, description and preview in `<title>`,
    meta description and Open Graph tags (right now every detail page is titled "Template · VASH", which wastes the sitemap).
 2. **Task-based categories** matching section 2 (menus, weekly specials, invitations...), with search by job.
 3. **Landing demo that works:** "Try it with sample photos" opens a real template in the guest editor (Lorem Picsum
    is in the free stack, but the bundled Pexels samples from #24 are better: no third-party image host).
-4. **Public template pages cached at the CDN** (`s-maxage`), like the sitemap, so search traffic doesn't hit the database.
+4. **Public gallery cached at the CDN** (`s-maxage`), like the sitemap, so search traffic doesn't hit the database. Template
+   pages themselves can't be cached as HTML: each response carries a fresh CSP nonce.
 
 ### M3. Photo editing you can rely on
 1. Replace and crop a photo inside its frame (pan and zoom within the frame).
@@ -117,7 +121,7 @@ user, so we use what those levels teach (timeouts, idempotency, outbox) without 
 | 12 to 14. Database internals, advanced architecture, Kafka internals | Outbox, CAS versioning, GIN | | Read Postgres `EXPLAIN` output for our own queries (level 2 item) | Event sourcing, CQRS, sagas: nothing in VASH needs them |
 | 15 to 17. Systems internals, build your own, consensus | | | | Learning topics, not product work. The engine (`packages/engine`, zero dependencies) is a good place to practise data structures and performance |
 
-## 5. Done in this branch
+## 5. Done in #27
 - `docs/roadmap.md` (this file) and `docs/threat-model.md`.
 - `/sitemap.xml` (public pages plus every published template, never hidden ones) and `/robots.txt`
   (keeps crawlers out of `/api`, `/edit`, `/dev` and signed-in screens).

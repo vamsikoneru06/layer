@@ -6,8 +6,9 @@ import { useState } from "react";
 import { useSession } from "@/components/app/session";
 import { useToast } from "@/components/ui/toast";
 import { createDesign } from "@/lib/api";
+import { blankDoc, localDesigns, newLocalDesign } from "@/lib/local-designs";
 
-/** Creates an empty design and opens it; guests are sent to sign in, since only accounts can save today. */
+/** Creates an empty design and opens it: in the account when signed in, otherwise on this device. */
 export function useCreateDesign() {
   const router = useRouter();
   const session = useSession();
@@ -16,10 +17,16 @@ export function useCreateDesign() {
 
   async function create(key: string, format: FormatKey, size?: { width: number; height: number }) {
     if (busy) return;
-    if (session.status !== "user") return router.push("/signin");
+    if (session.status === "loading") return;
     setBusy(key);
     try {
-      const { id } = await createDesign(format, size);
+      let id: string;
+      if (session.status === "user") ({ id } = await createDesign(format, size));
+      else {
+        const design = newLocalDesign(blankDoc(format, size));
+        await localDesigns.put(design);
+        id = design.id;
+      }
       router.push(`/edit/${id}`);
     } catch (err) {
       toast({ message: (err as Error).message });

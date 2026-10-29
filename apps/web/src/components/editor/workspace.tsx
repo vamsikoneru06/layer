@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
 import { duplicateDesign, getDesign, saveDesign, saveDesignAsCopy, type Design } from "@/lib/api";
+import { copyLocalDesign, localDesigns } from "@/lib/local-designs";
 import { createAutosaver, type Autosaver, type SaveStatus } from "@/lib/autosave";
 import { createImageLoader } from "@/lib/images";
 import { BottomBar } from "./bottom-bar";
@@ -17,6 +18,8 @@ import { buildActions, CONTEXT_LAYOUTS, toMenuItems, type ActionHost } from "./e
 import { EditorHeader } from "./editor-header";
 import { Segmented } from "./fields";
 import { InsertRail } from "./insert-rail";
+import { SaveToAccount } from "./save-to-account";
+import { usePhotoDrop } from "./use-photo-drop";
 import { LayersPanel } from "./layers-panel";
 import { MoveDialog } from "./move-dialog";
 import { PropertiesPanel } from "./properties-panel";
@@ -33,7 +36,13 @@ function useEditorState(editor: Editor | null): EditorState | null {
   return useSyncExternalStore(editor ? editor.subscribe : NO_EDITOR.subscribe, editor ? editor.getState : NO_EDITOR.get, NO_EDITOR.get);
 }
 
-export function Workspace({ design }: { design: Design }) {
+/** Saves a design kept on this device; versions count up locally so the autosaver works the same. */
+const saveLocal = (id: string) => async (doc: Doc, version: number) => {
+  await localDesigns.put({ id, doc, version: version + 1, updatedAt: new Date().toISOString() });
+  return version + 1;
+};
+
+export function Workspace({ design, local = false }: { design: Design; local?: boolean }) {
   const router = useRouter();
   const container = useRef<HTMLDivElement>(null);
   const scene = useRef<HTMLCanvasElement>(null);
@@ -72,7 +81,7 @@ export function Workspace({ design }: { design: Design }) {
       version: design.version,
       delayMs: 1500,
       retryMs: 5000,
-      save: (doc, v) => saveDesign(design.id, doc, v),
+      save: local ? saveLocal(design.id) : (doc, v) => saveDesign(design.id, doc, v),
       onStatus: (st) => {
         statusRef.current = st;
         setStatus(st);
@@ -104,7 +113,9 @@ export function Workspace({ design }: { design: Design }) {
       void s.flush().finally(() => s.dispose());
       e.destroy();
     };
-  }, [design]);
+  }, [design, local]);
+
+  const photoDrop = usePhotoDrop(editor);
 
   // Refusals ("Layout locked by the template.") and other engine messages show as a toast, then clear.
   const notice = state?.notice ?? null;
@@ -185,7 +196,8 @@ export function Workspace({ design }: { design: Design }) {
         });
         return;
       }
-      const copy = await duplicateDesign(design.id);
+      // A design kept in this browser is copied in this browser.
+      const copy = local ? await copyLocalDesign(localDesigns, design.id) : await duplicateDesign(design.id);
       router.push(`/edit/${copy.id}`);
     } catch (err) {
       toast({ message: err instanceof Error ? err.message : "Couldn’t make a copy. Try again." });
@@ -248,6 +260,7 @@ export function Workspace({ design }: { design: Design }) {
   const host: ActionHost = {
     panelsHidden,
     canFullscreen: fullscreen.supported,
+    local,
     copy: () => void clipboard.copy(),
     cut: () => void clipboard.cut(),
     paste: () => void clipboard.paste(),
@@ -279,6 +292,7 @@ export function Workspace({ design }: { design: Design }) {
         canUndo={state?.canUndo ?? false}
         canRedo={state?.canRedo ?? false}
         status={status}
+        local={local}
         onRetry={() => void saver.current?.flush()}
         onResolve={() => setConflictOpen(true)}
         exportOpen={exportOpen}
@@ -287,12 +301,13 @@ export function Workspace({ design }: { design: Design }) {
         onRenamingChange={setRenaming}
         actions={actions}
         mac={mac}
+        saveToAccount={local ? <SaveToAccount id={design.id} saver={saver} /> : null}
       />
 
       <div className="flex min-h-0 flex-1 gap-2 px-2 pb-2">
         {!panelsHidden && <InsertRail editor={editor} />}
         <div className="relative flex min-w-0 flex-1 flex-col">
-          <div ref={container} className="relative min-h-0 flex-1 overflow-hidden">
+          <div ref={container} {...photoDrop} className="relative min-h-0 flex-1 overflow-hidden">
             <canvas ref={scene} className="editor-develop absolute inset-0" aria-hidden />
             <canvas ref={overlay} className="absolute inset-0 touch-none" aria-label="Design canvas. Use the Layers panel to select layers with the keyboard." />
             {state && editor && <TextEditor editor={editor} state={state} />}

@@ -1,5 +1,5 @@
 /**
- * The VASH document format (schemaVersion 1).
+ * The VASH document format (schemaVersion 2).
  *
  * Rules that keep the format safe and predictable:
  * - Every key is required; "absent" is expressed as `null`.
@@ -143,7 +143,7 @@ export interface DocMeta {
 }
 
 export interface Doc {
-  schemaVersion: 1;
+  schemaVersion: 2;
   id: string;
   kind: "design" | "template";
   meta: DocMeta;

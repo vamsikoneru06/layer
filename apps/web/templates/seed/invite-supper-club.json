@@ -1,10 +1,10 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "invite-supper-club",
   "kind": "template",
   "meta": {
     "title": "Supper Club",
-    "category": "food",
+    "category": "invitations",
     "tags": [
       "dinner",
       "supper club",

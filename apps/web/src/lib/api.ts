@@ -23,8 +23,9 @@ async function request<T>(path: string, init?: RequestInit & { json?: unknown })
     throw new ApiError(0, "Couldn’t reach VASH. Check your connection and try again.");
   }
   if (!res.ok) {
-    const problem = (await res.json().catch(() => null)) as { detail?: string } | null;
-    throw new ApiError(res.status, problem?.detail ?? "Something went wrong. Please try again.");
+    // Our API sends problem+json ("detail"); Better Auth's routes send { message }.
+    const problem = (await res.json().catch(() => null)) as { detail?: string; message?: string } | null;
+    throw new ApiError(res.status, problem?.detail ?? problem?.message ?? "Something went wrong. Please try again.");
   }
   return (res.status === 204 ? undefined : await res.json()) as T;
 }
@@ -39,6 +40,8 @@ export type Me = {
   handle: string | null;
   role: string;
   onboardedAt: string | null;
+  /** Used for admins: two-factor on, and until when this device can use admin tools. */
+  twoFactor: { enabled: boolean; unlockedUntil: string | null };
 };
 
 export type DesignItem = {
@@ -77,6 +80,9 @@ export function createDesign(format: FormatKey, size?: { width: number; height: 
   const doc = createEmptyDoc({ id: crypto.randomUUID(), kind: "design", title: "Untitled design", format, size });
   return request("/api/designs", { method: "POST", json: { doc } });
 }
+
+/** Saves a document made on this device to the account. With `id`, a repeat returns the design already saved. */
+export const createDesignFromDoc = (doc: Doc, id?: string) => request<{ id: string }>("/api/designs", { method: "POST", json: id ? { id, doc } : { doc } });
 
 export type Design = { id: string; title: string; version: number; folderId: string | null; doc: Doc; updatedAt: string };
 
@@ -123,6 +129,16 @@ export const updateMe = (patch: { name?: string }) => request<Me>("/api/me", { m
 
 export const deleteMe = (confirm: string) => request<void>("/api/me", { method: "DELETE", json: { confirm } });
 
+/** Better Auth's two-factor routes, behind VASH's rules (server/auth/two-factor.ts). */
+const twoFactorPost = <T,>(path: string, json: unknown = {}) => request<T>(`/api/auth/two-factor/${path}`, { method: "POST", json });
+export const twoFactor = {
+  enable: () => twoFactorPost<{ totpURI: string; backupCodes: string[] }>("enable"),
+  verifyCode: (code: string) => twoFactorPost<unknown>("verify-totp", { code }),
+  verifyBackupCode: (code: string) => twoFactorPost<unknown>("verify-backup-code", { code }),
+  newBackupCodes: () => twoFactorPost<{ backupCodes: string[] }>("generate-backup-codes"),
+  disable: () => twoFactorPost<unknown>("disable"),
+};
+
 export const signOut = () => request<unknown>("/api/auth/sign-out", { method: "POST", json: {} });
 
 export type TemplateSort = "popular" | "new" | "featured";
@@ -138,7 +154,7 @@ export type TemplateItem = {
   height: number;
   featured: boolean;
   usesCount: number;
-  author: { handle: string | null; name: string } | null;
+  author: { handle: string | null; name: string | null } | null;
 };
 
 export type TemplateDetail = TemplateItem & { doc: Doc };

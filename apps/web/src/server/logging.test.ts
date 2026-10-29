@@ -40,4 +40,25 @@ describe("createLogger", () => {
     expect(text).not.toContain("riya@example.test");
     expect(text).toContain("connection refused");
   });
+
+  it("hands errors to the error reporter with the event name and request id, unredacted for its own scrubber", () => {
+    const reported: unknown[][] = [];
+    const lines: string[] = [];
+    const logger = createLogger((l) => lines.push(l), undefined, (err, tags) => reported.push([err, tags]));
+    const err = new Error("boom");
+    logger.error("request.failed", { requestId: "r9", err });
+    logger.error("no.error.field", { requestId: "r10" });
+    logger.warn("warn.only", { err });
+    expect(reported).toEqual([[err, { event: "request.failed", requestId: "r9" }]]);
+    expect(lines).toHaveLength(3);
+  });
+
+  it("keeps logging when the error reporter throws", () => {
+    const lines: string[] = [];
+    const logger = createLogger((l) => lines.push(l), undefined, () => {
+      throw new Error("reporter down");
+    });
+    expect(() => logger.error("x", { err: new Error("boom") })).not.toThrow();
+    expect(lines).toHaveLength(1);
+  });
 });

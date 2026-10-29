@@ -39,10 +39,10 @@ export function sampleTemplate(): Doc {
     maxChars: 40,
   };
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     id: "doc1",
     kind: "template",
-    meta: { title: "Birthday post", category: "birthday", tags: ["party"], format: "ig-post" },
+    meta: { title: "Birthday post", category: "celebrations", tags: ["party"], format: "ig-post" },
     artboard: { width: 1080, height: 1080, background: { type: "solid", color: "#FFF4E6" } },
     root: ["photo1", "heading"],
     nodes: { photo1: frame, heading },

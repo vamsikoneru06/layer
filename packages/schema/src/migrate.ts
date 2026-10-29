@@ -9,8 +9,32 @@ export interface Migration {
   migrate(doc: Record<string, unknown>): Record<string, unknown>;
 }
 
-/** Ordered list of migrations. Empty while the format is at version 1. */
-export const MIGRATIONS: readonly Migration[] = [];
+/** Version 1 filed templates by topic; version 2 by job. The closest job for each old topic. */
+export const V1_CATEGORIES: Readonly<Record<string, string>> = {
+  birthday: "celebrations",
+  business: "announcements",
+  food: "menus",
+  travel: "photo-posts",
+  quotes: "quotes-tips",
+  events: "events",
+  sale: "sales",
+  minimal: "photo-posts",
+};
+
+/** Ordered list of migrations. */
+export const MIGRATIONS: readonly Migration[] = [
+  {
+    from: 1,
+    migrate(doc) {
+      const meta = doc.meta;
+      if (typeof meta !== "object" || meta === null || Array.isArray(meta)) return doc;
+      const old = (meta as Record<string, unknown>).category;
+      if (typeof old !== "string") return doc;
+      const category = Object.hasOwn(V1_CATEGORIES, old) ? V1_CATEGORIES[old] : null;
+      return { ...doc, meta: { ...meta, category } };
+    },
+  },
+];
 
 export type MigrateResult =
   | { ok: true; doc: unknown; migrated: boolean }

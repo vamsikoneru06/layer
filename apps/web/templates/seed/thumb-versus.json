@@ -1,10 +1,10 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "thumb-versus",
   "kind": "template",
   "meta": {
     "title": "Head to Head",
-    "category": "business",
+    "category": "thumbnails",
     "tags": [
       "comparison",
       "versus",

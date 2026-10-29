@@ -61,6 +61,8 @@ export interface Action {
 export interface ActionHost {
   panelsHidden: boolean;
   canFullscreen: boolean;
+  /** A guest design kept in this browser: folders need an account. */
+  local: boolean;
   copy(): void;
   cut(): void;
   paste(): void;
@@ -109,7 +111,7 @@ export function buildActions(state: EditorState, core: EditorCore, host: ActionH
     { id: "open", label: "Open", run: host.open },
     { id: "makeCopy", label: "Make a copy", run: host.makeCopy },
     { id: "rename", label: "Rename", run: host.rename },
-    { id: "moveToFolder", label: "Move to folder", run: host.moveToFolder },
+    { id: "moveToFolder", label: "Move to folder", disabled: host.local ? "Folders need an account. Use Save to account first." : undefined, run: host.moveToFolder },
     { id: "designInfo", label: "Design info", run: host.designInfo },
     { id: "save", label: "Save", shortcut: "mod+s", run: host.save },
     { id: "download", label: "Download", run: host.download },

@@ -4,6 +4,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { assetKey, findUnusableAssets, storageUsedBytes } from "../assets/repository";
 import { quotaFor, quotaMessage, UPLOAD_LIMITS } from "../assets/service";
 import { assets } from "../db/schema";
+import { outsideUserScope } from "../db/user-scope";
 import type { Db } from "../db/types";
 import type { CurrentUser } from "../deps";
 import { insertDesign, type DesignRow } from "../designs/repository";
@@ -21,15 +22,19 @@ import { openShare } from "./service";
  * exist, or that the remixer couldn't use, become empty placeholders.
  */
 export async function remixShare(ctx: { db: Db; now: () => Date; storage: ObjectStorage | null }, remixer: CurrentUser, token: string): Promise<DesignRow> {
-  const { design } = await openShare(ctx.db, token);
-  const ids = [...referencedAssetIds(design.doc)].filter(isUuid);
-  const owned =
-    ids.length === 0
-      ? []
-      : await ctx.db
-          .select()
-          .from(assets)
-          .where(and(inArray(assets.id, ids), eq(assets.ownerId, design.ownerId), eq(assets.status, "ready"), eq(assets.kind, "photo")));
+  // The share token grants these two reads of the sharer's rows, which row-level security would otherwise hide.
+  const { design, owned } = await outsideUserScope(async () => {
+    const { design } = await openShare(ctx.db, token);
+    const ids = [...referencedAssetIds(design.doc)].filter(isUuid);
+    const owned =
+      ids.length === 0
+        ? []
+        : await ctx.db
+            .select()
+            .from(assets)
+            .where(and(inArray(assets.id, ids), eq(assets.ownerId, design.ownerId), eq(assets.status, "ready"), eq(assets.kind, "photo")));
+    return { design, owned };
+  });
   const ownedIds = new Set(owned.map((a) => a.id));
   const others = Object.values(design.doc.assets).filter((a) => !ownedIds.has(a.id));
   const unusable = new Set(await findUnusableAssets(ctx.db, remixer.id, others));

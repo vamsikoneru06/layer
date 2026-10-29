@@ -30,6 +30,7 @@ function docOf(nodes: ShapeNode[]): Doc {
 const host = (over: Partial<ActionHost> = {}): ActionHost => ({
   panelsHidden: false,
   canFullscreen: true,
+  local: false,
   copy: vi.fn(),
   cut: vi.fn(),
   paste: vi.fn(),
@@ -152,6 +153,12 @@ describe("the registry", () => {
     expect(actionsFor(core).togglePanels.label).toBe("Hide panels");
     expect(actionsFor(core, host({ panelsHidden: true })).togglePanels.label).toBe("Show panels");
     expect(actionsFor(core, host({ canFullscreen: false })).fullscreen.hidden).toBe(true);
+  });
+
+  it("offers folders only for designs in an account", () => {
+    const core = new EditorCore(docOf([]));
+    expect(actionsFor(core).moveToFolder.disabled).toBeUndefined();
+    expect(actionsFor(core, host({ local: true })).moveToFolder.disabled).toBe("Folders need an account. Use Save to account first.");
   });
 });
 

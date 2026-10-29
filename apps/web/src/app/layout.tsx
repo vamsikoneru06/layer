@@ -6,8 +6,10 @@ import { THEME_COOKIE, themeAttribute } from "@/lib/theme";
 import "./globals.css";
 
 export const metadata = {
+  // Absolute URLs for canonical and Open Graph tags; unset at build time, where nothing is rendered.
+  metadataBase: process.env.APP_ORIGIN ? new URL(process.env.APP_ORIGIN) : undefined,
   title: "VASH",
-  description: "Pick a template, drop in your photos, export. Free to use.",
+  description: "Pick a template, edit the text, colours and shapes, export a PNG. Free, and you can start without an account.",
 };
 
 // Fallback for the SF Pro system stack on non-Apple devices. Self-hosted (font-src 'self'); OFL in fonts/.

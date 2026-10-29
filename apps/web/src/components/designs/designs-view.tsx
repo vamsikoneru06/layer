@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronDown, Copy, Ellipsis, Folder as FolderIcon, FolderInput, FolderOpen, LayoutGrid, Layers, List, PenLine, Plus, Search, SearchX, Trash2, X } from "lucide-react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type MouseEvent, type ReactNode } from "react";
 import { useSession } from "@/components/app/session";
@@ -14,6 +15,7 @@ import type { DesignItem, Folder } from "@/lib/api";
 import { parseDraggedIds, sortDesigns, type SortKey } from "@/lib/designs";
 import { cn } from "@/lib/utils";
 import { DesignCard, DesignRow, type CardActions } from "./design-card";
+import { LocalDesignsGrid, useLocalDesigns } from "./local-designs-grid";
 
 const DRAG_TYPE = "application/x-vash-designs";
 const UNDO_MS = 5000;
@@ -411,16 +413,7 @@ export function DesignsView() {
     return (
       <div className="flex flex-col gap-7">
         {header}
-        <EmptyState
-          icon={<Layers />}
-          title="Sign in to see your designs"
-          body="Designs saved to your account show up here on every device."
-          action={
-            <ButtonLink href="/signin" size="md">
-              Sign in
-            </ButtonLink>
-          }
-        />
+        <GuestDesigns />
       </div>
     );
   }
@@ -595,6 +588,39 @@ export function DesignsView() {
         </div>
       </Dialog>
 
+    </div>
+  );
+}
+
+/** Not signed in: the designs kept in this browser, until signing in moves them to the account. */
+function GuestDesigns() {
+  const { designs, error, remove } = useLocalDesigns();
+  if (error) return <p className="text-sm text-danger">{error}</p>;
+  if (!designs) return null;
+  if (designs.length === 0) {
+    return (
+      <EmptyState
+        icon={<Layers />}
+        title="No designs in this browser yet"
+        body="Designs you make without signing in are saved here. Sign in to keep them in your account and see them on every device."
+        action={
+          <ButtonLink href="/signin" size="md">
+            Sign in
+          </ButtonLink>
+        }
+      />
+    );
+  }
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-sm text-muted">
+        Saved in this browser only. Clearing your browsing data deletes them.{" "}
+        <Link href="/signin" className="font-medium text-text underline-offset-4 hover:underline">
+          Sign in
+        </Link>{" "}
+        to move them to your account.
+      </p>
+      <LocalDesignsGrid designs={designs} onDelete={(id) => void remove(id)} />
     </div>
   );
 }

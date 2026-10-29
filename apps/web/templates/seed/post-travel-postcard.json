@@ -1,10 +1,10 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "post-travel-postcard",
   "kind": "template",
   "meta": {
     "title": "Travel Postcard",
-    "category": "travel",
+    "category": "photo-posts",
     "tags": [
       "travel",
       "postcard",

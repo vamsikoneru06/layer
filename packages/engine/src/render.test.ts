@@ -58,4 +58,19 @@ describe("renderScene", () => {
     expect(calls).toContainEqual({ op: "set:font", args: ['normal 400 20px "Inter", system-ui, sans-serif'] });
     expect(calls).toContainEqual({ op: "set:fillStyle", args: ["#123456"] });
   });
+
+  it("places justified words using one letter-spacing step per visible character, as layout does", () => {
+    const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+    const perGlyph = (s: string, _f: unknown, size: number) => [...segmenter.segment(s)].length * size * 0.5;
+    // 10 px per character plus 2 px spacing: "😀😀 aa bb" is 8 characters, 96 px, so 4 px spread over 2 gaps.
+    const t = { ...text("t", {}, "😀😀 aa bb cc", 100, 100), size: 20, letterSpacing: 2, align: "justify" as const };
+    const { ctx, calls } = recordingContext();
+    renderScene(ctx, docWith([t]), view, { measure: perGlyph, image: noImages, dpr: 1 });
+    const words = calls.filter((c) => c.op === "fillText").map((c) => [c.args[0], c.args[1]]);
+    expect(words.slice(0, 3)).toEqual([
+      ["😀😀", -50],
+      ["aa", -12],
+      ["bb", 26],
+    ]);
+  });
 });

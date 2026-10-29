@@ -2,7 +2,7 @@ import type { Doc, Fill, FrameNode, Node, ShapeNode, StickerNode, TextNode } fro
 import { isNeutral, type FilterFn } from "./filters";
 import { multiply, type Mat } from "./math";
 import { drawOrder, parentOf, worldMatrix } from "./scene";
-import { layoutText, type Measure } from "./text";
+import { graphemeCount, layoutText, type Measure } from "./text";
 import type { Viewport } from "./viewport";
 
 export type Ctx = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
@@ -188,7 +188,7 @@ function drawText(ctx: Ctx, n: TextNode, o: RenderOptions): void {
     let x = left + line.x;
     for (const word of line.text.split(" ")) {
       ctx.fillText(word, x, y);
-      x += o.measure(`${word} `, n.font, layout.size) + n.letterSpacing * (word.length + 1) + line.wordSpacing;
+      x += o.measure(`${word} `, n.font, layout.size) + n.letterSpacing * (graphemeCount(word) + 1) + line.wordSpacing;
     }
   }
 }

@@ -16,7 +16,7 @@ templates), it processes **personal data** of users in India and possibly the EU
 - Operator: one individual in India. Free service, no payments, no ads, no analytics.
 - Data: email, name, Google profile picture link (Google sign-in), designs, uploaded photos, session IP and browser,
   rate-limit counters (IP or account, up to 2 days), template reports, an id-only record of account deletions.
-- Processors: Vercel (hosting), Neon (Postgres), Supabase (photo storage), Google (OAuth sign-in, Gmail sending).
+- Processors: Vercel (hosting), Neon (Postgres), Supabase (photo storage), Google (OAuth sign-in, Gmail sending), Sentry (scrubbed error reports, up to 90 days), GitHub (encrypted database backups, 7 days).
 - User content becomes public when a user publishes a template (API exists; publish UI not built yet).
 - Security: strict CSP, owner-scoped API with cross-user tests, rate limits, file-signature checks on uploads,
   short-lived signed URLs, CodeQL, gitleaks, dependency review, `pnpm audit` in CI.
@@ -49,7 +49,7 @@ templates), it processes **personal data** of users in India and possibly the EU
 | 6 | No processing of children's data without verifiable parental consent (DPDP s. 9) | **Partly met**: Terms and sign-in state 18+ only; no age check | Accept the risk at this size, or add an "I'm 18 or older" checkbox at sign-up. |
 | 7 | Data rights: access, correction, erasure, grievance, nomination (DPDP s. 11–14) | **Met** for access, correction, erasure (Settings). Nomination by email. | None. |
 | 8 | Breach notification (DPDP s. 8(6); CERT-In; GDPR art. 33) | **Planned**: `docs/legal/incident-response.md` | Keep the plan to hand. |
-| 9 | Logs for 180 days within India (CERT-In) | **Not met** | Put Neon and Supabase in the Mumbai region (both offer it) and the Vercel function region in Mumbai (`bom1`); decide with a lawyer whether the log rule applies to a one-person free service, and if so, keep request logs in the database for 180 days. |
+| 9 | Logs for 180 days within India (CERT-In) | **Not met** | Put Supabase in Mumbai. Neon has no Mumbai region (its closest is Singapore, which `docs/deploy.md` uses, with Vercel functions in `sin1` beside it); decide with a lawyer whether the log rule applies to a one-person free service, and if so, keep request logs in the database for 180 days. |
 | 10 | Security safeguards (DPDP s. 8(5); IT Act 43A) | **Met** (see Facts) | Keep CI security checks green; rotate secrets after any suspicion. |
 | 11 | Vulnerability reporting route | **Met once `CONTACT_EMAIL` is set** (`/.well-known/security.txt`) | None. |
 | 12 | Licence for published templates | **Met** (Terms, "Your content") | Show a short notice in the publish flow when it's built. |
@@ -73,7 +73,7 @@ templates), it processes **personal data** of users in India and possibly the EU
 
 1. Set `GRIEVANCE_OFFICER_NAME` and `CONTACT_EMAIL` (a dedicated address) in Vercel.
 2. Switch sign-in email to a dedicated VASH Gmail account.
-3. Choose Mumbai regions (Neon, Supabase, Vercel functions) and settle the CERT-In log question with a lawyer.
+3. Put Supabase in Mumbai (Neon offers only Singapore nearby; see `docs/deploy.md`) and settle the CERT-In log question with a lawyer.
 4. Have a lawyer review `/terms` and `/privacy`.
 
 ## Further review recommended

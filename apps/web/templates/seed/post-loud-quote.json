@@ -1,10 +1,10 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "post-loud-quote",
   "kind": "template",
   "meta": {
     "title": "Loud Quote",
-    "category": "quotes",
+    "category": "quotes-tips",
     "tags": [
       "quote",
       "bold",

@@ -1,8 +1,10 @@
 import "server-only";
+import { attachDatabasePool } from "@vercel/functions";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import * as schema from "./schema";
 import type { Db } from "./types";
+import { UserScopedPool } from "./user-scope";
 
 /**
  * Fail fast instead of holding a request open: an unreachable database errors after 5 s, a stuck query after 15 s.
@@ -15,5 +17,8 @@ export function createDb(databaseUrl: string, onIdleError: (err: Error) => void)
   // The server can drop an idle client (Neon does); pg then emits "error" on the pool, which would
   // crash the process if nothing listened. The pool discards that client and opens a new one on demand.
   pool.on("error", onIdleError);
-  return { db: drizzle(pool, { schema }), pool };
+  // On Vercel (Fluid compute), close idle clients before the instance suspends instead of leaking them; a no-op elsewhere.
+  attachDatabasePool(pool);
+  // Statements made for a signed-in user run under row-level security (user-scope.ts).
+  return { db: drizzle(new UserScopedPool(pool) as unknown as Pool, { schema }), pool };
 }

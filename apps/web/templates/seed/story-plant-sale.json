@@ -1,10 +1,10 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "story-plant-sale",
   "kind": "template",
   "meta": {
     "title": "Plant Sale",
-    "category": "sale",
+    "category": "sales",
     "tags": [
       "plants",
       "sale",

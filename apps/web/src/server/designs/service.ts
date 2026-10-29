@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { LIMITS, parseDoc, type Doc } from "@vash/schema";
 import { findUnusableAssets } from "../assets/repository";
-import { isForeignKeyViolation } from "../db/errors";
+import { isForeignKeyViolation, isUniqueViolation } from "../db/errors";
 import type { Db } from "../db/types";
 import { folderExists } from "../folders/repository";
 import { conflict, notFound, unprocessable } from "../http/problem";
@@ -39,21 +39,38 @@ async function writingFolder<T>(write: Promise<T>): Promise<T> {
   }
 }
 
+/**
+ * A client may choose the id (designs made on a device before signing in): then a repeat of the same create
+ * returns the stored design (`created: false`), so an interrupted move to the account is safe to retry.
+ */
 export async function createDesign(
   ctx: ServiceContext,
   ownerId: string,
-  input: { title?: string; folderId?: string | null; doc: unknown },
-): Promise<repo.DesignRow> {
-  const id = randomUUID();
+  input: { id?: string; title?: string; folderId?: string | null; doc: unknown },
+): Promise<{ design: repo.DesignRow; created: boolean }> {
+  const id = input.id ?? randomUUID();
+  if (input.id) {
+    const existing = await repo.getDesign(ctx.db, ownerId, id);
+    if (existing) return { design: existing, created: false };
+  }
   const doc = await checkDoc(ctx.db, ownerId, input.doc, id);
   if (input.title !== undefined) doc.meta = { ...doc.meta, title: input.title };
   await assertFolder(ctx.db, ownerId, input.folderId);
   const now = ctx.now();
-  return writingFolder(
-    insertWithinQuota(ctx.db, ownerId, "designs", (tx) =>
-      repo.insertDesign(tx, { id, ownerId, folderId: input.folderId ?? null, title: doc.meta.title, doc, createdAt: now, updatedAt: now }),
-    ),
-  );
+  try {
+    const design = await writingFolder(
+      insertWithinQuota(ctx.db, ownerId, "designs", (tx) =>
+        repo.insertDesign(tx, { id, ownerId, folderId: input.folderId ?? null, title: doc.meta.title, doc, createdAt: now, updatedAt: now }),
+      ),
+    );
+    return { design, created: true };
+  } catch (err) {
+    if (!input.id || !isUniqueViolation(err)) throw err;
+    // A concurrent repeat won the race, or the id belongs to someone else (never say whose).
+    const existing = await repo.getDesign(ctx.db, ownerId, id);
+    if (existing) return { design: existing, created: false };
+    throw conflict("That design id is already taken. Try again with a new one.");
+  }
 }
 
 export async function saveDesignDoc(ctx: ServiceContext, ownerId: string, id: string, input: { doc: unknown; version: number }): Promise<repo.DesignRow> {

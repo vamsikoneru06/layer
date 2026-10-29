@@ -11,13 +11,14 @@ import { insertWithinQuota } from "../quotas";
 import { createFolder, deleteFolder, listFolders, renameFolder, type FolderRow } from "./repository";
 
 const writeLimit = { name: "userWrite", rule: RATE_LIMITS.userWrite, by: "user" } as const;
+const readLimit = { name: "userRead", rule: RATE_LIMITS.userRead, by: "user" } as const;
 const FolderBody = z.object({ name: z.string().trim().min(1).max(LIMITS.nameChars) }).strict();
 
 const toJson = (f: FolderRow) => ({ id: f.id, name: f.name, createdAt: f.createdAt.toISOString(), updatedAt: f.updatedAt.toISOString() });
 
 export function folderHandlers(deps: Deps) {
   return {
-    list: endpoint(deps, { auth: "user" }, async ({ req, user }) => {
+    list: endpoint(deps, { auth: "user", rateLimit: readLimit }, async ({ req, user }) => {
       const q = readQuery(req, pageQuery);
       const rows = await listFolders(deps.db, user.id, { cursor: q.cursor ? decodeCursor(q.cursor) : undefined, limit: q.limit });
       return Response.json(toPage(rows, q.limit, (r) => ({ at: r.createdAt.toISOString(), id: r.id }), toJson));

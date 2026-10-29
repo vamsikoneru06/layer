@@ -29,8 +29,8 @@ describe("GET /api/me", () => {
 describe("PATCH /api/me", () => {
   it("sets a normalised handle and interests", async () => {
     const alice = await createUser(t.db);
-    const res = await call(h.patch, { method: "PATCH", as: alice, body: { handle: "Riya_Designs", interests: ["birthday", "birthday", "travel"] } });
-    expect(res.body).toMatchObject({ handle: "riya_designs", interests: ["birthday", "travel"] });
+    const res = await call(h.patch, { method: "PATCH", as: alice, body: { handle: "Riya_Designs", interests: ["celebrations", "celebrations", "menus"] } });
+    expect(res.body).toMatchObject({ handle: "riya_designs", interests: ["celebrations", "menus"] });
   });
 
   it.each([{ handle: "ab" }, { handle: "has space" }, { handle: "admin" }, { interests: ["not-a-category"] }, { role: "admin" }, { email: "x@y.z" }])(

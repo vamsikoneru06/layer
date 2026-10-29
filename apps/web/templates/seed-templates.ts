@@ -143,7 +143,7 @@ function template(d: Definition): Doc {
     return { ...n, content: { assetId: ref.id, offsetX: 0, offsetY: 0, scale: 1 } };
   });
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     id: d.id,
     kind: "template",
     meta: { title: d.title, category: d.category, tags: d.tags, format: d.format },
@@ -164,7 +164,7 @@ export function seedTemplates(): Doc[] {
       photos: ["arch-window"],
       title: "Editorial Bloom",
       format: "ig-post",
-      category: "minimal",
+      category: "photo-posts",
       tags: ["editorial", "arch", "neutral", "spring"],
       background: solid("#F4F1EC"),
       nodes: [
@@ -181,7 +181,7 @@ export function seedTemplates(): Doc[] {
       photos: ["birthday-child"],
       title: "Confetti Birthday",
       format: "ig-post",
-      category: "birthday",
+      category: "celebrations",
       tags: ["birthday", "confetti", "pastel", "party"],
       background: linear(135, "#FFD6E0", "#FFE9C7"),
       nodes: [
@@ -203,7 +203,7 @@ export function seedTemplates(): Doc[] {
       photos: ["plated-dish"],
       title: "Chef's Special",
       format: "ig-post",
-      category: "food",
+      category: "menus",
       tags: ["menu", "restaurant", "dark", "special"],
       background: solid("#1F3A2E"),
       nodes: [
@@ -220,7 +220,7 @@ export function seedTemplates(): Doc[] {
       id: "post-loud-quote",
       title: "Loud Quote",
       format: "ig-post",
-      category: "quotes",
+      category: "quotes-tips",
       tags: ["quote", "bold", "typography", "motivation"],
       background: solid("#111111"),
       nodes: [
@@ -238,7 +238,7 @@ export function seedTemplates(): Doc[] {
       photos: ["beach-day", "golden-hour", "sea-swim"],
       title: "Weekend Photo Dump",
       format: "ig-story",
-      category: "travel",
+      category: "photo-posts",
       tags: ["photo dump", "polaroid", "collage", "weekend"],
       background: solid("#EDE6DA"),
       nodes: [
@@ -254,7 +254,7 @@ export function seedTemplates(): Doc[] {
       photos: ["sneakers"],
       title: "Flash Sale Drop",
       format: "ig-story",
-      category: "sale",
+      category: "sales",
       tags: ["sale", "discount", "gradient", "shop"],
       background: linear(160, "#FF5A36", "#FFB020"),
       nodes: [
@@ -290,7 +290,7 @@ export function seedTemplates(): Doc[] {
       id: "story-soft-quote",
       title: "Soft Gradient Quote",
       format: "ig-story",
-      category: "quotes",
+      category: "quotes-tips",
       tags: ["quote", "pastel", "gradient", "self-care"],
       background: linear(180, "#FDE2E4", "#CDE7F0"),
       nodes: [
@@ -309,7 +309,7 @@ export function seedTemplates(): Doc[] {
       photos: ["presenter"],
       title: "Three Tips",
       format: "yt-thumbnail",
-      category: "business",
+      category: "thumbnails",
       tags: ["youtube", "tips", "productivity", "bold"],
       background: solid("#F5F5F0"),
       nodes: [
@@ -326,7 +326,7 @@ export function seedTemplates(): Doc[] {
       photos: ["city-street"],
       title: "48 Hours In",
       format: "yt-thumbnail",
-      category: "travel",
+      category: "thumbnails",
       tags: ["vlog", "travel", "youtube", "beach"],
       background: solid("#000000"),
       nodes: [
@@ -342,7 +342,7 @@ export function seedTemplates(): Doc[] {
       photos: ["pasta-bowl"],
       title: "Quick Recipe",
       format: "yt-thumbnail",
-      category: "food",
+      category: "thumbnails",
       tags: ["recipe", "cooking", "youtube", "warm"],
       background: solid("#FFF4E0"),
       nodes: [
@@ -358,7 +358,7 @@ export function seedTemplates(): Doc[] {
       photos: ["coffee-cup", "tea-cup"],
       title: "Head to Head",
       format: "yt-thumbnail",
-      category: "business",
+      category: "thumbnails",
       tags: ["comparison", "versus", "review", "youtube"],
       background: solid("#111827"),
       nodes: [
@@ -398,7 +398,7 @@ export function seedTemplates(): Doc[] {
       photos: ["cafe-interior"],
       title: "Now Open",
       format: "poster",
-      category: "business",
+      category: "announcements",
       tags: ["cafe", "opening", "arch", "warm"],
       background: solid("#F7EFE5"),
       nodes: [
@@ -432,7 +432,7 @@ export function seedTemplates(): Doc[] {
       photos: ["flowers-vase"],
       title: "Still Life",
       format: "poster",
-      category: "minimal",
+      category: "events",
       tags: ["exhibition", "gallery", "minimal", "art"],
       background: solid("#FAFAF7"),
       nodes: [
@@ -451,7 +451,7 @@ export function seedTemplates(): Doc[] {
       photos: ["wedding-couple"],
       title: "Arch Wedding",
       format: "invitation",
-      category: "events",
+      category: "invitations",
       tags: ["wedding", "invitation", "arch", "elegant"],
       background: solid("#FBF7F0"),
       nodes: [
@@ -471,7 +471,7 @@ export function seedTemplates(): Doc[] {
       photos: ["kid-balloons"],
       title: "Balloon Party",
       format: "invitation",
-      category: "birthday",
+      category: "invitations",
       tags: ["kids", "birthday", "balloons", "pastel"],
       background: linear(180, "#E0F4FF", "#FFE9F3"),
       nodes: [
@@ -495,7 +495,7 @@ export function seedTemplates(): Doc[] {
       photos: ["dinner-table"],
       title: "Supper Club",
       format: "invitation",
-      category: "food",
+      category: "invitations",
       tags: ["dinner", "supper club", "elegant", "dark"],
       background: solid("#23291F"),
       nodes: [
@@ -513,7 +513,7 @@ export function seedTemplates(): Doc[] {
       photos: ["family-lights"],
       title: "Festive Greetings",
       format: "invitation",
-      category: "events",
+      category: "invitations",
       tags: ["festive", "greetings", "telugu", "family"],
       background: linear(160, "#7A1F3D", "#3B0D1E"),
       nodes: [
@@ -533,7 +533,7 @@ export function seedTemplates(): Doc[] {
       photos: ["mountain-lake"],
       title: "Travel Postcard",
       format: "ig-post",
-      category: "travel",
+      category: "photo-posts",
       tags: ["travel", "postcard", "mountains", "holiday"],
       background: solid("#F7F2E8"),
       nodes: [
@@ -548,7 +548,7 @@ export function seedTemplates(): Doc[] {
       photos: ["fashion-model", "clothes-rack"],
       title: "New Arrivals",
       format: "ig-post",
-      category: "sale",
+      category: "sales",
       tags: ["fashion", "new in", "shop", "dark"],
       background: solid("#111111"),
       nodes: [
@@ -564,7 +564,7 @@ export function seedTemplates(): Doc[] {
       photos: ["team-office"],
       title: "We're Hiring",
       format: "ig-post",
-      category: "business",
+      category: "announcements",
       tags: ["hiring", "jobs", "team", "careers"],
       background: solid("#0F2A4A"),
       nodes: [
@@ -581,7 +581,7 @@ export function seedTemplates(): Doc[] {
       photos: ["couple-sunset"],
       title: "Anniversary",
       format: "ig-post",
-      category: "events",
+      category: "celebrations",
       tags: ["anniversary", "love", "couple", "warm"],
       background: linear(180, "#FFE8D6", "#FFD1BA"),
       nodes: [
@@ -597,7 +597,7 @@ export function seedTemplates(): Doc[] {
       photos: ["portrait-bw"],
       title: "Minimal Portrait",
       format: "ig-post",
-      category: "minimal",
+      category: "photo-posts",
       tags: ["portrait", "black and white", "photography", "series"],
       background: solid("#EDEDED"),
       nodes: [
@@ -613,7 +613,7 @@ export function seedTemplates(): Doc[] {
       photos: ["sunrise-mountains"],
       title: "Morning Quote",
       format: "ig-post",
-      category: "quotes",
+      category: "quotes-tips",
       tags: ["quote", "morning", "sunrise", "calm"],
       background: solid("#000000"),
       nodes: [
@@ -629,7 +629,7 @@ export function seedTemplates(): Doc[] {
       photos: ["forest-trail", "ocean-waves", "desert-dunes", "snowy-peaks"],
       title: "Year in Places",
       format: "ig-post",
-      category: "travel",
+      category: "photo-posts",
       tags: ["grid", "recap", "travel", "collage"],
       background: solid("#FFFFFF"),
       nodes: [
@@ -648,7 +648,7 @@ export function seedTemplates(): Doc[] {
       photos: ["latte-art"],
       title: "Coffee Morning",
       format: "ig-story",
-      category: "food",
+      category: "menus",
       tags: ["coffee", "cafe", "morning", "warm"],
       background: linear(180, "#F3E9DC", "#E6D3BD"),
       nodes: [
@@ -664,7 +664,7 @@ export function seedTemplates(): Doc[] {
       photos: ["workout"],
       title: "Workout Plan",
       format: "ig-story",
-      category: "minimal",
+      category: "quotes-tips",
       tags: ["fitness", "workout", "gym", "plan"],
       background: solid("#0B0B0B"),
       nodes: [
@@ -679,7 +679,7 @@ export function seedTemplates(): Doc[] {
       photos: ["plants"],
       title: "Plant Sale",
       format: "ig-story",
-      category: "sale",
+      category: "sales",
       tags: ["plants", "sale", "green", "shop"],
       background: solid("#E7F0E4"),
       nodes: [
@@ -698,7 +698,7 @@ export function seedTemplates(): Doc[] {
       photos: ["podcast-mic"],
       title: "Podcast Episode",
       format: "yt-thumbnail",
-      category: "business",
+      category: "thumbnails",
       tags: ["podcast", "episode", "dark", "interview"],
       background: solid("#16161A"),
       nodes: [
@@ -714,7 +714,7 @@ export function seedTemplates(): Doc[] {
       photos: ["road-trip"],
       title: "Road Trip",
       format: "yt-thumbnail",
-      category: "travel",
+      category: "thumbnails",
       tags: ["road trip", "travel", "vlog", "adventure"],
       background: solid("#000000"),
       nodes: [
@@ -747,7 +747,7 @@ export function seedTemplates(): Doc[] {
       photos: ["vegetables", "fruit"],
       title: "Farmers' Market",
       format: "poster",
-      category: "food",
+      category: "announcements",
       tags: ["market", "local", "fresh", "weekend"],
       background: solid("#FFF8E7"),
       nodes: [
@@ -766,7 +766,7 @@ export function seedTemplates(): Doc[] {
       photos: ["graduate"],
       title: "Graduation Party",
       format: "invitation",
-      category: "events",
+      category: "invitations",
       tags: ["graduation", "party", "celebration", "navy"],
       background: solid("#0E1B2E"),
       nodes: [
@@ -783,7 +783,7 @@ export function seedTemplates(): Doc[] {
       photos: ["baby-toys"],
       title: "Baby Shower",
       format: "invitation",
-      category: "birthday",
+      category: "invitations",
       tags: ["baby shower", "soft", "pastel", "celebration"],
       background: linear(180, "#EAF4F4", "#FDF1E7"),
       nodes: [
