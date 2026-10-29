@@ -68,6 +68,7 @@ export default function PrivacyPage() {
       <h2>Cookies</h2>
       <ul>
         <li>A session cookie that keeps you signed in. It&apos;s required for the app to work.</li>
+        <li>Short-lived cookies used only while you sign in with Google. They expire within 10 minutes.</li>
         <li>An appearance cookie, only if you choose Light or Dark in Settings, so the app opens in your chosen theme.</li>
       </ul>
       <p>
@@ -95,7 +96,9 @@ export default function PrivacyPage() {
       <h2>Who can see your designs</h2>
       <p>
         Your designs and photos are private to your account. Uploaded photos and design previews are kept in private storage and are only shown to you
-        through links that expire within an hour. A design becomes public only if you choose to publish it as a template.
+        through links that expire within an hour. A design is public only if you choose to publish it as a template. Publishing copies its
+        photos and preview into public storage, where anyone with the link can see them. Hiding the template later does not remove those
+        copies; they stay until your account is deleted.
       </p>
 
       <h2>How long we keep it</h2>
@@ -107,7 +110,8 @@ export default function PrivacyPage() {
         <li>Error reports: up to 90 days, then Sentry deletes them.</li>
         <li>Encrypted database backups: 7 days.</li>
         <li>
-          After you delete your account: your data is removed at once and photo files are deleted from storage shortly after. We keep a
+          After you delete your account: your data is removed at once. Photo files are removed from storage by a daily cleanup job, and a
+          failed removal is retried for up to a week. We keep a
           single record that an account with a given internal id was deleted, with no name or email, to show we acted on the request.
         </li>
         <li>Our providers&apos; backups and logs may hold copies for a short time before they expire under their own policies.</li>
