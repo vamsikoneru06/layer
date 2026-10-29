@@ -3,7 +3,7 @@
 import { Menu } from "@/components/ui/menu";
 import { MENUS, toMenuItems, type Action, type ActionId } from "./editor-actions";
 
-const TITLES = { file: "File", edit: "Edit", view: "View", help: "Help" } as const;
+const TITLES = { file: "File", edit: "Edit", arrange: "Arrange", view: "View", help: "Help" } as const;
 
 export function MenuBar({ actions, mac }: { actions: Record<ActionId, Action>; mac: boolean }) {
   return (

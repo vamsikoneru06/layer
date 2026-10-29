@@ -1,6 +1,6 @@
 import type { Doc, NodeId } from "@vash/schema";
 import { EditorCore, type EditorState } from "./editor-core";
-import { exportPng } from "./export";
+import { exportImage, exportPng, type ImageFormat } from "./export";
 import { createFilterRenderer, type FilterFn } from "./filters";
 import { fontRequests } from "./fonts";
 import { createInteraction, type PointerInput } from "./interaction";
@@ -9,7 +9,7 @@ import type { EditMode } from "./policy";
 import { renderScene, type ImageState } from "./render";
 import { hitTest } from "./hit-test";
 import { frameAt } from "./photos";
-import { handleKey } from "./shortcuts";
+import { handleKey, type KeyInput } from "./shortcuts";
 import type { Measure } from "./text";
 import { textEditBox, type TextEditBox } from "./text-edit";
 import { fitViewport, toWorld, zoomAt } from "./viewport";
@@ -38,6 +38,8 @@ export interface Editor {
   invalidate(): void;
   /** The current document as a PNG at 1×/2×/3×. */
   exportPng(o: { scale: number; transparent: boolean }): Promise<Blob>;
+  /** The current document as a PNG or JPEG. JPEG ignores `transparent` and always paints the background. */
+  exportImage(o: { scale: number; transparent: boolean; format: ImageFormat; quality?: number }): Promise<Blob>;
   /** Placement of the on-canvas text box while a text layer is being edited. */
   textEditBox(): TextEditBox | null;
   /**
@@ -61,6 +63,27 @@ export interface KeyTarget {
   isContentEditable?: boolean;
   tagName?: string;
   closest?: (selector: string) => unknown;
+}
+
+/** The members of a keydown event that make up a shortcut. */
+export interface KeyEventLike {
+  key: string;
+  code: string;
+  metaKey: boolean;
+  ctrlKey: boolean;
+  shiftKey: boolean;
+  altKey: boolean;
+}
+
+/**
+ * A key press as `handleKey` takes it. With Option held, macOS reports the character it types ("ç" for C),
+ * so there a letter comes from the physical key (`code`) to let Option shortcuts match. Other platforms
+ * keep `key`: on Windows and Linux Ctrl+Alt is AltGr, which types characters, and the physical key would
+ * also be wrong on Dvorak or Colemak layouts.
+ */
+export function keyInputOf(e: KeyEventLike, mac: boolean): KeyInput {
+  const letter = mac && e.altKey && !/^[a-z]$/i.test(e.key) ? /^Key([A-Z])$/.exec(e.code) : null;
+  return { key: letter ? letter[1]!.toLowerCase() : e.key, mod: mac ? e.metaKey : e.ctrlKey, shift: e.shiftKey, alt: e.altKey };
 }
 
 /** The element a mouse press last focused; anything inside it still counts as mouse-focused. */
@@ -225,8 +248,8 @@ export function createEditor(o: EditorOptions): Editor {
       e.preventDefault();
       return;
     }
-    const mod = navigator.platform.startsWith("Mac") ? e.metaKey : e.ctrlKey;
-    if (handleKey(core, { key: e.key, mod, shift: e.shiftKey, alt: e.altKey })) e.preventDefault();
+    if (e.getModifierState?.("AltGraph")) return; // AltGr types a character, it is not a shortcut
+    if (handleKey(core, keyInputOf(e, navigator.platform.startsWith("Mac")))) e.preventDefault();
   };
   const onKeyUp = (e: KeyboardEvent) => {
     if (e.key === " ") {
@@ -265,6 +288,7 @@ export function createEditor(o: EditorOptions): Editor {
     zoomTo: (zoom) => core.setChrome({ viewport: zoomAt(core.getState().viewport, { x: size.width / 2, y: size.height / 2 }, zoom) }),
     invalidate,
     exportPng: (e) => exportPng(core.doc, { ...e, measure, image, imagesReady: o.imagesReady, filter }),
+    exportImage: (e) => exportImage(core.doc, { ...e, measure, image, imagesReady: o.imagesReady, filter }),
     dropTarget: (at) => {
       let id: NodeId | null = null;
       if (at) {

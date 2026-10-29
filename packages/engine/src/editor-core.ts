@@ -2,8 +2,8 @@ import { LIMITS, type Doc, type NodeId } from "@vash/schema";
 import type { Command } from "./commands";
 import { History } from "./history";
 import type { Box } from "./math";
-import { checkPolicy, type EditMode } from "./policy";
-import type { Guide } from "./snapping";
+import { checkPolicy, LOCKED, type EditMode } from "./policy";
+import { DEFAULT_SNAP, type Guide, type SnapOptions } from "./snapping";
 import { limitText } from "./text";
 import type { Viewport } from "./viewport";
 
@@ -40,6 +40,8 @@ export class EditorCore {
   #state: EditorState;
   #listeners = new Set<() => void>();
   #txRefused = false;
+  /** View setting, not document state: not in the undo history, read when a drag starts. */
+  #snapOptions: SnapOptions = DEFAULT_SNAP;
 
   constructor(doc: Doc, o: { mode?: EditMode } = {}) {
     this.mode = o.mode ?? "design";
@@ -57,6 +59,15 @@ export class EditorCore {
 
   get doc(): Doc {
     return this.history.doc;
+  }
+
+  get snapOptions(): SnapOptions {
+    return this.#snapOptions;
+  }
+
+  /** Takes effect the next time a drag starts; does not publish a state change. */
+  setSnapOptions(next: SnapOptions): void {
+    this.#snapOptions = next;
   }
 
   /** Applies one command as one undo step. Returns false (and sets a notice) when a lock refuses it. */
@@ -106,7 +117,7 @@ export class EditorCore {
     const node = this.doc.nodes[id];
     if (node?.type !== "text" || this.#chrome.editing) return false;
     if (this.mode === "design" && node.lock === "locked") {
-      this.setChrome({ notice: "This layer is locked by the template." });
+      this.setChrome({ notice: LOCKED });
       return false;
     }
     this.select([id]);
@@ -170,7 +181,9 @@ export class EditorCore {
 
   #snapshot(): EditorState {
     const doc = this.history.doc;
-    const selection = this.#selection.filter((id) => doc.nodes[id]);
+    const present = this.#selection.filter((id) => doc.nodes[id]);
+    // Keep the same array while nothing was dropped, so a view can tell the selection did not change.
+    const selection = present.length === this.#selection.length ? this.#selection : present;
     this.#selection = selection;
     const layoutLocked = this.mode === "design" && selection.some((id) => doc.nodes[id]?.lock !== "free");
     // Crop mode ends by itself when its frame is deselected, deleted or emptied (including by undo).

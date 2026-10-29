@@ -343,6 +343,8 @@ export function Slider({
   step = 0.01,
   onChange,
   disabled,
+  valueText = (v) => `${Math.round(v * 100)}%`,
+  readout = (v) => String(Math.round(v * 100)),
 }: {
   label: string;
   value: number;
@@ -351,6 +353,10 @@ export function Slider({
   step?: number;
   onChange: (v: number, final: boolean) => void;
   disabled?: boolean;
+  /** What screen readers announce for the value. Defaults to the percent shown on the slider. */
+  valueText?: (value: number) => string;
+  /** The number shown beside the label. Defaults to the value times 100, for 0 to 1 ranges. */
+  readout?: (value: number) => string;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const latest = useRef(onChange);
@@ -369,12 +375,13 @@ export function Slider({
     <label className={cn("flex flex-col gap-1", disabled && "opacity-45")}>
       <span className="flex items-center justify-between text-[12px]">
         <span className="text-muted">{label}</span>
-        <span className="font-medium tabular-nums">{Math.round(value * 100)}</span>
+        <span className="font-medium tabular-nums">{readout(value)}</span>
       </span>
       <input
         ref={input}
         type="range"
         aria-label={label}
+        aria-valuetext={valueText(value)}
         min={min}
         max={max}
         step={step}

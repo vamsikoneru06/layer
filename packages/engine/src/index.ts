@@ -7,20 +7,44 @@ export { createInteraction, type Interaction, type PointerInput, type WheelInput
 export { handleKey, type KeyInput } from "./shortcuts";
 export { hitTest, nodesInBox, worldBounds } from "./hit-test";
 export { drawOrder, parentOf, topLevelOf, worldMatrix } from "./scene";
-export { layoutText, type Measure, type TextLayout } from "./text";
+export { layoutText, LIST_INDENT, type Measure, type TextLayout } from "./text";
 export { fontRequests } from "./fonts";
-export { createNode, insertLayer, newNodeId, type InsertKind } from "./insert";
+export { createNode, insertLayer, insertShape, newNodeId, type InsertKind, type ShapeSpec } from "./insert";
 export { CLIPBOARD_PREFIX, planDuplicate } from "./clipboard";
 export { planGroup, planUngroup } from "./structure";
-export { INVALID_CHANGE, copySelection, cutSelection, duplicateSelection, groupSelection, pasteText, runPlan, ungroupSelection } from "./edit-ops";
+export { planAlign, planDistribute, planFlip, planMoveLayer, planReorder, planToggleLock, lockLabel, type AlignEdge, type Axis, type ReorderTarget } from "./arrange";
+export { STYLE_FIELDS, planPasteStyle, styleOf, type Style } from "./style";
+export {
+  INVALID_CHANGE,
+  alignSelection,
+  copySelection,
+  copiedStyleOf,
+  copyStyleOfSelection,
+  cutSelection,
+  distributeSelection,
+  duplicateSelection,
+  flipSelection,
+  groupSelection,
+  hasCopiedStyle,
+  moveLayer,
+  pasteStyleToSelection,
+  pasteText,
+  renameLayer,
+  reorderSelection,
+  runPlan,
+  toggleLockOfLayer,
+  toggleLockSelection,
+  ungroupSelection,
+} from "./edit-ops";
 export { topLevelSelection, type Plan } from "./selection-utils";
+export { planResize, resizeDesign, type ArtboardSize } from "./resize";
 export { clampContent, fillPhotos, frameAt, newPhotoFrame, photoTargets, placePhoto, removePhoto, swapPhotos, zoomPhoto } from "./photos";
 export { createFilterRenderer, FILTER_KEYS, FILTER_PRESETS, isNeutral, presetFilters, type FilterFn, type FilterValues } from "./filters";
 export { textEditBox, type TextEditBox } from "./text-edit";
-export { checkExport, exportPng, EXPORT_MAX_SIDE, PHOTOS_NOT_READY, referencedImages, type ExportCheck, type ExportOptions } from "./export";
+export { checkExport, exportImage, exportPng, EXPORT_MAX_SIDE, PHOTOS_NOT_READY, referencedImages, type ExportCheck, type ExportOptions, type ImageFormat } from "./export";
 export { drawNode, renderDoc, renderScene, fontString, type ImageState, type LoadedImage, type RenderOptions } from "./render";
 export { renderOverlay, GUIDE_COLOR, type OverlayState } from "./overlay";
 export { selectionFrame, handlePositions, handleAt, type Handle, type SelectionFrame } from "./handles";
-export { createSnapper, type Guide, type Snapper } from "./snapping";
+export { createSnapper, DEFAULT_SNAP, type Guide, type SnapOptions, type Snapper } from "./snapping";
 export { fitViewport, toScreen, toWorld, zoomAt, ZOOM_MAX, ZOOM_MIN, type Viewport } from "./viewport";
 export * from "./math";

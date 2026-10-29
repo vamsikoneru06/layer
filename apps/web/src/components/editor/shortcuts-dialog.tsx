@@ -2,11 +2,11 @@
 
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { formatShortcut, OTHER_SHORTCUTS, SHORTCUT_ACTIONS, type Action, type ActionId } from "./editor-actions";
+import { formatShortcut, OTHER_SHORTCUTS, SHORTCUT_ACTIONS, SHORTCUT_NAMES, type Action, type ActionId } from "./editor-actions";
 
 export function ShortcutsDialog({ open, onClose, actions, mac }: { open: boolean; onClose: () => void; actions: Record<ActionId, Action>; mac: boolean }) {
   const rows = [
-    ...SHORTCUT_ACTIONS.flatMap((id) => (actions[id].shortcut ? [{ name: actions[id].label, keys: formatShortcut(actions[id].shortcut!, mac) }] : [])),
+    ...SHORTCUT_ACTIONS.flatMap((id) => (actions[id].shortcut ? [{ name: SHORTCUT_NAMES[id] ?? actions[id].label, keys: formatShortcut(actions[id].shortcut!, mac) }] : [])),
     ...OTHER_SHORTCUTS.map((o) => ({ name: o.does, keys: formatShortcut(o.spec, mac) })),
   ];
   return (

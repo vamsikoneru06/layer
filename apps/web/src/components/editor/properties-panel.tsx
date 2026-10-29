@@ -1,16 +1,42 @@
 "use client";
 
-import { apply, checkPolicy, FILTER_PRESETS, isNeutral, presetFilters, removePhoto, rotation, zoomPhoto, type Command, type EditorCore, type EditorState, type FilterValues } from "@vash/engine";
-import { defaultFilters, FONT_FAMILIES, LIMITS, type FrameNode, type Node, type ShapeNode, type TextNode } from "@vash/schema";
-import { AlignCenter, AlignJustify, AlignLeft, AlignRight, Lock } from "lucide-react";
-import { useMemo } from "react";
+import { apply, checkPolicy, removePhoto, rotation, zoomPhoto, type Command, type EditorCore, type EditorState } from "@vash/engine";
+import { FONT_FAMILIES, LIMITS, type FrameNode, type Node, type ShapeNode, type TextNode } from "@vash/schema";
+import {
+  AlignCenter,
+  AlignCenterHorizontal,
+  AlignCenterVertical,
+  AlignEndHorizontal,
+  AlignEndVertical,
+  AlignHorizontalSpaceBetween,
+  AlignJustify,
+  AlignLeft,
+  AlignRight,
+  AlignStartHorizontal,
+  AlignStartVertical,
+  AlignVerticalSpaceBetween,
+  ArrowDown,
+  ArrowUp,
+  BringToFront,
+  FlipHorizontal2,
+  FlipVertical2,
+  Lock,
+  SendToBack,
+} from "lucide-react";
+import { useMemo, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { docColors } from "@/lib/color";
+import { designColors } from "@/lib/design-colors";
 import { DocColorsContext } from "./color-picker";
 import { ColorField, NumberField, Row, Section, Segmented, SelectField, Slider, Switch } from "./fields";
+import { FiltersSection } from "./filters-section";
+import { actionTitle, type Action, type ActionId } from "./editor-actions";
 import { FillField } from "./fill-field";
 import { FONT_FACES } from "./font-faces";
+import { IconButton } from "./icon-button";
+import { AltTextSection } from "./alt-text-section";
+import { ShadowSection } from "./shadow-section";
 import { changeCase, presetPatch, TEXT_PRESETS, type Case } from "./text-tools";
+import { TextEffectsSection } from "./text-effects-section";
 
 const TYPE_LABEL: Record<Node["type"], string> = { frame: "Photo frame", text: "Text", shape: "Shape", sticker: "Sticker", group: "Group" };
 
@@ -18,7 +44,7 @@ const TYPE_LABEL: Record<Node["type"], string> = { frame: "Photo frame", text: "
  * Applies a change as one undo step. Colour pickers send a stream of previews (`final` false) then one
  * final value; those run as a single transaction, like a drag on the canvas.
  */
-function changer(core: EditorCore) {
+export function changer(core: EditorCore) {
   return (cmd: Command, final = true) => {
     if (final && !core.history.inTransaction) return void core.dispatch(cmd);
     if (!core.history.inTransaction) core.beginTransaction();
@@ -35,22 +61,84 @@ function nearestWeight(family: string, weight: number): number {
 
 const WEIGHT_NAMES: Record<number, string> = { 100: "Thin", 200: "Extra light", 300: "Light", 400: "Regular", 500: "Medium", 600: "Semibold", 700: "Bold", 800: "Extra bold", 900: "Black" };
 
-export function PropertiesPanel({ state, core }: { state: EditorState; core: EditorCore }) {
-  const colors = useMemo(() => docColors(state.doc), [state.doc]);
+type Actions = Record<ActionId, Action>;
+
+/** Icon buttons for the arrange actions, in rows by kind. Each one shows why it is off, or its name and shortcut, as its tooltip. */
+export const ARRANGE_ROWS: readonly { name: string; buttons: readonly { id: ActionId; icon: ReactNode }[] }[] = [
+  {
+    name: "Align",
+    buttons: [
+      { id: "alignLeft", icon: <AlignStartVertical aria-hidden /> },
+      { id: "alignCenter", icon: <AlignCenterVertical aria-hidden /> },
+      { id: "alignRight", icon: <AlignEndVertical aria-hidden /> },
+      { id: "alignTop", icon: <AlignStartHorizontal aria-hidden /> },
+      { id: "alignMiddle", icon: <AlignCenterHorizontal aria-hidden /> },
+      { id: "alignBottom", icon: <AlignEndHorizontal aria-hidden /> },
+    ],
+  },
+  {
+    name: "Distribute and flip",
+    buttons: [
+      { id: "distributeHorizontal", icon: <AlignHorizontalSpaceBetween aria-hidden /> },
+      { id: "distributeVertical", icon: <AlignVerticalSpaceBetween aria-hidden /> },
+      { id: "flipHorizontal", icon: <FlipHorizontal2 aria-hidden /> },
+      { id: "flipVertical", icon: <FlipVertical2 aria-hidden /> },
+    ],
+  },
+  {
+    name: "Order",
+    buttons: [
+      { id: "bringForward", icon: <ArrowUp aria-hidden /> },
+      { id: "bringToFront", icon: <BringToFront aria-hidden /> },
+      { id: "sendBackward", icon: <ArrowDown aria-hidden /> },
+      { id: "sendToBack", icon: <SendToBack aria-hidden /> },
+    ],
+  },
+];
+
+function ArrangeSection({ actions, mac }: { actions: Actions; mac: boolean }) {
+  return (
+    <Section title="Arrange">
+      <div className="flex flex-col gap-1">
+        {ARRANGE_ROWS.map((row) => (
+          <div key={row.name} role="group" aria-label={row.name} className="flex gap-1">
+            {row.buttons.map(({ id, icon }) => {
+              const a = actions[id];
+              return (
+                <IconButton key={id} label={a.label} title={actionTitle(a, mac)} onClick={a.run} unavailable={a.disabled}>
+                  {icon}
+                </IconButton>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+/** `actions` feeds the Arrange buttons; a host without them (the filters lab) shows the panel without that section. */
+export function PropertiesPanel({ state, core, actions, mac = false }: { state: EditorState; core: EditorCore; actions?: Actions; mac?: boolean }) {
+  const colors = useMemo(() => designColors(state.doc, 16), [state.doc]);
   return (
     <DocColorsContext value={colors}>
-      <PanelBody state={state} core={core} />
+      <PanelBody state={state} core={core} actions={actions} mac={mac} />
     </DocColorsContext>
   );
 }
 
-function PanelBody({ state, core }: { state: EditorState; core: EditorCore }) {
+function PanelBody({ state, core, actions, mac }: { state: EditorState; core: EditorCore; actions?: Actions; mac: boolean }) {
   const { doc, selection, mode } = state;
   const change = changer(core);
   const allowed = (cmd: Command) => checkPolicy(doc, cmd, mode).ok;
 
   if (selection.length > 1) {
-    return <p className="text-muted">{selection.length} layers selected. Select one layer to edit its properties.</p>;
+    return (
+      <div className="flex flex-col gap-3.5">
+        <p className="text-muted">{selection.length} layers selected. Select one layer to edit its properties.</p>
+        {actions && <ArrangeSection actions={actions} mac={mac} />}
+      </div>
+    );
   }
 
   const node = selection.length === 1 ? doc.nodes[selection[0]!] : undefined;
@@ -112,9 +200,19 @@ function PanelBody({ state, core }: { state: EditorState; core: EditorCore }) {
       )}
 
       {node.type === "text" && <TextSection node={node} disabled={locked} update={update} artboard={doc.artboard} authoring={mode === "template"} />}
+      {node.type === "text" && (
+        <TextEffectsSection
+          node={node}
+          page={doc.artboard.background.type === "solid" ? doc.artboard.background.color : (doc.artboard.background.stops[0]?.color ?? null)}
+          disabled={locked}
+          update={update}
+        />
+      )}
       {node.type === "shape" && <ShapeSection node={node} disabled={locked} update={update} />}
       {node.type === "frame" && <PhotoSection node={node} disabled={locked} doc={doc} change={change} />}
       {node.type === "frame" && <FiltersSection node={node} disabled={locked} update={update} />}
+
+      {actions && <ArrangeSection actions={actions} mac={mac} />}
 
       <Section title="Position & size">
         <div className="grid grid-cols-2 gap-2">
@@ -134,6 +232,9 @@ function PanelBody({ state, core }: { state: EditorState; core: EditorCore }) {
           <NumberField label="◐" name="Opacity in percent" value={node.opacity * 100} min={0} max={100} suffix="%" disabled={locked} onCommit={(o) => update({ opacity: o / 100 })} />
         </div>
       </Section>
+
+      <ShadowSection node={node} disabled={locked} update={update} />
+      {node.type !== "text" && <AltTextSection key={id} node={node} disabled={locked} update={update} />}
 
       {mode === "design" && !locked && (
         <Row label="Lock layer">
@@ -280,6 +381,12 @@ function TextSection({
   );
 }
 
+const BORDER_STYLES = [
+  { value: "solid", label: "Solid" },
+  { value: "dashed", label: "Dashed" },
+  { value: "dotted", label: "Dotted" },
+] as const;
+
 function ShapeSection({ node, disabled, update }: { node: ShapeNode; disabled: boolean; update: Update }) {
   const g = node.geometry;
   return (
@@ -315,6 +422,11 @@ function ShapeSection({ node, disabled, update }: { node: ShapeNode; disabled: b
           </button>
         </div>
       )}
+      <Row label="Border style">
+        <div className="w-[180px]">
+          <Segmented name="Border style" value={node.stroke?.dash ?? "solid"} options={BORDER_STYLES} disabled={disabled || !node.stroke} onChange={(dash) => update({ stroke: { ...node.stroke!, dash } })} />
+        </div>
+      </Row>
       {g.kind === "rect" && (
         <NumberField
           label="◜"
@@ -329,20 +441,6 @@ function ShapeSection({ node, disabled, update }: { node: ShapeNode; disabled: b
     </Section>
   );
 }
-
-const SLIDERS: readonly { key: keyof FilterValues; label: string; signed: boolean }[] = [
-  { key: "brightness", label: "Brightness", signed: true },
-  { key: "contrast", label: "Contrast", signed: true },
-  { key: "saturation", label: "Saturation", signed: true },
-  { key: "warmth", label: "Warmth", signed: true },
-  { key: "tint", label: "Tint", signed: true },
-  { key: "highlights", label: "Highlights", signed: true },
-  { key: "shadows", label: "Shadows", signed: true },
-  { key: "vignette", label: "Vignette", signed: false },
-  { key: "grain", label: "Grain", signed: false },
-  { key: "blur", label: "Blur", signed: false },
-  { key: "sharpen", label: "Sharpen", signed: false },
-];
 
 function PhotoSection({ node, disabled, doc, change }: { node: FrameNode; disabled: boolean; doc: EditorState["doc"]; change: (cmd: Command, final?: boolean) => void }) {
   if (!node.content) {
@@ -367,42 +465,6 @@ function PhotoSection({ node, disabled, doc, change }: { node: FrameNode; disabl
         <Button variant="secondary" size="sm" disabled={disabled} onClick={() => change(removePhoto(doc, node.id))}>
           Remove photo
         </Button>
-      </div>
-    </Section>
-  );
-}
-
-function FiltersSection({ node, disabled, update }: { node: FrameNode; disabled: boolean; update: Update }) {
-  const f = node.filters;
-  const chip = (selected: boolean) =>
-    `h-8 rounded-lg px-2 text-[12px] font-medium disabled:opacity-45 ${selected ? "bg-text text-bg" : "bg-field text-text hover:bg-line"}`;
-
-  return (
-    <Section title="Filters">
-      {!node.content && <p className="text-[12px] text-muted">Add a photo to this frame to see its filters.</p>}
-      <div role="group" aria-label="Filter presets" className="grid grid-cols-4 gap-1.5">
-        <button type="button" aria-pressed={f.preset === null && isNeutral(f)} disabled={disabled} onClick={() => update({ filters: defaultFilters() })} className={chip(f.preset === null && isNeutral(f))}>
-          None
-        </button>
-        {FILTER_PRESETS.map((p) => (
-          <button key={p.key} type="button" aria-pressed={f.preset === p.key} disabled={disabled} onClick={() => update({ filters: presetFilters(p.key) })} className={chip(f.preset === p.key)}>
-            {p.label}
-          </button>
-        ))}
-      </div>
-      <div className="flex flex-col gap-2.5 pt-1">
-        {SLIDERS.map(({ key, label, signed }) => (
-          <Slider
-            key={key}
-            label={label}
-            value={f[key]}
-            min={signed ? -1 : 0}
-            max={1}
-            disabled={disabled}
-            // Adjusting by hand leaves the preset; its values stay as the starting point.
-            onChange={(v, final) => update({ filters: { ...f, [key]: v, preset: null } }, final)}
-          />
-        ))}
       </div>
     </Section>
   );

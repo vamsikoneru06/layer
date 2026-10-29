@@ -25,6 +25,12 @@ export const LIMITS = {
   polygonSidesMin: 3,
   polygonSidesMax: 64,
   strokeWidthMax: 500,
+  altChars: 250,
+  shadowBlurMax: 200,
+  shadowOffsetMax: 500,
+  textOutlineMax: 20,
+  curveMax: 100,
+  pixelateMax: 100,
 } as const;
 
 export const FORMATS: Record<Exclude<FormatKey, "custom">, { width: number; height: number; label: string }> = {

@@ -1,7 +1,8 @@
 import { EditorCore, ZOOM_MAX } from "@vash/engine";
 import { createEmptyDoc, type Doc, type ShapeNode } from "@vash/schema";
 import { describe, expect, it, vi } from "vitest";
-import { ACTION_IDS, buildActions, CONTEXT_LAYOUTS, formatShortcut, MENUS, toMenuItems, type ActionHost } from "./editor-actions";
+import { DEFAULT_VIEW } from "@/lib/guides";
+import { actionTitle, ACTION_IDS, buildActions, CONTEXT_LAYOUTS, formatShortcut, MENUS, SHORTCUT_ACTIONS, SHORTCUT_NAMES, toMenuItems, type ActionHost } from "./editor-actions";
 
 function rect(id: string, x: number, lock: ShapeNode["lock"] = "free"): ShapeNode {
   return {
@@ -40,14 +41,25 @@ const host = (over: Partial<ActionHost> = {}): ActionHost => ({
   rename: vi.fn(),
   moveToFolder: vi.fn(),
   designInfo: vi.fn(),
+  versionHistory: vi.fn(),
+  resizeDesign: vi.fn(),
   save: vi.fn(),
   download: vi.fn(),
   zoomIn: vi.fn(),
   zoomOut: vi.fn(),
   fit: vi.fn(),
+  actualSize: vi.fn(),
   fullscreen: vi.fn(),
   togglePanels: vi.fn(),
   shortcuts: vi.fn(),
+  view: { ...DEFAULT_VIEW },
+  guideCount: 0,
+  toggleRulers: vi.fn(),
+  toggleGuides: vi.fn(),
+  toggleGrid: vi.fn(),
+  toggleSnapObjects: vi.fn(),
+  toggleSnapGuides: vi.fn(),
+  clearGuides: vi.fn(),
   ...over,
 });
 const actionsFor = (core: EditorCore, h = host()) => buildActions(core.getState(), core, h);
@@ -62,6 +74,17 @@ describe("formatShortcut", () => {
   it("uses symbols on a Mac", () => {
     expect(formatShortcut("mod+shift+g", true)).toBe("⌘⇧G");
     expect(formatShortcut("mod+s", true)).toBe("⌘S");
+  });
+
+  it("shows the bracket keys as they are, and Alt as Alt or Option", () => {
+    expect(formatShortcut("mod+]", false)).toBe("Ctrl+]");
+    expect(formatShortcut("mod+shift+[", false)).toBe("Ctrl+Shift+[");
+    expect(formatShortcut("mod+shift+]", true)).toBe("⌘⇧]");
+    expect(formatShortcut("mod+[", true)).toBe("⌘[");
+    expect(formatShortcut("alt+shift+l", false)).toBe("Alt+Shift+L");
+    expect(formatShortcut("alt+shift+l", true)).toBe("⌥⇧L");
+    expect(formatShortcut("mod+alt+c", false)).toBe("Ctrl+Alt+C");
+    expect(formatShortcut("mod+alt+v", true)).toBe("⌘⌥V");
   });
 });
 
@@ -162,6 +185,250 @@ describe("the registry", () => {
   });
 });
 
+const NEW_IDS = [
+  "bringForward",
+  "bringToFront",
+  "sendBackward",
+  "sendToBack",
+  "alignLeft",
+  "alignCenter",
+  "alignRight",
+  "alignTop",
+  "alignMiddle",
+  "alignBottom",
+  "distributeHorizontal",
+  "distributeVertical",
+  "flipHorizontal",
+  "flipVertical",
+  "toggleLock",
+  "copyStyle",
+  "pasteStyle",
+] as const;
+
+const labels = (items: ReturnType<typeof toMenuItems>) => items.map((i) => (i === "separator" ? "-" : i.label));
+
+describe("object controls", () => {
+  it("labels and shortcuts follow the spec", () => {
+    const a = actionsFor(new EditorCore(docOf([rect("a", 100)])));
+    expect(NEW_IDS.map((id) => a[id].label)).toEqual([
+      "Bring forward",
+      "Bring to front",
+      "Send backward",
+      "Send to back",
+      "Align left",
+      "Align centre",
+      "Align right",
+      "Align top",
+      "Align middle",
+      "Align bottom",
+      "Distribute horizontally",
+      "Distribute vertically",
+      "Flip horizontal",
+      "Flip vertical",
+      "Lock",
+      "Copy style",
+      "Paste style",
+    ]);
+    expect(NEW_IDS.map((id) => a[id].shortcut)).toEqual([
+      "mod+]",
+      "mod+shift+]",
+      "mod+[",
+      "mod+shift+[",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      "alt+shift+l",
+      "mod+alt+c",
+      "mod+alt+v",
+    ]);
+  });
+
+  it("explains why each is off when nothing is selected", () => {
+    const a = actionsFor(new EditorCore(docOf([rect("a", 100)])));
+    for (const id of ["bringForward", "bringToFront", "sendBackward", "sendToBack", "alignLeft", "alignCenter", "alignRight", "alignTop", "alignMiddle", "alignBottom", "flipHorizontal", "flipVertical", "toggleLock"] as const) {
+      expect(a[id].disabled, id).toBe("Select a layer first.");
+    }
+    expect(a.distributeHorizontal.disabled).toBe("Select three or more layers to distribute.");
+    expect(a.distributeVertical.disabled).toBe("Select three or more layers to distribute.");
+    expect(a.copyStyle.disabled).toBe("Select one layer to copy its style.");
+    expect(a.pasteStyle.disabled).toBe("Copy a style first.");
+  });
+
+  it("enables what can run, and gives the plan's reason for what cannot", () => {
+    const core = new EditorCore(docOf([rect("a", 100), rect("b", 300), rect("c", 700)]));
+    core.select(["a"]);
+    const one = actionsFor(core);
+    for (const id of ["bringForward", "bringToFront", "alignLeft", "alignCenter", "alignTop", "flipHorizontal", "flipVertical", "toggleLock", "copyStyle"] as const) {
+      expect(one[id].disabled, id).toBeUndefined();
+    }
+    expect(one.sendBackward.disabled).toBe("Already at the back.");
+    expect(one.sendToBack.disabled).toBe("Already at the back.");
+    expect(one.distributeHorizontal.disabled).toBe("Select three or more layers to distribute.");
+
+    core.select(["a", "b", "c"]);
+    const three = actionsFor(core);
+    expect(three.distributeHorizontal.disabled).toBeUndefined();
+    expect(three.bringToFront.disabled).toBe("Already at the front.");
+    expect(three.copyStyle.disabled).toBe("Select one layer to copy its style.");
+  });
+
+  it("says Already aligned once the layer is where the edge is", () => {
+    const core = new EditorCore(docOf([rect("a", 50)]));
+    core.select(["a"]);
+    expect(actionsFor(core).alignLeft.disabled).toBe("Already aligned.");
+  });
+
+  it("runs order, align, distribute and flip as one undo step each", () => {
+    const core = new EditorCore(docOf([rect("a", 100), rect("b", 300), rect("c", 700)]));
+    core.select(["a"]);
+    actionsFor(core).bringToFront.run();
+    expect(core.doc.root).toEqual(["b", "c", "a"]);
+    core.undo();
+    expect(core.doc.root).toEqual(["a", "b", "c"]);
+
+    actionsFor(core).alignLeft.run();
+    expect(core.doc.nodes.a!.transform.x).toBe(50);
+    core.undo();
+    expect(core.doc.nodes.a!.transform.x).toBe(100);
+
+    actionsFor(core).flipHorizontal.run();
+    expect(core.doc.nodes.a!.transform.scaleX).toBe(-1);
+    core.undo();
+
+    core.select(["a", "b", "c"]);
+    actionsFor(core).distributeHorizontal.run();
+    expect(core.doc.nodes.b!.transform.x).toBe(400);
+    core.undo();
+    expect(core.doc.nodes.b!.transform.x).toBe(300);
+  });
+
+  it("switches Lock and Unlock with the selection, and the lock policy still decides", () => {
+    const core = new EditorCore(docOf([rect("a", 100), rect("b", 300, "locked")]));
+    core.select(["a"]);
+    expect(actionsFor(core).toggleLock.label).toBe("Lock");
+    actionsFor(core).toggleLock.run();
+    expect(core.doc.nodes.a!.lock).toBe("locked");
+    expect(actionsFor(core).toggleLock.label).toBe("Unlock");
+    actionsFor(core).toggleLock.run();
+    expect(core.doc.nodes.a!.lock).toBe("free");
+
+    core.select(["a", "b"]);
+    expect(actionsFor(core).toggleLock.label).toBe("Unlock");
+    core.select(["b"]);
+    expect(actionsFor(core).alignLeft.disabled).toMatch(/lock/i);
+  });
+
+  it("pastes a copied style only after one was copied", () => {
+    const core = new EditorCore(docOf([rect("a", 100), rect("b", 300)]));
+    core.dispatch({ type: "update", id: "a", patch: { opacity: 0.4 } });
+    core.select(["a"]);
+    expect(actionsFor(core).pasteStyle.disabled).toBe("Copy a style first.");
+    actionsFor(core).copyStyle.run();
+    core.select(["b"]);
+    expect(actionsFor(core).pasteStyle.disabled).toBeUndefined();
+    actionsFor(core).pasteStyle.run();
+    expect(core.doc.nodes.b!.opacity).toBe(0.4);
+    core.undo();
+    expect(core.doc.nodes.b!.opacity).toBe(1);
+  });
+
+  it("keeps a copied style per editor", () => {
+    const one = new EditorCore(docOf([rect("a", 100)]));
+    const two = new EditorCore(docOf([rect("a", 100)]));
+    one.select(["a"]);
+    two.select(["a"]);
+    actionsFor(one).copyStyle.run();
+    expect(actionsFor(one).pasteStyle.disabled).toBeUndefined();
+    expect(actionsFor(two).pasteStyle.disabled).toBe("Copy a style first.");
+  });
+
+  it("lays out the Arrange menu between Edit and View, as the spec lists it", () => {
+    expect(Object.keys(MENUS)).toEqual(["file", "edit", "arrange", "view", "help"]);
+    const a = actionsFor(new EditorCore(docOf([rect("a", 100)])));
+    expect(labels(toMenuItems(a, MENUS.arrange, false))).toEqual([
+      "Bring forward",
+      "Bring to front",
+      "Send backward",
+      "Send to back",
+      "-",
+      "Align left",
+      "Align centre",
+      "Align right",
+      "Align top",
+      "Align middle",
+      "Align bottom",
+      "-",
+      "Distribute horizontally",
+      "Distribute vertically",
+      "-",
+      "Flip horizontal",
+      "Flip vertical",
+      "-",
+      "Lock",
+    ]);
+  });
+
+  it("puts Copy style and Paste style after Paste in the Edit menu", () => {
+    const a = actionsFor(new EditorCore(docOf([rect("a", 100)])));
+    const edit = labels(toMenuItems(a, MENUS.edit, false));
+    expect(edit.slice(edit.indexOf("Paste"), edit.indexOf("Paste") + 3)).toEqual(["Paste", "Copy style", "Paste style"]);
+  });
+
+  it("adds the style, order, flip and lock items to the right-click menu on a layer, not on the canvas", () => {
+    const a = actionsFor(new EditorCore(docOf([rect("a", 100)])));
+    expect(labels(toMenuItems(a, CONTEXT_LAYOUTS.node, false))).toEqual([
+      "Cut",
+      "Copy",
+      "Paste",
+      "Duplicate",
+      "Delete",
+      "-",
+      "Group",
+      "Ungroup",
+      "-",
+      "Copy style",
+      "Paste style",
+      "-",
+      "Bring forward",
+      "Bring to front",
+      "Send backward",
+      "Send to back",
+      "-",
+      "Flip horizontal",
+      "Flip vertical",
+      "Lock",
+    ]);
+    expect(labels(toMenuItems(a, CONTEXT_LAYOUTS.canvas, false))).toEqual(["Paste", "Select all"]);
+  });
+
+  it("passes the new shortcuts to the menus and lists them in the shortcuts dialog", () => {
+    const a = actionsFor(new EditorCore(docOf([rect("a", 100)])));
+    expect(toMenuItems(a, ["bringToFront", "toggleLock"], false)).toMatchObject([{ shortcut: "Ctrl+Shift+]" }, { shortcut: "Alt+Shift+L" }]);
+    for (const id of NEW_IDS) if (a[id].shortcut) expect(SHORTCUT_ACTIONS, id).toContain(id);
+    for (const id of SHORTCUT_ACTIONS) expect(a[id].shortcut, id).toBeTruthy();
+    // The dialog names Lock by what the key does, not by what the current selection would do.
+    expect(SHORTCUT_NAMES.toggleLock).toBe("Lock or unlock");
+  });
+
+  it("titles a button with its shortcut, or with why it is off", () => {
+    const core = new EditorCore(docOf([rect("a", 100), rect("b", 300)]));
+    expect(actionTitle(actionsFor(core).bringToFront, false)).toBe("Select a layer first.");
+    core.select(["a"]);
+    const a = actionsFor(core);
+    expect(actionTitle(a.bringToFront, false)).toBe("Bring to front (Ctrl+Shift+])");
+    expect(actionTitle(a.bringToFront, true)).toBe("Bring to front (⌘⇧])");
+    expect(actionTitle(a.alignLeft, false)).toBe("Align left");
+    expect(actionTitle(a.sendToBack, false)).toBe("Already at the back.");
+  });
+});
+
 describe("toMenuItems", () => {
   it("adds shortcut labels and passes the disabled reason through", () => {
     const actions = actionsFor(new EditorCore(docOf([rect("a", 100)])));
@@ -174,5 +441,104 @@ describe("toMenuItems", () => {
     const actions = actionsFor(new EditorCore(docOf([])), host({ canFullscreen: false }));
     expect(toMenuItems(actions, ["fit", "separator", "fullscreen"], false).map((i) => (i === "separator" ? "-" : i.label))).toEqual(["Fit to screen"]);
     expect(toMenuItems(actions, ["separator", "fit", "separator", "separator", "togglePanels"], false).map((i) => (i === "separator" ? "-" : i.label))).toEqual(["Fit to screen", "-", "Hide panels"]);
+  });
+});
+
+describe("canvas view switches", () => {
+  const SWITCHES = ["toggleRulers", "toggleGuides", "toggleGrid", "toggleSnapObjects", "toggleSnapGuides", "clearGuides"] as const;
+
+  it("labels the switches, and Rulers has the Shift+R shortcut", () => {
+    const a = actionsFor(new EditorCore(docOf([])));
+    expect(SWITCHES.map((id) => a[id].label)).toEqual(["Rulers", "Guides", "Grid", "Snap to objects", "Snap to guides", "Clear guides"]);
+    expect(a.toggleRulers.shortcut).toBe("shift+r");
+    expect(formatShortcut("shift+r", false)).toBe("Shift+R");
+    expect(SHORTCUT_ACTIONS).toContain("toggleRulers");
+  });
+
+  it("shows each switch as checked when it is on", () => {
+    const a = actionsFor(new EditorCore(docOf([])), host({ view: { ...DEFAULT_VIEW, rulers: true, grid: false } }));
+    expect([a.toggleRulers.checked, a.toggleGuides.checked, a.toggleGrid.checked, a.toggleSnapObjects.checked, a.toggleSnapGuides.checked]).toEqual([true, true, false, true, true]);
+    expect(a.clearGuides.checked).toBeUndefined();
+  });
+
+  it("hands each switch to the host", () => {
+    const h = host();
+    const a = actionsFor(new EditorCore(docOf([])), h);
+    a.toggleRulers.run();
+    a.toggleGuides.run();
+    a.toggleGrid.run();
+    a.toggleSnapObjects.run();
+    a.toggleSnapGuides.run();
+    expect(h.toggleRulers).toHaveBeenCalledOnce();
+    expect(h.toggleGuides).toHaveBeenCalledOnce();
+    expect(h.toggleGrid).toHaveBeenCalledOnce();
+    expect(h.toggleSnapObjects).toHaveBeenCalledOnce();
+    expect(h.toggleSnapGuides).toHaveBeenCalledOnce();
+  });
+
+  it("says there are no guides to clear, and clears them when there are", () => {
+    expect(actionsFor(new EditorCore(docOf([]))).clearGuides.disabled).toBe("No guides to clear.");
+    const h = host({ guideCount: 2 });
+    const a = actionsFor(new EditorCore(docOf([])), h);
+    expect(a.clearGuides.disabled).toBeUndefined();
+    a.clearGuides.run();
+    expect(h.clearGuides).toHaveBeenCalledOnce();
+  });
+
+  it("gives the zoom items their keys, and lists them in the shortcuts dialog", () => {
+    const a = actionsFor(new EditorCore(docOf([])));
+    expect([a.zoomIn.shortcut, a.zoomOut.shortcut, a.fit.shortcut, a.actualSize.shortcut]).toEqual(["mod+=", "mod+-", "mod+0", "mod+1"]);
+    expect([formatShortcut("mod+=", false), formatShortcut("mod+-", false), formatShortcut("mod+0", false), formatShortcut("mod+1", true)]).toEqual(["Ctrl+=", "Ctrl+-", "Ctrl+0", "⌘1"]);
+    for (const id of ["zoomIn", "zoomOut", "fit", "actualSize"] as const) expect(SHORTCUT_ACTIONS, id).toContain(id);
+  });
+
+  it("runs Actual size through the host", () => {
+    const h = host();
+    actionsFor(new EditorCore(docOf([])), h).actualSize.run();
+    expect(h.actualSize).toHaveBeenCalledOnce();
+  });
+
+  it("lists Resize design in the File menu after Design info, and hands it to the host", () => {
+    const h = host();
+    const a = actionsFor(new EditorCore(docOf([])), h);
+    expect(labels(toMenuItems(a, MENUS.file, false))).toEqual(["New design", "Open", "Make a copy", "-", "Rename", "Move to folder", "Design info", "Version history", "Resize design", "-", "Save", "Download"]);
+    a.resizeDesign.run();
+    expect(h.resizeDesign).toHaveBeenCalledOnce();
+    expect(a.resizeDesign.disabled).toBeUndefined();
+  });
+
+  it("offers Version history in the File menu, also for guest designs (the panel explains it needs an account)", () => {
+    const h = host({ local: true });
+    const a = actionsFor(new EditorCore(docOf([])), h);
+    expect(a.versionHistory.label).toBe("Version history");
+    expect(a.versionHistory.disabled).toBeUndefined();
+    a.versionHistory.run();
+    expect(h.versionHistory).toHaveBeenCalledOnce();
+  });
+
+  it("lays out the View menu with the switches between the zoom items and the panels", () => {
+    const a = actionsFor(new EditorCore(docOf([])));
+    expect(labels(toMenuItems(a, MENUS.view, false))).toEqual([
+      "Zoom in",
+      "Zoom out",
+      "Fit to screen",
+      "Actual size",
+      "-",
+      "Rulers",
+      "Guides",
+      "Grid",
+      "-",
+      "Snap to objects",
+      "Snap to guides",
+      "Clear guides",
+      "-",
+      "Fullscreen",
+      "Hide panels",
+    ]);
+  });
+
+  it("passes the checked state to menu rows, and leaves other rows without one", () => {
+    const a = actionsFor(new EditorCore(docOf([])), host({ view: { ...DEFAULT_VIEW, rulers: true } }));
+    expect(toMenuItems(a, ["toggleRulers", "fit"], false)).toMatchObject([{ label: "Rulers", checked: true, shortcut: "Shift+R" }, { label: "Fit to screen", checked: undefined }]);
   });
 });

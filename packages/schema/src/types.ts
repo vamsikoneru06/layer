@@ -2,7 +2,9 @@
  * The VASH document format (schemaVersion 2).
  *
  * Rules that keep the format safe and predictable:
- * - Every key is required; "absent" is expressed as `null`.
+ * - Every key is required; "absent" is expressed as `null`. The optional keys (`shadow`, `alt`, `stroke.dash`,
+ *   the filter `duotone` and `pixelate`, and the text `outline`, `highlight`, `list`, `curve`) may be omitted; designs and
+ *   templates written before they existed stay valid.
  * - Layers live in a flat `nodes` map; `root` and `group.children` hold IDs.
  * - Assets are referenced by ID only. The document never contains a URL.
  * - Filters are parameters; pixels are never baked into the document.
@@ -31,6 +33,14 @@ export interface Transform {
   scaleY: number;
 }
 
+export interface Shadow {
+  color: Color;
+  /** Blur radius in document pixels. */
+  blur: number;
+  offsetX: number;
+  offsetY: number;
+}
+
 interface BaseNode {
   id: NodeId;
   name: string;
@@ -40,6 +50,10 @@ interface BaseNode {
   opacity: number;
   visible: boolean;
   lock: Lock;
+  /** Optional: omit or `null` for no shadow. */
+  shadow?: Shadow | null;
+  /** Optional: alt text for the node, plain text without control characters. */
+  alt?: string;
 }
 
 /** Path data is in unit-box coordinates (0..1 on both axes) and scaled to the node size. */
@@ -61,6 +75,10 @@ export interface Filters {
   grain: number;
   blur: number;
   sharpen: number;
+  /** Optional: maps light and dark tones to two colours, or omit / `null` for off. */
+  duotone?: { light: Color; dark: Color } | null;
+  /** Optional: block size slider from 0 (off) to 100. Omit for off. */
+  pixelate?: number;
 }
 
 export interface FrameContent {
@@ -86,6 +104,8 @@ export interface FontSpec {
   style: "normal" | "italic";
 }
 
+export type TextList = "none" | "bullet" | "number";
+
 export interface TextNode extends BaseNode {
   type: "text";
   content: string;
@@ -97,6 +117,14 @@ export interface TextNode extends BaseNode {
   letterSpacing: number;
   fit: "none" | "shrink";
   maxChars: number | null;
+  /** Optional: text outline, or omit / `null` for none. */
+  outline?: { color: Color; width: number } | null;
+  /** Optional: background highlight behind the text, or omit / `null` for none. */
+  highlight?: { color: Color } | null;
+  /** Optional: list markers per line. Omit for none. */
+  list?: TextList;
+  /** Optional: arch (positive) or smile (negative) curve, -100 to 100. Omit for straight text. */
+  curve?: number;
 }
 
 export type ShapeGeometry =
@@ -105,11 +133,14 @@ export type ShapeGeometry =
   | { kind: "polygon"; sides: number }
   | { kind: "path"; d: string };
 
+export type StrokeDash = "solid" | "dashed" | "dotted";
+
 export interface ShapeNode extends BaseNode {
   type: "shape";
   geometry: ShapeGeometry;
   fill: Fill | null;
-  stroke: { color: Color; width: number } | null;
+  /** `dash` is optional and defaults to solid. */
+  stroke: { color: Color; width: number; dash?: StrokeDash } | null;
 }
 
 export interface StickerNode extends BaseNode {

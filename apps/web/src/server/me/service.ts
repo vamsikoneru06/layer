@@ -1,5 +1,5 @@
 import { and, asc, eq, inArray, or, sql } from "drizzle-orm";
-import { assets, auditLog, designs, folders, storageDeletions, templates, user } from "../db/schema";
+import { assets, auditLog, designs, designVersions, folders, storageDeletions, templates, user } from "../db/schema";
 import { isUniqueViolation } from "../db/errors";
 import type { Db } from "../db/types";
 import { conflict, notFound, unprocessable } from "../http/problem";
@@ -117,6 +117,30 @@ export async function* exportAccount(db: Db, userId: string, now: Date): AsyncGe
         ),
       )
       .orderBy(asc(designs.createdAt), asc(designs.id))
+      .limit(EXPORT_PAGE_SIZE);
+    for (const row of page) {
+      yield (first ? "" : ",") + JSON.stringify(row);
+      first = false;
+    }
+    if (page.length < EXPORT_PAGE_SIZE) break;
+    after = page.at(-1);
+  }
+  yield `],"designVersions":[`;
+
+  // Earlier versions of the designs above (up to 30 each), paged the same way.
+  after = undefined;
+  first = true;
+  for (;;) {
+    const page = await db
+      .select({ id: designVersions.id, designId: designVersions.designId, version: designVersions.version, title: designVersions.title, doc: designVersions.doc, createdAt: designVersions.createdAt })
+      .from(designVersions)
+      .where(
+        and(
+          eq(designVersions.ownerId, userId),
+          after ? sql`(${designVersions.createdAt}, ${designVersions.id}) > (${after.createdAt.toISOString()}::timestamptz, ${after.id}::uuid)` : undefined,
+        ),
+      )
+      .orderBy(asc(designVersions.createdAt), asc(designVersions.id))
       .limit(EXPORT_PAGE_SIZE);
     for (const row of page) {
       yield (first ? "" : ",") + JSON.stringify(row);

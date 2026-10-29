@@ -3,10 +3,26 @@ import type { EditorCore } from "./editor-core";
 
 export type InsertKind = "heading" | "subheading" | "body" | "rect" | "rounded" | "ellipse" | "triangle" | "frame" | "frame-circle";
 
+/** What a shape layer looks like, sized in artboard pixels. */
+export interface ShapeSpec {
+  name: string;
+  geometry: ShapeNode["geometry"];
+  width: number;
+  height: number;
+  fill: ShapeNode["fill"];
+  stroke: ShapeNode["stroke"];
+}
+
 /** A random node id in the schema's id alphabet. */
 export function newNodeId(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(9));
   return `n${Array.from(bytes, (b) => b.toString(36).padStart(2, "0")).join("")}`;
+}
+
+/** The fields every new layer shares: its id, centred on the artboard, unrotated, visible and unlocked. */
+function baseNode(doc: Doc, id: string) {
+  const { width: W, height: H } = doc.artboard;
+  return { id, transform: { x: W / 2, y: H / 2, rotation: 0, scaleX: 1, scaleY: 1 }, opacity: 1, visible: true, lock: "free" as const };
 }
 
 /** Relative luminance of the background's first colour (0 black, 1 white), to pick legible text. */
@@ -30,7 +46,7 @@ const TEXT: Record<"heading" | "subheading" | "body", { name: string; content: s
 export function createNode(kind: InsertKind, doc: Doc, id: string = newNodeId()): Node {
   const { width: W, height: H } = doc.artboard;
   const side = Math.min(W, H);
-  const base = { id, transform: { x: W / 2, y: H / 2, rotation: 0, scaleX: 1, scaleY: 1 }, opacity: 1, visible: true, lock: "free" as const };
+  const base = baseNode(doc, id);
 
   if (kind === "heading" || kind === "subheading" || kind === "body") {
     const t = TEXT[kind];
@@ -85,19 +101,48 @@ export function createNode(kind: InsertKind, doc: Doc, id: string = newNodeId())
 }
 
 /**
- * Adds a new layer on top and selects it (text starts in typing mode). Returns false, with a notice,
- * when the design already has as many layers as it may.
+ * Adds `node` on top as one undo step and selects it. Returns false, with a notice, when the design
+ * already has as many layers as it may.
  */
-export function insertLayer(core: EditorCore, kind: InsertKind): boolean {
+function addOnTop(core: EditorCore, node: Node): boolean {
   const doc = core.doc;
   const max = doc.kind === "template" ? LIMITS.templateNodes : LIMITS.designNodes;
   if (Object.keys(doc.nodes).length >= max) {
     core.setChrome({ notice: `A design can have up to ${max} layers.` });
     return false;
   }
-  const node = createNode(kind, doc);
   if (!core.dispatch({ type: "insert", nodes: [node], parent: null, index: doc.root.length })) return false;
   core.select([node.id]);
+  return true;
+}
+
+/**
+ * Adds a new layer on top and selects it (text starts in typing mode). Returns false, with a notice,
+ * when the design already has as many layers as it may.
+ */
+export function insertLayer(core: EditorCore, kind: InsertKind): boolean {
+  const node = createNode(kind, core.doc);
+  if (!addOnTop(core, node)) return false;
   if (node.type === "text") core.startTextEdit(node.id);
   return true;
+}
+
+/**
+ * Adds a shape layer from `spec` on top, centred on the artboard, and selects it. A shape larger than
+ * the artboard is scaled down proportionally to fit (never below 1 px).
+ */
+export function insertShape(core: EditorCore, spec: ShapeSpec): boolean {
+  const { width: W, height: H } = core.doc.artboard;
+  const fit = Math.min(1, W / spec.width, H / spec.height);
+  const node: ShapeNode = {
+    ...baseNode(core.doc, newNodeId()),
+    type: "shape",
+    name: spec.name,
+    width: Math.max(1, spec.width * fit),
+    height: Math.max(1, spec.height * fit),
+    geometry: spec.geometry,
+    fill: spec.fill,
+    stroke: spec.stroke,
+  };
+  return addOnTop(core, node);
 }

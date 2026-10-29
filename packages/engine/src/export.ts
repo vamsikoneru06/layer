@@ -42,11 +42,26 @@ export function referencedImages(doc: Doc): string[] {
 
 export const PHOTOS_NOT_READY = "Some photos haven't loaded, so the image would have empty spaces. Check your connection and try again.";
 
+export type ImageFormat = "png" | "jpeg";
+
+const DEFAULT_QUALITY = 0.92;
+
+/** The encoder MIME type and a quality clamped to 0..1 (only JPEG uses it; the canvas ignores it for PNG). */
+export function encodeOptions(format: ImageFormat, quality = DEFAULT_QUALITY): { type: "image/png" | "image/jpeg"; quality: number } {
+  const q = Number.isFinite(quality) ? Math.min(1, Math.max(0, quality)) : DEFAULT_QUALITY;
+  return { type: format === "jpeg" ? "image/jpeg" : "image/png", quality: q };
+}
+
+/** JPEG has no transparency, so a JPEG always gets the background fill. */
+export function paintsBackground(format: ImageFormat, transparent: boolean): boolean {
+  return format === "jpeg" || !transparent;
+}
+
 /**
- * Renders the artboard at `scale` to a PNG once the design's fonts and photos have loaded. Refuses
+ * Renders the artboard at `scale` to an image once the design's fonts and photos have loaded. Refuses
  * rather than export a photo as an empty box.
  */
-export async function exportPng(doc: Doc, o: ExportOptions): Promise<Blob> {
+export async function exportImage(doc: Doc, o: ExportOptions & { format: ImageFormat; quality?: number }): Promise<Blob> {
   const size = checkExport(doc, o.scale);
   if (!size.ok) throw new Error(size.reason);
   const photos = referencedImages(doc);
@@ -59,9 +74,15 @@ export async function exportPng(doc: Doc, o: ExportOptions): Promise<Blob> {
   const canvas = offscreen ? new OffscreenCanvas(size.width, size.height) : Object.assign(document.createElement("canvas"), size);
   const ctx = canvas.getContext("2d") as Ctx | null;
   if (!ctx) throw new Error("Your browser couldn't create an image this size.");
-  renderDoc(ctx, doc, [o.scale, 0, 0, o.scale, 0, 0], { measure: o.measure, image: o.image, filter: o.filter, dpr: o.scale }, { background: !o.transparent });
+  renderDoc(ctx, doc, [o.scale, 0, 0, o.scale, 0, 0], { measure: o.measure, image: o.image, filter: o.filter, dpr: o.scale }, { background: paintsBackground(o.format, o.transparent) });
+  const encode = encodeOptions(o.format, o.quality);
   if (canvas instanceof HTMLCanvasElement) {
-    return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Export failed."))), "image/png"));
+    return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Export failed."))), encode.type, encode.quality));
   }
-  return canvas.convertToBlob({ type: "image/png" });
+  return canvas.convertToBlob(encode);
+}
+
+/** Renders the artboard at `scale` to a PNG. See exportImage. */
+export function exportPng(doc: Doc, o: ExportOptions): Promise<Blob> {
+  return exportImage(doc, { ...o, format: "png" });
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import type { Editor, EditorState } from "@vash/engine";
+import { LIST_INDENT, type Editor, type EditorState } from "@vash/engine";
 import { LIMITS } from "@vash/schema";
 import { useEffect, useRef } from "react";
 
@@ -22,6 +22,8 @@ export function TextEditor({ editor, state }: { editor: Editor; state: EditorSta
   const box = editing ? editor.textEditBox() : null;
   if (!box) return null;
   const { node } = box;
+  // Every line starts at the indent, so the text doesn't move when the marker is drawn on the canvas.
+  const indent = node.list === "bullet" || node.list === "number" ? box.fontSize * LIST_INDENT : 0;
 
   return (
     <textarea
@@ -50,6 +52,7 @@ export function TextEditor({ editor, state }: { editor: Editor; state: EditorSta
         width: box.width,
         height: box.height,
         paddingTop: box.paddingTop,
+        paddingLeft: indent,
         transform: `matrix(${box.matrix.join(",")})`,
         transformOrigin: "0 0",
         fontFamily: `"${node.font.family}", system-ui, sans-serif`,

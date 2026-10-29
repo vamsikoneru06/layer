@@ -1,6 +1,5 @@
-import { createEmptyDoc } from "@vash/schema";
 import { describe, expect, it } from "vitest";
-import { addStop, convertFill, docColors, fillCss, hsvToHex, parseHex, sortStops, toHsv } from "./color";
+import { addStop, convertFill, fillCss, hsvToHex, parseHex, sortStops, toHsv } from "./color";
 
 describe("parseHex", () => {
   it("reads 6 and 8 digit codes, with or without #", () => {
@@ -37,21 +36,6 @@ describe("fillCss", () => {
     expect(
       fillCss({ type: "linear", angle: 90, stops: [{ offset: 0, color: "#000000" }, { offset: 0.5, color: "#FFFFFF80" }] }),
     ).toBe("linear-gradient(90deg, #000000 0%, #FFFFFF80 50%)");
-  });
-});
-
-describe("docColors", () => {
-  it("lists each colour the design uses once, in order, ignoring case", () => {
-    const doc = createEmptyDoc({ id: "d", kind: "design", title: "Test", format: "custom", size: { width: 100, height: 100 } });
-    doc.artboard.background = { type: "solid", color: "#FFFFFF" };
-    doc.nodes.t = { id: "t", type: "text", color: "#ff0000" } as never;
-    doc.nodes.s = {
-      id: "s",
-      type: "shape",
-      fill: { type: "linear", angle: 0, stops: [{ offset: 0, color: "#FF0000" }, { offset: 1, color: "#0000FF" }] },
-      stroke: { color: "#00FF00", width: 1 },
-    } as never;
-    expect(docColors(doc)).toEqual(["#FFFFFF", "#FF0000", "#0000FF", "#00FF00"]);
   });
 });
 

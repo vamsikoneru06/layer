@@ -5,11 +5,18 @@ import type { Doc } from "@vash/schema";
 import { Check, ChevronDown, Download } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { Button, buttonClass } from "@/components/ui/button";
-import { exportFileName } from "@/lib/export-name";
+import { exportFileName, type ExportFormat } from "@/lib/export-name";
+import { formatFileSize } from "@/lib/file-size";
+import { jpegToPdf, pointsFromPixels } from "@/lib/pdf";
 import { cn } from "@/lib/utils";
-import { Switch } from "./fields";
+import { Segmented, Slider, Switch } from "./fields";
 
 const SCALES = [1, 2, 3] as const;
+const FILE_TYPES: { value: ExportFormat; label: string }[] = [
+  { value: "png", label: "PNG" },
+  { value: "jpg", label: "JPG" },
+  { value: "pdf", label: "PDF" },
+];
 
 type Phase = "idle" | "rendering" | "done";
 
@@ -22,8 +29,11 @@ function save(blob: Blob, name: string) {
 }
 
 export function ExportPopover({ editor, doc, open, onOpenChange }: { editor: Editor | null; doc: Doc; open: boolean; onOpenChange: (open: boolean) => void }) {
+  const [fileType, setFileType] = useState<ExportFormat>("png");
   const [scale, setScale] = useState<number>(2);
   const [transparent, setTransparent] = useState(false);
+  const [quality, setQuality] = useState(0.9);
+  const [savedBytes, setSavedBytes] = useState<number | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState<string | null>(null);
   const id = useId();
@@ -63,8 +73,23 @@ export function ExportPopover({ editor, doc, open, onOpenChange }: { editor: Edi
     setPhase("rendering");
     setError(null);
     try {
-      const blob = await editor.exportPng({ scale, transparent });
-      save(blob, exportFileName(doc.meta.title, scale));
+      let file: Blob;
+      if (fileType === "png") {
+        file = await editor.exportPng({ scale, transparent });
+      } else if (fileType === "jpg") {
+        file = await editor.exportImage({ scale, transparent: false, format: "jpeg", quality });
+      } else {
+        // JPEG pixels go into a one-page PDF sized to the artboard in points.
+        const jpeg = await editor.exportImage({ scale, transparent: false, format: "jpeg", quality });
+        const bytes = jpegToPdf(
+          new Uint8Array(await jpeg.arrayBuffer()),
+          { width: check.width, height: check.height },
+          { width: pointsFromPixels(doc.artboard.width), height: pointsFromPixels(doc.artboard.height) },
+        );
+        file = new Blob([new Uint8Array(bytes)], { type: "application/pdf" });
+      }
+      save(file, exportFileName(doc.meta.title, scale, fileType));
+      setSavedBytes(file.size);
       setPhase("done");
     } catch (e) {
       setPhase("idle");
@@ -87,7 +112,12 @@ export function ExportPopover({ editor, doc, open, onOpenChange }: { editor: Edi
         >
           <div className="flex items-baseline justify-between">
             <h2 className="text-sm font-semibold">Export</h2>
-            <span className="text-[13px] text-muted">PNG</span>
+            <span className="text-[13px] text-muted">{fileType.toUpperCase()}</span>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <span className="text-[13px] font-medium">File type</span>
+            <Segmented name="File type" value={fileType} options={FILE_TYPES} onChange={setFileType} />
           </div>
 
           <div className="flex flex-col gap-2">
@@ -117,10 +147,16 @@ export function ExportPopover({ editor, doc, open, onOpenChange }: { editor: Edi
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-[13px] font-medium">
-            Transparent background
-            <Switch label="Transparent background" checked={transparent} onChange={setTransparent} />
-          </div>
+          {fileType === "png" && (
+            <div className="flex items-center justify-between text-[13px] font-medium">
+              Transparent background
+              <Switch label="Transparent background" checked={transparent} onChange={setTransparent} />
+            </div>
+          )}
+
+          {fileType === "jpg" && <p className="text-[13px] text-muted">JPG has no transparency, so the background is always included.</p>}
+
+          {fileType !== "png" && <Slider label="Quality" value={quality} min={0.5} max={1} onChange={(v) => setQuality(v)} />}
 
           {(error ?? (!check.ok && check.reason)) && (
             <p role="alert" className="text-[13px] text-danger">
@@ -134,7 +170,7 @@ export function ExportPopover({ editor, doc, open, onOpenChange }: { editor: Edi
             disabled={!editor || !check.ok}
             icon={phase === "done" ? <Check aria-hidden className="size-4" /> : phase === "idle" ? <Download aria-hidden className="size-4" /> : undefined}
           >
-            {phase === "rendering" ? "Rendering…" : phase === "done" ? "Downloaded" : "Download"}
+            {phase === "rendering" ? "Rendering…" : phase === "done" ? `Downloaded${savedBytes === null ? "" : `, ${formatFileSize(savedBytes)}`}` : "Download"}
           </Button>
         </div>
       )}

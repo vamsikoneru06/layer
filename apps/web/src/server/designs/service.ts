@@ -73,14 +73,74 @@ export async function createDesign(
   }
 }
 
-export async function saveDesignDoc(ctx: ServiceContext, ownerId: string, id: string, input: { doc: unknown; version: number }): Promise<repo.DesignRow> {
-  if ((await repo.getDesignVersion(ctx.db, ownerId, id)) === undefined) throw notFound();
-  const doc = await checkDoc(ctx.db, ownerId, input.doc, id);
-  const saved = await repo.updateDesignDoc(ctx.db, ownerId, id, input.version, doc, ctx.now());
-  if (saved) return saved;
-  const current = await repo.getDesignVersion(ctx.db, ownerId, id);
-  if (current === undefined) throw notFound();
-  throw conflict("This design changed since you loaded it.", { currentVersion: current });
+/** A save or restore keeps the content it replaces when the newest kept version is older than this, or none exists. */
+const VERSION_INTERVAL_MS = 10 * 60_000;
+/** Versions kept per design; the oldest are deleted when a new one is kept. */
+export const MAX_VERSIONS = 30;
+
+const changedSinceLoad = (currentVersion: number) => conflict("This design changed since you loaded it.", { currentVersion });
+
+/** Keeps the design's current content as a version, then prunes the oldest beyond MAX_VERSIONS. */
+async function keepVersion(db: Db, ownerId: string, design: repo.DesignRow, now: Date): Promise<void> {
+  await repo.insertVersion(db, { designId: design.id, ownerId, version: design.version, title: design.title, doc: design.doc, createdAt: now });
+  await repo.pruneVersions(db, ownerId, design.id, MAX_VERSIONS);
+}
+
+async function versionDue(db: Db, ownerId: string, designId: string, now: Date): Promise<boolean> {
+  const latest = await repo.latestVersionAt(db, ownerId, designId);
+  return latest === undefined || now.getTime() - latest.getTime() > VERSION_INTERVAL_MS;
+}
+
+/**
+ * One transaction: the row lock serialises saves and restores of a design, so a stale save is refused before it can
+ * keep a version. `checkpoint` (Ctrl+S, File > Save) always keeps the content it replaces.
+ */
+export async function saveDesignDoc(
+  ctx: ServiceContext,
+  ownerId: string,
+  id: string,
+  input: { doc: unknown; version: number; checkpoint?: boolean },
+): Promise<repo.DesignRow> {
+  return ctx.db.transaction(async (tx) => {
+    const current = await repo.getDesignForUpdate(tx, ownerId, id);
+    if (!current) throw notFound();
+    const doc = await checkDoc(tx, ownerId, input.doc, id);
+    if (current.version !== input.version) throw changedSinceLoad(current.version);
+    const now = ctx.now();
+    if (input.checkpoint || (await versionDue(tx, ownerId, id, now))) await keepVersion(tx, ownerId, current, now);
+    const saved = await repo.updateDesignDoc(tx, ownerId, id, input.version, doc, now);
+    if (!saved) throw changedSinceLoad(current.version);
+    return saved;
+  });
+}
+
+/** Restoring keeps the content it replaces (always, not only past the interval) and is saved as a new version. */
+export async function restoreVersion(ctx: ServiceContext, ownerId: string, designId: string, versionId: string, expectedVersion: number): Promise<repo.DesignRow> {
+  return ctx.db.transaction(async (tx) => {
+    const current = await repo.getDesignForUpdate(tx, ownerId, designId);
+    if (!current) throw notFound();
+    if (current.version !== expectedVersion) throw changedSinceLoad(current.version);
+    const version = await repo.getVersionRow(tx, ownerId, designId, versionId);
+    if (!version) throw notFound();
+    // The photos it used may have been deleted since; the same check as a save keeps the design's references valid.
+    const doc = await checkDoc(tx, ownerId, version.doc, designId);
+    const now = ctx.now();
+    await keepVersion(tx, ownerId, current, now);
+    const restored = await repo.updateDesignDoc(tx, ownerId, designId, expectedVersion, doc, now);
+    if (!restored) throw changedSinceLoad(current.version);
+    return restored;
+  });
+}
+
+export async function listVersions(ctx: ServiceContext, ownerId: string, designId: string) {
+  if ((await repo.getDesignVersion(ctx.db, ownerId, designId)) === undefined) throw notFound();
+  return repo.listVersionRows(ctx.db, ownerId, designId);
+}
+
+export async function getVersion(ctx: ServiceContext, ownerId: string, designId: string, versionId: string): Promise<repo.VersionRow> {
+  const row = await repo.getVersionRow(ctx.db, ownerId, designId, versionId);
+  if (!row) throw notFound();
+  return row;
 }
 
 export async function updateDesignMeta(

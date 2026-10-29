@@ -1,5 +1,6 @@
 "use client";
 
+import { Check } from "lucide-react";
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +14,8 @@ export type MenuItem =
       shortcut?: string;
       /** Why the item can't be used right now. The item stays visible, dimmed, and does nothing. */
       disabled?: string;
+      /** For a setting that is on or off: the item is a checkbox row, with a check mark when true. */
+      checked?: boolean;
     }
   | "separator";
 
@@ -26,11 +29,13 @@ type TriggerProps = {
 /** The look shared by dropdown menus and the right-click menu. */
 export const MENU_PANEL = "min-w-[220px] rounded-2xl bg-bg p-1.5 shadow-[0_0_0_.5px_var(--line),0_12px_32px_rgba(0,0,0,.16)]";
 
+const ITEM_SELECTOR = "[role=menuitem],[role=menuitemcheckbox]";
+
 /** Up and Down arrows move focus between the items of an open menu, wrapping around. */
 export function moveMenuFocus(e: KeyboardEvent, list: HTMLElement | null): void {
   if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
   e.preventDefault();
-  const all = [...(list?.querySelectorAll<HTMLElement>("[role=menuitem]") ?? [])];
+  const all = [...(list?.querySelectorAll<HTMLElement>(ITEM_SELECTOR) ?? [])];
   const at = all.indexOf(document.activeElement as HTMLElement);
   all[(at + (e.key === "ArrowDown" ? 1 : -1) + all.length) % all.length]?.focus();
 }
@@ -46,7 +51,8 @@ export function MenuItems({ items, onDone }: { items: MenuItem[]; onDone: () => 
           <button
             key={item.label}
             type="button"
-            role="menuitem"
+            role={typeof item.checked === "boolean" ? "menuitemcheckbox" : "menuitem"}
+            aria-checked={typeof item.checked === "boolean" ? item.checked : undefined}
             aria-disabled={item.disabled ? true : undefined}
             title={item.disabled}
             onClick={() => {
@@ -60,6 +66,11 @@ export function MenuItems({ items, onDone }: { items: MenuItem[]; onDone: () => 
               item.disabled && "opacity-45 hover:bg-transparent",
             )}
           >
+            {typeof item.checked === "boolean" && (
+              <span aria-hidden className="flex size-4 flex-none items-center justify-center">
+                {item.checked && <Check className="size-4" />}
+              </span>
+            )}
             {item.icon}
             <span className="flex-1">{item.label}</span>
             {item.shortcut && <span className="text-[12px] text-muted">{item.shortcut}</span>}
@@ -91,7 +102,7 @@ export function Menu({
 
   useEffect(() => {
     if (!open) return;
-    list.current?.querySelector<HTMLElement>("[role=menuitem]")?.focus();
+    list.current?.querySelector<HTMLElement>(ITEM_SELECTOR)?.focus();
     const onDown = (e: PointerEvent) => {
       if (!root.current?.contains(e.target as Node)) setOpen(false);
     };

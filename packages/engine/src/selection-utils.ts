@@ -1,11 +1,19 @@
 import { LIMITS, type Doc, type Node, type NodeId } from "@vash/schema";
 import type { Command } from "./commands";
+import { checkPolicy, type EditMode } from "./policy";
 import { parentOf } from "./scene";
 
 /** What an edit will do, worked out before anything changes: the command and what to select after, or why not. */
 export type Plan = { ok: true; command: Command; select: NodeId[]; notice?: string } | { ok: false; reason: string };
 
 export const refuse = (reason: string): Plan => ({ ok: false, reason });
+
+/** `command` as a plan, or a refusal carrying the lock policy's reason when a lock forbids it. */
+export function checked(doc: Doc, command: Command, mode: EditMode, select: readonly NodeId[], notice?: string): Plan {
+  const verdict = checkPolicy(doc, command, mode);
+  if (!verdict.ok) return refuse(verdict.reason);
+  return { ok: true, command, select: [...select], ...(notice ? { notice } : {}) };
+}
 
 /** Child list of `parent` (null = the document root). */
 export function siblingsOf(doc: Doc, parent: NodeId | null): readonly NodeId[] {

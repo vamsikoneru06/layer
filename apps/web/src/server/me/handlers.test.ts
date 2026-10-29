@@ -5,7 +5,7 @@ import { testDeps } from "../../../tests/support/deps";
 import { emptyDoc } from "../../../tests/support/docs";
 import { createAsset, createFolder, createUser } from "../../../tests/support/factories";
 import { call } from "../../../tests/support/invoke";
-import { auditLog, designs, folders, storageDeletions, user } from "../db/schema";
+import { auditLog, designs, designVersions, folders, storageDeletions, user } from "../db/schema";
 import { RATE_LIMITS } from "../rate-limit/rules";
 import { meHandlers } from "./handlers";
 import { EXPORT_PAGE_SIZE } from "./service";
@@ -71,6 +71,22 @@ describe("GET /api/me/export", () => {
     expect(res.body.folders.map((f: { name: string }) => f.name)).toEqual(["Alice's folder"]);
     expect(res.body.designs[0].doc.meta.title).toBe("Mine");
     expect(JSON.stringify(res.body)).not.toContain("Bob's folder");
+  });
+
+  it("includes earlier versions of the caller's designs, and nobody else's", async () => {
+    const alice = await createUser(t.db);
+    const bob = await createUser(t.db);
+    const [aliceDesign] = await t.db.insert(designs).values({ ownerId: alice.id, title: "Mine", doc: emptyDoc("Mine") }).returning();
+    const [bobDesign] = await t.db.insert(designs).values({ ownerId: bob.id, title: "Bobs", doc: emptyDoc("Bobs") }).returning();
+    await t.db.insert(designVersions).values([
+      { designId: aliceDesign!.id, ownerId: alice.id, version: 1, title: "Mine, earlier", doc: emptyDoc("Mine, earlier") },
+      { designId: bobDesign!.id, ownerId: bob.id, version: 1, title: "Bobs, earlier", doc: emptyDoc("Bobs, earlier") },
+    ]);
+    const res = await call(h.export, { as: alice });
+    expect(res.body.designVersions).toEqual([
+      expect.objectContaining({ designId: aliceDesign!.id, version: 1, title: "Mine, earlier", doc: expect.objectContaining({ id: "draft" }) }),
+    ]);
+    expect(JSON.stringify(res.body)).not.toContain("Bobs, earlier");
   });
 
   it("streams designs across pages as one valid JSON document, oldest first", async () => {

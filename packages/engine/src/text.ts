@@ -11,6 +11,8 @@ export interface TextLine {
   width: number;
   /** Extra px between words on justified lines. */
   wordSpacing: number;
+  /** The list marker ("•", "1.", ...) for the first line of a list paragraph. Drawn in the hanging indent. */
+  marker?: string;
 }
 
 export interface TextLayout {
@@ -27,7 +29,12 @@ interface RawLine {
   width: number;
   last: boolean;
   broken: boolean;
+  marker?: string;
 }
+
+/** The hanging indent of a list, in multiples of the laid-out font size. */
+/** Hanging indent for bulleted and numbered lists, in multiples of the font size. */
+export const LIST_INDENT = 1.6;
 
 const segmenter = typeof Intl !== "undefined" && "Segmenter" in Intl ? new Intl.Segmenter(undefined, { granularity: "grapheme" }) : null;
 const PLAIN = /^[\x20-\x7e]*$/;
@@ -56,33 +63,40 @@ export function limitText(s: string, maxChars: number, maxUnits: number): string
   return out;
 }
 
-function wrap(node: TextNode, size: number, measure: Measure): RawLine[] {
+/**
+ * Wraps each paragraph (text between "\n") to `maxWidth`. In a list, the first line of each paragraph that has
+ * visible text gets a marker, numbered in order; an empty paragraph keeps its line but gets none.
+ */
+function wrap(node: TextNode, size: number, measure: Measure, maxWidth: number): RawLine[] {
   const width = (s: string) => measure(s, node.font, size) + (node.letterSpacing === 0 ? 0 : node.letterSpacing * graphemeCount(s));
+  const list = node.list ?? "none";
   const lines: RawLine[] = [];
+  let number = 0;
   for (const paragraph of node.content.split("\n")) {
+    const first = lines.length;
     const words = paragraph.split(" ").filter((w, i, all) => w !== "" || all.length === 1);
     let current = "";
     const push = (text: string, last: boolean, broken = false) => lines.push({ text, width: width(text), last, broken });
     for (const word of words) {
       const candidate = current ? `${current} ${word}` : word;
-      if (width(candidate) <= node.width) {
+      if (width(candidate) <= maxWidth) {
         current = candidate;
         continue;
       }
       if (current) push(current, false);
-      if (width(word) <= node.width) {
+      if (width(word) <= maxWidth) {
         current = word;
         continue;
       }
       // The word alone is wider than the box: break it between characters, at least one per line. The longest
       // prefix that fits is found by binary search (width only grows as characters are added).
       let rest = graphemes(word);
-      while (rest.length > 1 && width(rest.join("")) > node.width) {
+      while (rest.length > 1 && width(rest.join("")) > maxWidth) {
         let lo = 1;
         let hi = rest.length - 1;
         while (lo < hi) {
           const mid = (lo + hi + 1) >> 1;
-          if (width(rest.slice(0, mid).join("")) <= node.width) lo = mid;
+          if (width(rest.slice(0, mid).join("")) <= maxWidth) lo = mid;
           else hi = mid - 1;
         }
         push(rest.slice(0, lo).join(""), false, true);
@@ -91,26 +105,40 @@ function wrap(node: TextNode, size: number, measure: Measure): RawLine[] {
       current = rest.join("");
     }
     push(current, true);
+    if (list !== "none" && paragraph.trim() !== "") {
+      number++;
+      lines[first]!.marker = list === "bullet" ? "•" : `${number}.`;
+    }
   }
   return lines;
 }
 
-function place(node: TextNode, size: number, raw: RawLine[]): TextLayout {
+/**
+ * Places the wrapped lines. With a list, the text sits in the column right of the hanging indent, and the
+ * alignment is within that column, so wrapped lines and centred or right-aligned lines stay inside the box.
+ */
+function place(node: TextNode, size: number, raw: RawLine[], indent: number): TextLayout {
   const lineHeight = size * node.lineHeight;
   const height = raw.length * lineHeight;
   const top = (node.height - height) / 2;
+  const column = node.width - indent;
   const lines = raw.map((l, i): TextLine => {
     const gaps = l.text.split(" ").length - 1;
     const justify = node.align === "justify" && !l.last && gaps > 0;
-    const free = node.width - l.width;
+    const free = column - l.width;
     const x = node.align === "center" ? free / 2 : node.align === "right" ? free : 0;
-    return { text: l.text, x: justify ? 0 : x, y: top + i * lineHeight, width: l.width, wordSpacing: justify ? free / gaps : 0 };
+    const line: TextLine = { text: l.text, x: indent + (justify ? 0 : x), y: top + i * lineHeight, width: l.width, wordSpacing: justify ? free / gaps : 0 };
+    if (l.marker) line.marker = l.marker;
+    return line;
   });
   const overflow = height > node.height + 0.01 || raw.some((l) => l.broken);
   return { size, lineHeight, lines, height, overflow };
 }
 
-const layout = (node: TextNode, size: number, measure: Measure) => place(node, size, wrap(node, size, measure));
+const layout = (node: TextNode, size: number, measure: Measure) => {
+  const indent = node.list && node.list !== "none" ? LIST_INDENT * size : 0;
+  return place(node, size, wrap(node, size, measure, node.width - indent), indent);
+};
 
 const caches = new WeakMap<Measure, WeakMap<TextNode, TextLayout>>();
 
