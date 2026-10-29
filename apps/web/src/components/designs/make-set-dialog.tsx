@@ -4,7 +4,7 @@ import type { Doc, FormatKey } from "@vash/schema";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { otherSizes, planSet, type SetMember } from "@/lib/make-set";
+import { madeSizes, otherSizes, planSet, type SetMember } from "@/lib/make-set";
 
 /** What to make the set from: the title shows at once, the document loads when the dialog opens. */
 export type SetSource = { title: string; load: () => Promise<Doc> };
@@ -15,10 +15,13 @@ export type SetSource = { title: string; load: () => Promise<Doc> };
  */
 export function MakeSetDialog({
   source,
+  existingTitles = [],
   onClose,
   save,
 }: {
   source: SetSource | null;
+  /** Titles of designs already saved. A size with the title it would get is marked "Already made" and left unticked. */
+  existingTitles?: readonly string[];
   onClose: () => void;
   /** Saves the new designs; resolves to the sizes that couldn't be saved (empty when all were). */
   save: (members: SetMember[]) => Promise<FormatKey[]>;
@@ -42,7 +45,8 @@ export function MakeSetDialog({
       (d) => {
         if (!live) return;
         setDoc(d);
-        setChosen(new Set(otherSizes(d).map((s) => s.format)));
+        const made = madeSizes(d, existingTitles);
+        setChosen(new Set(otherSizes(d).map((s) => s.format).filter((f) => !made.includes(f))));
       },
       (err: unknown) => live && setError(err instanceof Error ? err.message : "This design couldn’t be opened."),
     );
@@ -54,6 +58,7 @@ export function MakeSetDialog({
   // Every size is planned up front, so each row can say what to check before anything is saved.
   const plan = useMemo(() => (doc ? planSet(doc, otherSizes(doc).map((s) => s.format)) : []), [doc]);
   const sizes = doc ? otherSizes(doc) : [];
+  const madeFormats = doc ? madeSizes(doc, existingTitles) : [];
   const picked = plan.filter((m) => chosen.has(m.format));
 
   async function make() {
@@ -102,6 +107,7 @@ export function MakeSetDialog({
                   <span className="text-sm font-medium">{s.label}</span>
                   <span className="text-[13px] text-muted">
                     {s.width} × {s.height}
+                    {madeFormats.includes(s.format) && " · Already made"}
                     {small > 0 && ` · ${small} text ${small === 1 ? "layer" : "layers"} will be too small to read, so check ${small === 1 ? "it" : "them"}`}
                   </span>
                 </span>

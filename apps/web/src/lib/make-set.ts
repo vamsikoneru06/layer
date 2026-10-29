@@ -15,14 +15,27 @@ export interface SetMember {
   warnings: ResizeWarning[];
 }
 
+/** "<base> · <label>", with the base cut short so the whole title fits the limit. */
+export function setTitle(base: string, label: string): string {
+  const suffix = ` · ${label}`;
+  return `${base.slice(0, LIMITS.titleChars - suffix.length)}${suffix}`;
+}
+
 /** "Make the set": the design at each chosen size, as new documents titled "<title> · <size>". */
 export function planSet(doc: Doc, formats: readonly FormatKey[]): SetMember[] {
   return otherSizes(doc)
     .filter((s) => formats.includes(s.format))
     .map((s) => {
       const { doc: resized, warnings } = resizeDoc(doc, s);
-      const suffix = ` · ${s.label}`;
-      const title = `${doc.meta.title.slice(0, LIMITS.titleChars - suffix.length)}${suffix}`;
+      const title = setTitle(doc.meta.title, s.label);
       return { format: s.format, warnings, doc: { ...resized, id: crypto.randomUUID(), kind: "design", meta: { ...resized.meta, title } } };
     });
+}
+
+/** The sizes that already have a design titled the way "Make the set" would title it. */
+export function madeSizes(doc: Doc, existingTitles: readonly string[]): FormatKey[] {
+  const taken = new Set(existingTitles);
+  return otherSizes(doc)
+    .filter((s) => taken.has(setTitle(doc.meta.title, s.label)))
+    .map((s) => s.format);
 }

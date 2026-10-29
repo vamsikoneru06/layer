@@ -265,14 +265,14 @@ export function DesignsView() {
   async function saveSet(original: DesignItem, members: SetMember[]): Promise<FormatKey[]> {
     const made: DesignItem[] = [];
     const failed: FormatKey[] = [];
-    await Promise.all(
-      members.map((m) =>
-        api.createDesignCopy(m.doc, original.folderId).then(
-          (item) => made.push(item),
-          () => failed.push(m.format),
-        ),
-      ),
-    );
+    // One at a time: every create takes the owner's row lock, so parallel requests would only queue up in the database.
+    for (const m of members) {
+      try {
+        made.push(await api.createDesignCopy(m.doc, original.folderId));
+      } catch {
+        failed.push(m.format);
+      }
+    }
     if (made.length) setDesigns((prev) => [...made, ...(prev ?? [])]);
     if (made.length && !failed.length) toast({ message: made.length === 1 ? "Made 1 design" : `Made ${made.length} designs` });
     return failed;
@@ -603,7 +603,13 @@ export function DesignsView() {
         />
       )}
 
-      <MakeSetDialog key={setFrom?.design.id ?? "closed"} source={setFrom?.source ?? null} onClose={() => setSetFrom(null)} save={(members) => saveSet(setFrom!.design, members)} />
+      <MakeSetDialog
+        key={setFrom?.design.id ?? "closed"}
+        source={setFrom?.source ?? null}
+        existingTitles={(designs ?? []).map((d) => d.title)}
+        onClose={() => setSetFrom(null)}
+        save={(members) => saveSet(setFrom!.design, members)}
+      />
 
       <MoveDialog
         key={moving?.join() ?? "closed"}
@@ -663,6 +669,7 @@ function GuestDesigns() {
       <LocalDesignsGrid designs={designs} onDelete={(id) => void remove(id)} onMakeSet={(d) => setSetFrom({ title: d.doc.meta.title, load: async () => openableDoc(d.doc) })} />
       <MakeSetDialog
         source={setFrom}
+        existingTitles={designs.map((d) => d.doc.meta.title)}
         onClose={() => setSetFrom(null)}
         save={async (members) => {
           const { saved, failed } = await saveSetLocally(members);

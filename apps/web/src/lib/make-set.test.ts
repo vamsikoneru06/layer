@@ -1,7 +1,7 @@
-import { createEmptyDoc, validateDoc } from "@vash/schema";
+import { LIMITS, createEmptyDoc, validateDoc } from "@vash/schema";
 import { describe, expect, it } from "vitest";
 import { templateDoc } from "../../tests/support/docs";
-import { otherSizes, planSet } from "./make-set";
+import { madeSizes, otherSizes, planSet, setTitle } from "./make-set";
 
 describe("make the set", () => {
   it("offers every standard size except the design's own", () => {
@@ -30,5 +30,24 @@ describe("make the set", () => {
     const [story] = planSet(original, ["ig-story"]);
     expect(story!.doc.meta.title).toHaveLength(120);
     expect(story!.doc.meta.title.endsWith(" · Instagram story")).toBe(true);
+  });
+
+  it("setTitle keeps a long base within the limit and ends with the size", () => {
+    const title = setTitle("x".repeat(120), "Instagram story");
+    expect(title).toHaveLength(LIMITS.titleChars);
+    expect(title.endsWith(" · Instagram story")).toBe(true);
+  });
+
+  it("madeSizes returns the sizes whose titles already exist", () => {
+    const original = { ...templateDoc({ title: "Weekly specials" }), kind: "design" as const };
+    const titles = planSet(original, ["ig-story", "yt-thumbnail"]).map((m) => m.doc.meta.title);
+    expect(madeSizes(original, [...titles, "Something else"])).toEqual(["ig-story", "yt-thumbnail"]);
+    expect(madeSizes(original, [titles[0]!])).toEqual(["ig-story"]);
+  });
+
+  it("madeSizes returns nothing when no title matches", () => {
+    const original = { ...templateDoc({ title: "Weekly specials" }), kind: "design" as const };
+    expect(madeSizes(original, [])).toEqual([]);
+    expect(madeSizes(original, ["Weekly specials", "Weekly specials · Instagram story x"])).toEqual([]);
   });
 });
