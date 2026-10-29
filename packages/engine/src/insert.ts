@@ -28,7 +28,7 @@ function baseNode(doc: Doc, id: string) {
 /** Relative luminance of the background's first colour (0 black, 1 white), to pick legible text. */
 function backgroundLuma(doc: Doc): number {
   const bg = doc.artboard.background;
-  const hex = bg.type === "solid" ? bg.color : (bg.stops[0]?.color ?? "#FFFFFF");
+  const hex = bg.type === "solid" ? bg.color : bg.type === "linear" ? (bg.stops[0]?.color ?? "#FFFFFF") : "#FFFFFF";
   const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255) as [number, number, number];
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }

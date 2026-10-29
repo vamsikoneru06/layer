@@ -9,6 +9,7 @@ let gid = 0;
 function paint(fill: Fill | null, defs: string[]): string {
   if (!fill) return "none";
   if (fill.type === "solid") return fill.color;
+  if (fill.type === "image") return "#FFFFFF";
   const id = `g${gid++}`;
   const a = ((fill.angle - 90) * Math.PI) / 180;
   const [x1, y1, x2, y2] = [0.5 - Math.cos(a) / 2, 0.5 - Math.sin(a) / 2, 0.5 + Math.cos(a) / 2, 0.5 + Math.sin(a) / 2];

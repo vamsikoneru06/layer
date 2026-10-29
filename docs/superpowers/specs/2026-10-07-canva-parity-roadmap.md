@@ -42,3 +42,31 @@ Each batch gets its own short spec, approval, branch and PR.
   any AI text tool needs a free service decision.
 - Video, audio and animation timelines: VASH exports still images.
 - Canva's own templates, photos, fonts and brand kit: VASH uses its own and open-licence content.
+
+## Status, 2026-10-29
+
+Built (on `feat/object-finish` and `feat/finish-batch`, PR #56 and the batch after it):
+
+- Object controls: floating toolbar, Layers panel (drag, rename, collapse, lock), shadows, dashed and dotted borders, alt text.
+- Elements: 22 shapes, 5 lines and arrows, 45 icons with search, grids and tables.
+- Canvas: rulers, guides, grid, snapping switches, safe area and margins overlays, fit width.
+- Export: PNG, JPG (quality), PDF (one page), file size shown after download.
+- Text: outline, highlight, bulleted and numbered lists, curve.
+- Photos: duotone, pixelate, six more looks, reset adjustments, replace photo.
+- Colours: design colours and recent colours. Resize design. Zoom keys.
+- Version history (earlier versions, restore) and share links (create, copy, revoke).
+
+Built since then (same branch):
+
+- Export: bleed and crop marks (PNG, JPG and PDF).
+- Canvas: smart spacing guides while moving, the hand tool and the select tool (V and H).
+- Background: a photo as the page background (cover fit), with a Remove image action.
+- Grids and tables; photo reset and replace; share links.
+
+Still open:
+
+- Multi-page (S9): needs an owner decision first; changes the document format.
+- Real-time collaboration and comments: needs a free realtime service chosen first.
+- Pexels search: needs owner approval for a new service (see branch feat/pexels, PR #35).
+
+Not planned: AI tools, video, audio and animation, Canva's own content and brand kit.

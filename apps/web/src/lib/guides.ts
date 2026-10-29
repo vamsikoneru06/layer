@@ -13,9 +13,13 @@ export interface ViewSettings {
   grid: boolean;
   snapObjects: boolean;
   snapGuides: boolean;
+  /** A dotted rectangle inset 10% of the page on every side, for text that must stay clear of the edges. */
+  safeArea: boolean;
+  /** A dashed rectangle inset 5% of the page on every side. */
+  margins: boolean;
 }
 
-export const DEFAULT_VIEW: ViewSettings = { rulers: false, guides: true, grid: false, snapObjects: true, snapGuides: true };
+export const DEFAULT_VIEW: ViewSettings = { rulers: false, guides: true, grid: false, snapObjects: true, snapGuides: true, safeArea: false, margins: false };
 
 const VIEW_KEY = "vash:view";
 const GUIDES_PREFIX = "vash:guides:";
@@ -97,5 +101,7 @@ export function saveView(v: ViewSettings): void {
     grid: v.grid,
     snapObjects: v.snapObjects,
     snapGuides: v.snapGuides,
+    safeArea: v.safeArea,
+    margins: v.margins,
   });
 }

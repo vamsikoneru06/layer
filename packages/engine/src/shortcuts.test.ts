@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { EditorCore } from "./editor-core";
+import type { Tool } from "./interaction";
 import { handleKey, type KeyInput } from "./shortcuts";
 import { docWith, rect, text } from "./test-docs";
 
@@ -64,5 +65,40 @@ describe("handleKey", () => {
     c.select(["r"]);
     expect(handleKey(c, key("Enter"))).toBe(false);
     expect(c.getState().editing).toBeNull();
+  });
+});
+
+describe("tool keys", () => {
+  it("V selects the select tool and H the hand tool, with or without a selection", () => {
+    const c = setup();
+    const seen: string[] = [];
+    const setTool = (t: Tool) => {
+      seen.push(t);
+    };
+    expect(handleKey(c, key("h"), setTool)).toBe(true);
+    expect(handleKey(c, key("V"), setTool)).toBe(true);
+    c.select(["a"]);
+    expect(handleKey(c, key("h"), setTool)).toBe(true);
+    expect(seen).toEqual(["hand", "select", "hand"]);
+  });
+
+  it("ignores the keys without a setter, and with Ctrl, Cmd or Alt", () => {
+    const c = setup();
+    const seen: string[] = [];
+    const setTool = (t: Tool) => {
+      seen.push(t);
+    };
+    expect(handleKey(c, key("v"))).toBe(false);
+    expect(handleKey(c, key("h", { mod: true }), setTool)).toBe(false);
+    expect(handleKey(c, key("v", { alt: true }), setTool)).toBe(false);
+    expect(seen).toEqual([]);
+  });
+
+  it("changes no layer and adds no undo step", () => {
+    const c = setup();
+    c.select(["a"]);
+    handleKey(c, key("h"), () => {});
+    expect(c.getState().canUndo).toBe(false);
+    expect(c.doc.nodes.a!.transform).toMatchObject({ x: 100, y: 100 });
   });
 });

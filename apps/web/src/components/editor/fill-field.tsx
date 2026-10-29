@@ -2,26 +2,55 @@
 
 import { LIMITS, type Fill } from "@vash/schema";
 import { Plus, RotateCw, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { addStop, convertFill, fillCss, sortStops } from "@/lib/color";
 import { ColorField, NumberField, Row, Segmented } from "./fields";
 
-const TYPES = [
+const TYPES: readonly { value: Fill["type"]; label: string }[] = [
   { value: "solid", label: "Solid" },
   { value: "linear", label: "Linear" },
-] as const;
+];
+
+/** Offered only where a photo can be set (the artboard background). */
+const IMAGE_TYPE = { value: "image", label: "Image" } as const;
 
 /**
- * Edits a fill: one colour, or a linear gradient (angle plus 2 to 8 stops). Colour drags stream
- * `final: false` previews like ColorField; every other change is final.
+ * Edits a fill: one colour, a linear gradient (angle plus 2 to 8 stops), or a photo. Colour drags stream
+ * `final: false` previews like ColorField; every other change is final. Choosing Image calls `onPickImage`,
+ * which picks and sets the photo; a photo is removed with "Remove image", which returns to a white solid.
  */
-export function FillField({ name, value, onChange, disabled }: { name: string; value: Fill; onChange: (fill: Fill, final: boolean) => void; disabled?: boolean }) {
+export function FillField({ name, value, onChange, disabled, onPickImage }: {
+  name: string;
+  value: Fill;
+  onChange: (fill: Fill, final: boolean) => void;
+  disabled?: boolean;
+  onPickImage?: () => void;
+}) {
+  const options = onPickImage ? [...TYPES, IMAGE_TYPE] : TYPES;
   return (
     <div className="flex flex-col gap-2">
-      <Segmented name={`${name} type`} value={value.type} options={TYPES} disabled={disabled} onChange={(type) => onChange(convertFill(value, type), true)} />
-      {value.type === "solid" ? (
+      <Segmented
+        name={`${name} type`}
+        value={value.type}
+        options={options}
+        disabled={disabled}
+        onChange={(type) => {
+          if (type === "image") onPickImage?.();
+          else onChange(convertFill(value, type), true);
+        }}
+      />
+      {value.type === "solid" && (
         <ColorField name={name} value={value.color} disabled={disabled} onChange={(color, final) => onChange({ type: "solid", color }, final)} />
-      ) : (
-        <Linear name={name} fill={value} disabled={disabled} onChange={onChange} />
+      )}
+      {value.type === "linear" && <Linear name={name} fill={value} disabled={disabled} onChange={onChange} />}
+      {value.type === "image" && (
+        <div className="flex flex-col gap-2">
+          <div aria-hidden className="h-6 rounded-lg shadow-[inset_0_0_0_.5px_var(--line)]" style={{ background: fillCss(value) }} />
+          <p className="text-[12px] text-muted">The photo covers the design. Remove it to go back to a solid colour.</p>
+          <Button variant="secondary" size="sm" disabled={disabled} onClick={() => onChange(convertFill(value, "solid"), true)} className="self-start">
+            Remove image
+          </Button>
+        </div>
       )}
     </div>
   );

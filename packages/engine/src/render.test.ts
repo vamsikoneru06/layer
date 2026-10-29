@@ -1,4 +1,6 @@
+import type { Doc } from "@vash/schema";
 import { describe, expect, it } from "vitest";
+import type { Mat } from "./math";
 import { recordingContext } from "./recording-ctx";
 import { arcAngles, arcPoint, arcRadius, renderDoc, renderScene, type ImageState } from "./render";
 import { docWith, frame, group, rect, text } from "./test-docs";
@@ -339,5 +341,77 @@ describe("renderDoc shadows and stroke dashes", () => {
     const solid = { ...rect("a", {}), stroke: { color: "#000000", width: 2 } };
     renderDoc(ctx, docWith([solid]), identity, opts, { background: false });
     expect(calls.some((c) => c.op === "setLineDash" || c.op === "set:lineCap")).toBe(false);
+  });
+});
+
+describe("renderDoc image background", () => {
+  const identity: Mat = [1, 0, 0, 1, 0, 0];
+  const measure = (s: string, _f: unknown, size: number) => s.length * size * 0.5;
+  /** A 1000 × 1000 artboard (docWith's size) with the given background. */
+  const withBackground = (background: Doc["artboard"]["background"]): Doc => {
+    const doc = docWith([]);
+    doc.artboard.background = background;
+    return doc;
+  };
+  const photo = (width: number, height: number) => ({ source: { tag: "bg" } as unknown as CanvasImageSource, width, height });
+  const imageFill = { type: "image", assetId: "bg1", fit: "cover" } as const;
+
+  it("covers the artboard with the photo, centred, and clips it to the artboard", () => {
+    const source = photo(2000, 1000);
+    const { ctx, calls } = recordingContext();
+    const asked: string[] = [];
+    renderDoc(ctx, withBackground(imageFill), identity, { measure, image: (id) => { asked.push(id); return source; }, dpr: 1 }, { background: true });
+    // A 2000×1000 photo on a 1000×1000 artboard is scaled to cover the height: 2000×1000, centred.
+    expect(asked).toEqual(["bg1"]);
+    expect(calls).toContainEqual({ op: "drawImage", args: [source.source, -1000, -500, 2000, 1000] });
+    const clip = calls.findIndex((c) => c.op === "clip");
+    expect(clip).toBeGreaterThanOrEqual(0);
+    expect(clip).toBeLessThan(calls.findIndex((c) => c.op === "drawImage"));
+  });
+
+  it("scales a tall photo to cover the width, so the overhang is cropped top and bottom", () => {
+    const source = photo(500, 1000);
+    const { ctx, calls } = recordingContext();
+    renderDoc(ctx, withBackground(imageFill), identity, { measure, image: () => source, dpr: 1 }, { background: true });
+    // 500×1000 scaled by 2 covers the 1000 px width: 1000×2000, centred.
+    expect(calls).toContainEqual({ op: "drawImage", args: [source.source, -500, -1000, 1000, 2000] });
+  });
+
+  it("paints the white base while the photo loads, and when it is missing", () => {
+    for (const state of ["loading", "missing"] as const) {
+      const { ctx, calls } = recordingContext();
+      renderDoc(ctx, withBackground(imageFill), identity, { measure, image: () => state, dpr: 1 }, { background: true });
+      expect(calls.some((c) => c.op === "drawImage")).toBe(false);
+      expect(calls).toContainEqual({ op: "set:fillStyle", args: ["#FFFFFF"] });
+      expect(calls).toContainEqual({ op: "fillRect", args: [-500, -500, 1000, 1000] });
+    }
+  });
+
+  it("does not let the photo cast the artboard's shadow a second time", () => {
+    const source = photo(1000, 1000);
+    const { ctx, calls } = recordingContext();
+    renderDoc(ctx, withBackground(imageFill), identity, { measure, image: () => source, dpr: 1 }, { background: true, shadow: true });
+    const shadowOn = calls.findIndex((c) => c.op === "set:shadowColor" && c.args[0] === "rgba(0,0,0,0.14)");
+    const shadowOff = calls.findIndex((c, i) => i > shadowOn && c.op === "set:shadowColor" && c.args[0] === "transparent");
+    expect(shadowOn).toBeGreaterThanOrEqual(0);
+    expect(shadowOff).toBeLessThan(calls.findIndex((c) => c.op === "drawImage"));
+  });
+
+  it("draws nothing for the background when it is not painted (a transparent export)", () => {
+    const { ctx, calls } = recordingContext();
+    renderDoc(ctx, withBackground(imageFill), identity, { measure, image: () => photo(100, 100), dpr: 1 }, { background: false });
+    expect(calls.some((c) => c.op === "drawImage")).toBe(false);
+  });
+
+  it("keeps solid and linear backgrounds as plain fills, with no photo", () => {
+    const solid = recordingContext();
+    renderDoc(solid.ctx, withBackground({ type: "solid", color: "#112233" }), identity, { measure, image: () => "loading", dpr: 1 }, { background: true });
+    expect(solid.calls).toContainEqual({ op: "set:fillStyle", args: ["#112233"] });
+    expect(solid.calls.some((c) => c.op === "drawImage")).toBe(false);
+
+    const linear = recordingContext();
+    renderDoc(linear.ctx, withBackground({ type: "linear", angle: 90, stops: [{ offset: 0, color: "#000000" }, { offset: 1, color: "#FFFFFF" }] }), identity, { measure, image: () => "loading", dpr: 1 }, { background: true });
+    expect(linear.calls.some((c) => c.op === "createLinearGradient")).toBe(true);
+    expect(linear.calls.some((c) => c.op === "drawImage")).toBe(false);
   });
 });

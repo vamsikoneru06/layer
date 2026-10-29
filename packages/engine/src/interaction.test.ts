@@ -106,6 +106,45 @@ describe("moving", () => {
   });
 });
 
+describe("equal spacing", () => {
+  // Boxes are 100 px wide. "left" spans 50-150 and "right" 350-450, a 200 px gap. "m" starts at 750-850 (centre 800).
+  const row = () => setup([rect("left", { x: 100, y: 200 }), rect("right", { x: 400, y: 200 }), rect("m", { x: 800, y: 200 })]);
+
+  it("snaps a layer to an equal gap while dragging, marks both gaps, and clears them on release", () => {
+    const { core, ui, p, node } = row();
+    ui.pointerDown(p(800, 200));
+    // Centre 697 spans 647-747, 197 px from "right". Shifting 3 px right makes the gap 200, like the one between "left" and "right".
+    ui.pointerMove(p(697, 200));
+    expect(node("m").transform.x).toBe(700);
+    expect(core.getState().spacing).toEqual([
+      { axis: "x", from: 450, to: 650, at: 200 },
+      { axis: "x", from: 150, to: 350, at: 200 },
+    ]);
+    ui.pointerUp(p(697, 200));
+    expect(node("m").transform.x).toBe(700);
+    expect(core.getState().spacing).toEqual([]);
+  });
+
+  it("does not snap to an equal gap or mark spacing when objects snapping is off", () => {
+    const { core, ui, p, node } = row();
+    core.setSnapOptions({ objects: false, guides: { x: [], y: [] } });
+    ui.pointerDown(p(800, 200));
+    ui.pointerMove(p(697, 200));
+    expect(node("m").transform.x).toBe(697);
+    expect(core.getState().spacing).toEqual([]);
+  });
+
+  it("clears spacing when the drag is cancelled", () => {
+    const { core, ui, p, node } = row();
+    ui.pointerDown(p(800, 200));
+    ui.pointerMove(p(697, 200));
+    expect(core.getState().spacing).not.toEqual([]);
+    ui.cancel();
+    expect(node("m").transform.x).toBe(800);
+    expect(core.getState().spacing).toEqual([]);
+  });
+});
+
 describe("resizing and rotating", () => {
   it("resizes from a corner keeping the opposite corner fixed", () => {
     const { ui, p, drag, node } = setup();
@@ -159,5 +198,86 @@ describe("viewport", () => {
     expect(core.getState().viewport).toMatchObject({ panX: 50, panY: 30 });
     ui.wheel({ x: 100, y: 100, deltaX: 0, deltaY: -100, zoom: true });
     expect(core.getState().viewport.zoom).toBeGreaterThan(1);
+  });
+});
+
+describe("hand tool", () => {
+  it("pans when a primary drag starts anywhere, including on a layer", () => {
+    const { core, ui, drag, node } = setup();
+    core.select(["a"]);
+    ui.setTool("hand");
+    drag([200, 200], [260, 230]);
+    expect(core.getState().viewport).toMatchObject({ panX: 60, panY: 30 });
+    expect(node("a").transform).toMatchObject({ x: 200, y: 200 });
+    expect(core.getState().canUndo).toBe(false);
+  });
+
+  it("does not move the selected layer, select, or hover", () => {
+    const { core, ui, p, drag } = setup();
+    core.select(["a"]);
+    ui.setTool("hand");
+    drag([200, 200], [240, 240]);
+    expect(core.getState().selection).toEqual(["a"]);
+    ui.pointerMove(p(600, 600));
+    expect(core.getState().hover).toBeNull();
+  });
+
+  it("does not select on click, or clear the selection on an empty click", () => {
+    const { core, ui, p } = setup();
+    ui.setTool("hand");
+    ui.pointerDown(p(200, 200));
+    ui.pointerUp(p(200, 200));
+    expect(core.getState().selection).toEqual([]);
+    core.select(["b"]);
+    ui.pointerDown(p(900, 100));
+    ui.pointerUp(p(900, 100));
+    expect(core.getState().selection).toEqual(["b"]);
+  });
+
+  it("shows the grab cursor, and grabbing while panning", () => {
+    const { ui, p } = setup();
+    ui.setTool("hand");
+    expect(ui.cursor()).toBe("grab");
+    ui.pointerDown(p(200, 200));
+    expect(ui.cursor()).toBe("grabbing");
+    ui.pointerUp(p(200, 200));
+    expect(ui.cursor()).toBe("grab");
+  });
+
+  it("keeps Space panning in select mode too", () => {
+    const { core, ui, drag } = setup();
+    ui.setSpace(true);
+    drag([200, 200], [230, 200]);
+    expect(core.getState().viewport).toMatchObject({ panX: 30, panY: 0 });
+    ui.setSpace(false);
+    expect(ui.tool()).toBe("select");
+  });
+
+  it("returns to select mode: clicks select and drags move again", () => {
+    const { core, ui, p, drag, node } = setup();
+    ui.setTool("hand");
+    ui.setTool("select");
+    ui.pointerDown(p(200, 200));
+    ui.pointerUp(p(200, 200));
+    expect(core.getState().selection).toEqual(["a"]);
+    drag([200, 200], [233, 211]);
+    expect(node("a").transform).toMatchObject({ x: 233, y: 211 });
+  });
+
+  it("round-trips the tool, publishes each change, and stays out of undo history", () => {
+    const { core, ui } = setup();
+    let published = 0;
+    core.subscribe(() => published++);
+    expect(ui.tool()).toBe("select");
+    ui.setTool("hand");
+    expect(ui.tool()).toBe("hand");
+    expect(published).toBe(1);
+    ui.setTool("hand");
+    expect(published).toBe(1);
+    ui.setTool("select");
+    expect(ui.tool()).toBe("select");
+    expect(published).toBe(2);
+    expect(core.getState().canUndo).toBe(false);
+    expect(core.doc.nodes.a!.transform).toMatchObject({ x: 200, y: 200 });
   });
 });

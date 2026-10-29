@@ -9,7 +9,7 @@ import { exportFileName, type ExportFormat } from "@/lib/export-name";
 import { formatFileSize } from "@/lib/file-size";
 import { jpegToPdf, pointsFromPixels } from "@/lib/pdf";
 import { cn } from "@/lib/utils";
-import { Segmented, Slider, Switch } from "./fields";
+import { NumberField, Segmented, Slider, Switch } from "./fields";
 
 const SCALES = [1, 2, 3] as const;
 const FILE_TYPES: { value: ExportFormat; label: string }[] = [
@@ -32,6 +32,8 @@ export function ExportPopover({ editor, doc, open, onOpenChange }: { editor: Edi
   const [fileType, setFileType] = useState<ExportFormat>("png");
   const [scale, setScale] = useState<number>(2);
   const [transparent, setTransparent] = useState(false);
+  const [bleed, setBleed] = useState(0);
+  const [cropMarks, setCropMarks] = useState(false);
   const [quality, setQuality] = useState(0.9);
   const [savedBytes, setSavedBytes] = useState<number | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
@@ -66,7 +68,8 @@ export function ExportPopover({ editor, doc, open, onOpenChange }: { editor: Edi
     return () => clearTimeout(t);
   }, [phase]);
 
-  const check = checkExport(doc, scale);
+  const print = { bleed, cropMarks };
+  const check = checkExport(doc, scale, print);
 
   async function download() {
     if (!editor || !check.ok) return;
@@ -75,16 +78,16 @@ export function ExportPopover({ editor, doc, open, onOpenChange }: { editor: Edi
     try {
       let file: Blob;
       if (fileType === "png") {
-        file = await editor.exportPng({ scale, transparent });
+        file = await editor.exportPng({ scale, transparent, ...print });
       } else if (fileType === "jpg") {
-        file = await editor.exportImage({ scale, transparent: false, format: "jpeg", quality });
+        file = await editor.exportImage({ scale, transparent: false, format: "jpeg", quality, ...print });
       } else {
-        // JPEG pixels go into a one-page PDF sized to the artboard in points.
-        const jpeg = await editor.exportImage({ scale, transparent: false, format: "jpeg", quality });
+        // JPEG pixels go into a one-page PDF sized to the export (bleed and marks included) in points.
+        const jpeg = await editor.exportImage({ scale, transparent: false, format: "jpeg", quality, ...print });
         const bytes = jpegToPdf(
           new Uint8Array(await jpeg.arrayBuffer()),
           { width: check.width, height: check.height },
-          { width: pointsFromPixels(doc.artboard.width), height: pointsFromPixels(doc.artboard.height) },
+          { width: pointsFromPixels(check.width / scale), height: pointsFromPixels(check.height / scale) },
         );
         file = new Blob([new Uint8Array(bytes)], { type: "application/pdf" });
       }
@@ -126,7 +129,7 @@ export function ExportPopover({ editor, doc, open, onOpenChange }: { editor: Edi
             </span>
             <div role="radiogroup" aria-labelledby={`${id}-size`} className="flex rounded-[10px] bg-field p-[3px]">
               {SCALES.map((s) => {
-                const c = checkExport(doc, s);
+                const c = checkExport(doc, s, print);
                 return (
                   <button
                     key={s}
@@ -155,6 +158,16 @@ export function ExportPopover({ editor, doc, open, onOpenChange }: { editor: Edi
           )}
 
           {fileType === "jpg" && <p className="text-[13px] text-muted">JPG has no transparency, so the background is always included.</p>}
+
+          <div className="flex flex-col gap-2">
+            <span className="text-[13px] font-medium">Bleed</span>
+            <NumberField label="±" name="Bleed in design pixels" value={bleed} min={0} max={30} suffix="px" onCommit={setBleed} />
+          </div>
+
+          <div className="flex items-center justify-between text-[13px] font-medium">
+            Crop marks
+            <Switch label="Crop marks" checked={cropMarks} onChange={setCropMarks} />
+          </div>
 
           {fileType !== "png" && <Slider label="Quality" value={quality} min={0.5} max={1} onChange={(v) => setQuality(v)} />}
 

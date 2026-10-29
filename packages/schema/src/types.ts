@@ -20,9 +20,14 @@ export type FormatKey = "ig-post" | "ig-story" | "yt-thumbnail" | "poster" | "in
 
 export type Lock = "free" | "content-only" | "locked";
 
+/**
+ * A fill. `image` is a photo covering the artboard (cover fit, centred); only the artboard background may hold one.
+ * It refers to a photo in `Doc.assets`, like a frame does.
+ */
 export type Fill =
   | { type: "solid"; color: Color }
-  | { type: "linear"; angle: number; stops: Array<{ offset: number; color: Color }> };
+  | { type: "linear"; angle: number; stops: Array<{ offset: number; color: Color }> }
+  | { type: "image"; assetId: AssetId; fit: "cover" };
 
 export interface Transform {
   x: number;

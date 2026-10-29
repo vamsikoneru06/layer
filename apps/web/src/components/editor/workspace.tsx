@@ -1,6 +1,6 @@
 "use client";
 
-import { copiedStyleOf, createEditor, hitTest, resizeDesign, toWorld, topLevelOf, type Editor, type EditorState, type Measure } from "@vash/engine";
+import { copiedStyleOf, createEditor, hitTest, resizeDesign, toWorld, topLevelOf, ZOOM_MAX, ZOOM_MIN, type Editor, type EditorState, type Measure, type Viewport } from "@vash/engine";
 import { parseDoc, type Doc } from "@vash/schema";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type PointerEvent as ReactPointerEvent } from "react";
@@ -30,10 +30,12 @@ import { MoveDialog } from "./move-dialog";
 import { PropertiesPanel } from "./properties-panel";
 import { ShortcutsDialog } from "./shortcuts-dialog";
 import { TextEditor } from "./text-editor";
+import { ToolSwitch } from "./tool-switch";
 import { useClipboard } from "./use-clipboard";
 import { useElementSize } from "./use-element-size";
 import { useFullscreen } from "./use-fullscreen";
 import { VersionHistoryPanel } from "./version-history-panel";
+import { ShareDialog } from "./share-dialog";
 // Self-hosted allowlisted fonts, loaded only on the editor route.
 import "./fonts.css";
 
@@ -59,6 +61,13 @@ const measure: Measure = (text, font, size) => {
   measureContext.font = `${font.style} ${font.weight} ${size}px "${font.family}", system-ui, sans-serif`;
   return measureContext.measureText(text).width;
 };
+
+/** Zoom that makes the artboard as wide as the canvas, with the same 48 px padding as Fit to screen. Centred across; down from the top margin when the page is taller than the canvas. */
+function fitWidthViewport(view: { width: number; height: number }, artboard: { width: number; height: number }): Viewport {
+  const padding = 48;
+  const zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, (view.width - padding * 2) / artboard.width));
+  return { zoom, panX: (view.width - artboard.width * zoom) / 2, panY: Math.max(padding, (view.height - artboard.height * zoom) / 2) };
+}
 
 export function Workspace({ design, local = false }: { design: Design; local?: boolean }) {
   const router = useRouter();
@@ -87,6 +96,7 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
   const fullscreen = useFullscreen();
   const [infoOpen, setInfoOpen] = useState(false);
   const [moveOpen, setMoveOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [resizeOpen, setResizeOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [menuAt, setMenuAt] = useState<{ x: number; y: number; onLayer: boolean } | null>(null);
@@ -390,11 +400,15 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
       setHistoryOpen(true);
     },
     resizeDesign: () => setResizeOpen(true),
+    share: () => setShareOpen(true),
     save: () => void saveNow(),
     download: () => setExportOpen(true),
     zoomIn: () => editor?.zoomTo(editor.getState().viewport.zoom * 1.25),
     zoomOut: () => editor?.zoomTo(editor.getState().viewport.zoom / 1.25),
     fit: () => editor?.fit(),
+    fitWidth: () => {
+      if (editor) editor.core.setChrome({ viewport: fitWidthViewport(size, editor.core.doc.artboard) });
+    },
     actualSize: () => editor?.zoomTo(1),
     fullscreen: () => void fullscreen.toggle().catch(() => toast({ message: "Fullscreen isn’t available right now." })),
     togglePanels: () => setPanelsHidden((hidden) => !hidden),
@@ -404,6 +418,8 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
     toggleGrid: () => toggleView("grid"),
     toggleSnapObjects: () => toggleView("snapObjects"),
     toggleSnapGuides: () => toggleView("snapGuides"),
+    toggleSafeArea: () => toggleView("safeArea"),
+    toggleMargins: () => toggleView("margins"),
     clearGuides: () => setGuides(() => ({ x: [], y: [] })),
   };
   const hostRef = useRef(latestHost);
@@ -424,12 +440,14 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
       moveToFolder: call("moveToFolder"),
       designInfo: call("designInfo"),
       versionHistory: call("versionHistory"),
+      share: call("share"),
       resizeDesign: call("resizeDesign"),
       save: call("save"),
       download: call("download"),
       zoomIn: call("zoomIn"),
       zoomOut: call("zoomOut"),
       fit: call("fit"),
+      fitWidth: call("fitWidth"),
       actualSize: call("actualSize"),
       fullscreen: call("fullscreen"),
       togglePanels: call("togglePanels"),
@@ -441,6 +459,8 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
       toggleGrid: call("toggleGrid"),
       toggleSnapObjects: call("toggleSnapObjects"),
       toggleSnapGuides: call("toggleSnapGuides"),
+      toggleSafeArea: call("toggleSafeArea"),
+      toggleMargins: call("toggleMargins"),
       clearGuides: call("clearGuides"),
     };
   }, [panelsHidden, fullscreen.supported, local, view, guideCount]);
@@ -535,14 +555,23 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
                   size={size}
                   page={{ width: artboard.width, height: artboard.height }}
                   guides={guides}
+                  spacing={state.spacing}
                   showGuides={view.guides}
                   showGrid={view.grid}
+                  showSafeArea={view.safeArea}
+                  showMargins={view.margins}
                   onMoveGuide={(axis, index, at) => setGuides((g) => moveGuide(g, axis, index, at))}
                   onRemoveGuide={(axis, index) => setGuides((g) => removeGuide(g, axis, index))}
                 />
               )}
               {state && editor && <TextEditor editor={editor} state={state} />}
               {state && editor && actions && <FloatingToolbar core={editor.core} state={state} actions={actions} mac={mac} container={container} focusCanvas={() => overlay.current?.focus()} />}
+              {/* Bottom-left of the canvas, just above the zoom bar. V and H switch the tool from the keyboard too. */}
+              {state && editor && (
+                <div className="absolute bottom-3 left-3 z-10">
+                  <ToolSwitch tool={editor.tool()} onChange={(tool) => editor.setTool(tool)} />
+                </div>
+              )}
               {panelsHidden && (
                 <button type="button" onClick={() => setPanelsHidden(false)} className="glass-btn glass-secondary absolute top-3 right-3 h-8 rounded-lg px-3 text-[13px]">
                   <span className="glass-label">Show panels</span>
@@ -634,6 +663,7 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
         mode={state?.mode ?? "design"}
         onResize={(size, scaleContent) => !!editor && resizeDesign(editor.core, size, scaleContent)}
       />
+      {!local && <ShareDialog designId={design.id} open={shareOpen} onClose={() => setShareOpen(false)} />}
       <MoveDialog
         open={moveOpen}
         onClose={() => setMoveOpen(false)}

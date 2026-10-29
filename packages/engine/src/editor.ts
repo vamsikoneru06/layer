@@ -3,7 +3,7 @@ import { EditorCore, type EditorState } from "./editor-core";
 import { exportImage, exportPng, type ImageFormat } from "./export";
 import { createFilterRenderer, type FilterFn } from "./filters";
 import { fontRequests } from "./fonts";
-import { createInteraction, type PointerInput } from "./interaction";
+import { createInteraction, type PointerInput, type Tool } from "./interaction";
 import { renderOverlay } from "./overlay";
 import type { EditMode } from "./policy";
 import { renderScene, type ImageState } from "./render";
@@ -34,12 +34,15 @@ export interface Editor {
   fit(): void;
   /** Set zoom about the view centre (1 = 100%). */
   zoomTo(zoom: number): void;
+  /** The pointer tool: `select` (default) or `hand` (drag to pan). Not part of the document or the undo history. */
+  tool(): Tool;
+  setTool(tool: Tool): void;
   /** Redraw on the next frame (e.g. after fonts or images load). */
   invalidate(): void;
   /** The current document as a PNG at 1×/2×/3×. */
-  exportPng(o: { scale: number; transparent: boolean }): Promise<Blob>;
+  exportPng(o: { scale: number; transparent: boolean; bleed?: number; cropMarks?: boolean }): Promise<Blob>;
   /** The current document as a PNG or JPEG. JPEG ignores `transparent` and always paints the background. */
-  exportImage(o: { scale: number; transparent: boolean; format: ImageFormat; quality?: number }): Promise<Blob>;
+  exportImage(o: { scale: number; transparent: boolean; format: ImageFormat; quality?: number; bleed?: number; cropMarks?: boolean }): Promise<Blob>;
   /** Placement of the on-canvas text box while a text layer is being edited. */
   textEditBox(): TextEditBox | null;
   /**
@@ -213,6 +216,7 @@ export function createEditor(o: EditorOptions): Editor {
   const onCancel = () => ui.cancel();
   // Double-clicking text (even inside a group) starts typing into it.
   const onDoubleClick = (e: MouseEvent) => {
+    if (ui.tool() === "hand") return; // With the hand, clicks do not reach layers.
     const hit = hitTest(core.doc, toWorld(core.getState().viewport, input(e)));
     const type = hit ? core.doc.nodes[hit]?.type : undefined;
     if (type === "text") core.startTextEdit(hit!);
@@ -249,7 +253,7 @@ export function createEditor(o: EditorOptions): Editor {
       return;
     }
     if (e.getModifierState?.("AltGraph")) return; // AltGr types a character, it is not a shortcut
-    if (handleKey(core, keyInputOf(e, navigator.platform.startsWith("Mac")))) e.preventDefault();
+    if (handleKey(core, keyInputOf(e, navigator.platform.startsWith("Mac")), ui.setTool)) e.preventDefault();
   };
   const onKeyUp = (e: KeyboardEvent) => {
     if (e.key === " ") {
@@ -286,6 +290,8 @@ export function createEditor(o: EditorOptions): Editor {
     subscribe: core.subscribe,
     fit,
     zoomTo: (zoom) => core.setChrome({ viewport: zoomAt(core.getState().viewport, { x: size.width / 2, y: size.height / 2 }, zoom) }),
+    tool: () => ui.tool(),
+    setTool: (tool) => ui.setTool(tool),
     invalidate,
     exportPng: (e) => exportPng(core.doc, { ...e, measure, image, imagesReady: o.imagesReady, filter }),
     exportImage: (e) => exportImage(core.doc, { ...e, measure, image, imagesReady: o.imagesReady, filter }),

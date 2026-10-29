@@ -1,6 +1,6 @@
 "use client";
 
-import { insertLayer, insertShape, type Editor, type InsertKind, type ShapeSpec } from "@vash/engine";
+import { insertGrid, insertLayer, insertShape, type Editor, type GridOptions, type InsertKind, type ShapeSpec } from "@vash/engine";
 import { Image as ImageIcon, Shapes, Type, type LucideIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { ICONS } from "@/lib/icon-paths";
@@ -26,6 +26,52 @@ const INK = "#1C1C1E";
 /** Icons are inserted at 160 px with a 13 px stroke: lucide's 2 on a 24 grid, scaled. */
 const ICON_SIZE = 160;
 const ICON_STROKE = 13;
+
+/** The Grids section: square cells, and a table with no gaps and a dark outline. */
+const GRIDS: readonly { label: string; options: GridOptions }[] = [
+  { label: "2 by 2", options: { rows: 2, cols: 2, cellSize: 120, gap: 12, fill: SHAPE_FILL, stroke: null } },
+  { label: "3 by 3", options: { rows: 3, cols: 3, cellSize: 120, gap: 12, fill: SHAPE_FILL, stroke: null } },
+  { label: "4 by 4", options: { rows: 4, cols: 4, cellSize: 120, gap: 12, fill: SHAPE_FILL, stroke: null } },
+  { label: "Table", options: { rows: 3, cols: 4, cellSize: 100, gap: 0, fill: null, stroke: { color: INK, width: 4 } } },
+];
+
+/** The Tile's svg is 48 by 48; the grid fills 40 of it along its longer side, keeping its proportions. */
+const PREVIEW = 48;
+const PREVIEW_DRAWN = 40;
+
+function GridPreview({ options: { rows, cols, cellSize, gap, fill } }: { options: GridOptions }) {
+  const width = cols * cellSize + (cols - 1) * gap;
+  const height = rows * cellSize + (rows - 1) * gap;
+  const scale = PREVIEW_DRAWN / Math.max(width, height);
+  const x0 = (PREVIEW - width * scale) / 2;
+  const y0 = (PREVIEW - height * scale) / 2;
+  const cell = cellSize * scale;
+  const step = (cellSize + gap) * scale;
+  const ink = fill === null ? { fill: "none", stroke: "currentColor", strokeWidth: 1.5 } : { fill: "currentColor", opacity: 0.35 };
+  const cells = Array.from({ length: rows * cols }, (_, i) => ({ r: Math.floor(i / cols), c: i % cols }));
+  return (
+    <>
+      {cells.map(({ r, c }) => (
+        <rect key={`${r}-${c}`} x={x0 + c * step} y={y0 + r * step} width={cell} height={cell} {...ink} />
+      ))}
+    </>
+  );
+}
+
+function GridTiles({ add }: { add: (options: GridOptions) => void }) {
+  return (
+    <section className="flex flex-col gap-2">
+      <h3 className="text-[12px] font-medium text-muted">Grids</h3>
+      <div className="grid grid-cols-2 gap-2">
+        {GRIDS.map(({ label, options }) => (
+          <Tile key={label} label={label} onClick={() => add(options)}>
+            <GridPreview options={options} />
+          </Tile>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 function Tile({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
   return (
@@ -103,7 +149,19 @@ function IconsSection({ add }: { add: (spec: ShapeSpec) => void }) {
   );
 }
 
-function Panel({ tab, add, addShape, editor }: { tab: Tab; add: (kind: InsertKind) => void; addShape: (spec: ShapeSpec) => void; editor: Editor | null }) {
+function Panel({
+  tab,
+  add,
+  addShape,
+  addGrid,
+  editor,
+}: {
+  tab: Tab;
+  add: (kind: InsertKind) => void;
+  addShape: (spec: ShapeSpec) => void;
+  addGrid: (options: GridOptions) => void;
+  editor: Editor | null;
+}) {
   if (tab === "text") {
     return (
       <>
@@ -133,6 +191,7 @@ function Panel({ tab, add, addShape, editor }: { tab: Tab; add: (kind: InsertKin
           <h3 className="text-[12px] font-medium text-muted">Lines and arrows</h3>
           <CatalogTiles entries={LINES} add={addShape} />
         </section>
+        <GridTiles add={addGrid} />
         <IconsSection add={addShape} />
       </>
     );
@@ -184,6 +243,7 @@ export function InsertRail({ editor }: { editor: Editor | null }) {
             editor={editor}
             add={(kind) => editor && insertLayer(editor.core, kind)}
             addShape={(spec) => editor && insertShape(editor.core, spec)}
+            addGrid={(options) => editor && insertGrid(editor.core, options)}
           />
         </div>
       )}
