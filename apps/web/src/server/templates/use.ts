@@ -14,7 +14,7 @@ import { canSee } from "./view";
 /** Spec §8.2: copies the current version into a new design; a signed-in use counts once per user per template per UTC day. */
 export async function useTemplate(ctx: { db: Db; now: () => Date }, viewer: CurrentUser, templateId: string): Promise<DesignRow> {
   const card = await getTemplateCard(ctx.db, templateId);
-  if (!card || !canSee(card, viewer)) throw notFound();
+  if (!card || !canSee(card, viewer, ctx.now())) throw notFound();
   const version = await getTemplateVersion(ctx.db, templateId, card.currentVersion);
   if (!version) throw notFound();
   // Stored versions may predate a schema migration; parseDoc brings them up to date.

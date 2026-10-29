@@ -15,7 +15,7 @@ const mailer = captureMailer();
 beforeAll(async () => {
   t = await createTestDb();
   auth = createAuth({ db: t.db, config: testConfig, mailer, now: () => new Date() });
-  route = createAuthRoute(auth, testConfig);
+  route = createAuthRoute(auth, { db: t.db, config: testConfig, now: () => new Date() });
 });
 afterAll(() => t.close());
 
@@ -184,7 +184,7 @@ describe("magic-link abuse controls", () => {
   it("still limits links per client when no proxy is trusted (shared bucket, fail closed)", async () => {
     const untrusted = createAuthRoute(
       createAuth({ db: t.db, config: { ...testConfig, trustProxy: false }, mailer, now: () => new Date() }),
-      testConfig,
+      { db: t.db, config: testConfig, now: () => new Date() },
     );
     const statuses = [];
     for (let i = 0; i < 21; i++) {
@@ -214,4 +214,25 @@ describe("magic-link abuse controls", () => {
       expect(res.status).toBe(404);
     },
   );
+});
+
+describe("sign-in state is not a magic-link token", () => {
+  // Regression for the better-auth advisory "OAuth state can be used as a Magic Link to sign in as another user".
+  // An OAuth state row is stored under its raw value; magic-link verification only looks up "magic-link:<hash of token>".
+  it("refuses a raw verification value presented as a magic-link token", async () => {
+    const state = `oauth-state-${crypto.randomUUID()}`;
+    const victim = "victim@example.test";
+    await t.db.insert(user).values({ id: `u_${crypto.randomUUID()}`, name: "Victim", email: victim, emailVerified: true });
+    await t.db.insert(verification).values({
+      id: crypto.randomUUID(),
+      identifier: state,
+      value: JSON.stringify({ callbackURL: "/home" }),
+      expiresAt: new Date(Date.now() + 10 * 60_000),
+    });
+
+    const res = await verify(new URL(`${origin}/api/auth/magic-link/verify?token=${state}&callbackURL=%2Fhome`));
+    expect(sessionCookie(res)).toBeNull();
+    const [row] = await t.db.select().from(verification).where(eq(verification.identifier, state));
+    expect(row).toBeDefined();
+  });
 });

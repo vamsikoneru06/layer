@@ -39,7 +39,7 @@ function build() {
   // An S3-compatible bucket when configured; otherwise photos are kept in the database itself.
   const storage = config.storage ? s3Storage(config.storage) : databaseStorage({ db, secret: config.authSecret, origin: config.appOrigin, now });
   return {
-    auth: createAuthRoute(auth, config),
+    auth: createAuthRoute(auth, { db, config, now }),
     health: healthHandlers(deps),
     folders: folderHandlers(deps),
     designs: designHandlers(deps),

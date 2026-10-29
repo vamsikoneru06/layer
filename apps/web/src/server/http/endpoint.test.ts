@@ -34,7 +34,7 @@ describe("endpoint()", () => {
 
   it("requires a user, and an admin for admin endpoints", async () => {
     const member = await createUser(t.db);
-    const admin = await createUser(t.db, { role: "admin" });
+    const admin = await createUser(t.db, { role: "admin", twoFactorEnabled: true });
     const needsUser = endpoint(testDeps(t.db), { auth: "user" }, async ({ user }) => Response.json({ id: user.id }));
     const needsAdmin = endpoint(testDeps(t.db), { auth: "admin" }, ok);
     expect((await call(needsUser)).status).toBe(401);

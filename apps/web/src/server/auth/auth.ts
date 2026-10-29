@@ -5,6 +5,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError, createAuthMiddleware } from "better-auth/api";
 import { toNextJsHandler } from "better-auth/next-js";
 import { magicLink } from "better-auth/plugins/magic-link";
+import { twoFactor } from "better-auth/plugins/two-factor";
 import type { AppConfig } from "../config";
 import { authSchema } from "../db/schema";
 import type { Db } from "../db/types";
@@ -15,6 +16,7 @@ import { betterAuthRateLimitStorage, consume } from "../rate-limit/limiter";
 import { RATE_LIMITS } from "../rate-limit/rules";
 import { authCookieOptions } from "./cookies";
 import { magicLinkEmail, type Mailer } from "./mailer";
+import { twoFactorGuard } from "./two-factor";
 
 export interface AuthDeps {
   db: Db;
@@ -26,7 +28,7 @@ export interface AuthDeps {
 const DAY_SECONDS = 60 * 60 * 24;
 const AUTH_BODY_LIMIT = 8 * 1024;
 
-/** Where each route takes the caller's post-sign-in redirects from. Better Auth doesn't check them on magic links. */
+/** Where each route takes the caller's post-sign-in redirects from. Better Auth checks them against trusted origins too, and this app checks them below. */
 const REDIRECT_SOURCES: Record<string, "body" | "query"> = {
   "/sign-in/magic-link": "body",
   "/magic-link/verify": "query",
@@ -35,8 +37,9 @@ const REDIRECT_SOURCES: Record<string, "body" | "query"> = {
 const REDIRECT_FIELDS = ["callbackURL", "newUserCallbackURL", "errorCallbackURL"] as const;
 
 /**
- * True when `value` (if given) resolves to this app's origin. Better Auth URL-decodes the value again
+ * True when `value` (if given) resolves to this app's origin. Some Better Auth versions URL-decode the value again
  * before redirecting, so every decoding of it must stay on-site too ("%2F%2Fevil.example" -> "//evil.example").
+ * The check keeps decoding for that reason even where the installed version doesn't.
  */
 export function isSameOriginRedirect(value: unknown, appOrigin: string): boolean {
   if (value === undefined) return true;
@@ -83,6 +86,10 @@ const DISABLED_PATHS = [
   "/account-info",
   "/link-social",
   "/unlink-account",
+  // Two-factor by email code isn't offered, and the setup key is shown once at setup, never again to a session.
+  "/two-factor/send-otp",
+  "/two-factor/verify-otp",
+  "/two-factor/get-totp-uri",
 ];
 
 export function createAuth({ db, config, mailer, now }: AuthDeps) {
@@ -149,15 +156,19 @@ export function createAuth({ db, config, mailer, now }: AuthDeps) {
           await mailer.send(magicLinkEmail(email, url));
         },
       }),
+      // Authenticator-app codes for admins; who may use it and when is enforced by twoFactorGuard (two-factor.ts).
+      // Passwordless: VASH accounts have no password, so the plugin's password confirmation can't apply.
+      twoFactor({ issuer: "VASH", allowPasswordless: true }),
     ],
   });
 }
 
 export type Auth = ReturnType<typeof createAuth>;
 
-/** Better Auth's handler behind the same strict Origin check and a small body cap. */
-export function createAuthRoute(auth: Auth, config: AppConfig) {
+/** Better Auth's handler behind the same strict Origin check, a small body cap and VASH's two-factor rules. */
+export function createAuthRoute(auth: Auth, { db, config, now }: Pick<AuthDeps, "db" | "config" | "now">) {
   const http = toNextJsHandler(auth);
+  const guard = twoFactorGuard({ auth, db, config, now });
   return {
     GET: (req: Request) => http.GET(req),
     async POST(req: Request): Promise<Response> {
@@ -171,7 +182,12 @@ export function createAuthRoute(auth: Auth, config: AppConfig) {
         if (err instanceof HttpError) return problem(err.status, err.title, err.detail, randomUUID());
         throw err;
       }
-      return http.POST(new Request(req.url, { method: "POST", headers: req.headers, body }));
+      const path = new URL(req.url).pathname.replace(/^\/api\/auth/, "");
+      const refused = await guard.before(req, path);
+      if (refused) return refused;
+      const res = await http.POST(new Request(req.url, { method: "POST", headers: req.headers, body }));
+      await guard.after(req, path, res);
+      return res;
     },
   };
 }

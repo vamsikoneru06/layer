@@ -2,6 +2,9 @@ import { fillPhotos, type Editor } from "@vash/engine";
 import type { AssetMime, AssetRef, NodeId } from "@vash/schema";
 import { ApiError, uploadPhoto, type Photo } from "@/lib/api";
 
+/** Fired on window after photos are uploaded, so an open Photos panel can show them. */
+export const PHOTOS_UPLOADED = "vash:photos-uploaded";
+
 /** Drag data for a photo dragged from the Photos panel onto the canvas. */
 export const PHOTO_DRAG_TYPE = "application/x-vash-photo";
 
@@ -41,6 +44,7 @@ export async function uploadAll(files: readonly File[], onProgress: (done: numbe
     }
   }
   onProgress(files.length, files.length);
+  if (photos.length) window.dispatchEvent(new Event(PHOTOS_UPLOADED));
   return { photos, errors };
 }
 

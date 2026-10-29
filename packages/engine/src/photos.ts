@@ -2,7 +2,7 @@ import { LIMITS, referencedAssetIds, type AssetRef, type Doc, type FrameContent,
 import { applyCommand, type Command } from "./commands";
 import { worldBounds } from "./hit-test";
 import { createNode, newNodeId } from "./insert";
-import { apply, invert, type Point } from "./math";
+import { apply, boxCorners, invert, multiply, translation, type Point } from "./math";
 import { drawOrder, worldMatrix } from "./scene";
 
 /** Frames close enough in height count as one row when filling photos in reading order. */
@@ -13,18 +13,20 @@ const isFrame = (doc: Doc, id: NodeId): FrameNode | null => {
   return n?.type === "frame" && n.lock !== "locked" ? n : null;
 };
 
+/** Is `point` (artboard coordinates) inside this frame's shape? */
+export function inFrame(doc: Doc, id: NodeId, point: Point): boolean {
+  const node = isFrame(doc, id);
+  const inverse = node && invert(worldMatrix(doc, id));
+  if (!node || !inverse) return false;
+  const p = apply(inverse, point);
+  const hw = node.width / 2, hh = node.height / 2;
+  return node.shape.kind === "ellipse" ? (p.x / hw) ** 2 + (p.y / hh) ** 2 <= 1 : Math.abs(p.x) <= hw && Math.abs(p.y) <= hh;
+}
+
 /** The topmost frame that can take a photo under `point` (artboard coordinates), ignoring other layers. */
 export function frameAt(doc: Doc, point: Point): NodeId | null {
   const order = drawOrder(doc);
-  for (let i = order.length - 1; i >= 0; i--) {
-    const node = isFrame(doc, order[i]!);
-    const inverse = node && invert(worldMatrix(doc, node.id));
-    if (!node || !inverse) continue;
-    const p = apply(inverse, point);
-    const hw = node.width / 2, hh = node.height / 2;
-    const inside = node.shape.kind === "ellipse" ? (p.x / hw) ** 2 + (p.y / hh) ** 2 <= 1 : Math.abs(p.x) <= hw && Math.abs(p.y) <= hh;
-    if (inside) return node.id;
-  }
+  for (let i = order.length - 1; i >= 0; i--) if (inFrame(doc, order[i]!, point)) return order[i]!;
   return null;
 }
 
@@ -141,4 +143,29 @@ export function fillPhotos(doc: Doc, photos: readonly AssetRef[], o: { target?: 
     }
   });
   return { command: { type: "batch", commands }, filled };
+}
+
+/** Swaps the photos of two frames (either may be empty); each is re-centred at "cover" in its new frame. */
+export function swapPhotos(doc: Doc, a: NodeId, b: NodeId): Command | null {
+  const fa = isFrame(doc, a);
+  const fb = isFrame(doc, b);
+  if (!fa || !fb || a === b) return null;
+  const moved = (c: FrameContent | null): FrameContent | null => (c ? { assetId: c.assetId, offsetX: 0, offsetY: 0, scale: 1 } : null);
+  return {
+    type: "batch",
+    commands: [
+      { type: "update", id: a, patch: { content: moved(fb.content) } },
+      { type: "update", id: b, patch: { content: moved(fa.content) } },
+    ],
+  };
+}
+
+/** The corners (artboard coordinates) of a frame's whole photo, including the parts the frame hides. */
+export function photoExtent(doc: Doc, id: NodeId): Point[] | null {
+  const node = doc.nodes[id];
+  if (node?.type !== "frame" || !node.content) return null;
+  const asset = doc.assets[node.content.assetId];
+  if (!asset) return null;
+  const k = Math.max(node.width / asset.width, node.height / asset.height) * node.content.scale;
+  return boxCorners(asset.width * k, asset.height * k, multiply(worldMatrix(doc, id), translation(node.content.offsetX, node.content.offsetY)));
 }

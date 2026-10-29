@@ -1,7 +1,7 @@
-import { createEmptyDoc } from "@vash/schema";
+import { createEmptyDoc, LIMITS } from "@vash/schema";
 import { describe, expect, it } from "vitest";
 import { templateDoc } from "../../tests/support/docs";
-import { docFromTemplate, moveToAccount, newLocalDesign, type LocalDesign, type LocalDesignStore } from "./local-designs";
+import { copyLocalDesign, docFromTemplate, moveToAccount, newLocalDesign, type LocalDesign, type LocalDesignStore } from "./local-designs";
 
 function memoryStore(designs: LocalDesign[] = []): LocalDesignStore & { ids(): string[] } {
   const rows = new Map(designs.map((d) => [d.id, d]));
@@ -28,6 +28,32 @@ describe("docFromTemplate", () => {
   it("refuses anything that isn't a valid template", () => {
     expect(docFromTemplate({ nope: true })).toBeNull();
     expect(docFromTemplate(createEmptyDoc({ id: crypto.randomUUID(), kind: "design", title: "x", format: "ig-post" }))).toBeNull();
+  });
+});
+
+describe("copyLocalDesign", () => {
+  it("stores a copy under a new id with the same content and a 'Copy of' title", async () => {
+    const source = design("Poster", "2026-10-01T00:00:00Z");
+    const store = memoryStore([source]);
+    const copy = await copyLocalDesign(store, source.id, new Date("2026-10-07T00:00:00Z"));
+    expect(copy.id).not.toBe(source.id);
+    expect(copy.doc.id).toBe(copy.id);
+    expect(copy.doc.meta.title).toBe("Copy of Poster");
+    expect(copy.doc.artboard).toEqual(source.doc.artboard);
+    expect(copy).toMatchObject({ version: 1, updatedAt: "2026-10-07T00:00:00.000Z" });
+    expect(await store.get(copy.id)).toEqual(copy);
+    expect(await store.get(source.id)).toEqual(source);
+  });
+
+  it("keeps the title within the limit without splitting a character", async () => {
+    const long = design("a".repeat(LIMITS.titleChars - 9) + "\u{1F600}", "2026-10-01T00:00:00Z");
+    const copy = await copyLocalDesign(memoryStore([long]), long.id);
+    expect(copy.doc.meta.title.length).toBeLessThanOrEqual(LIMITS.titleChars);
+    expect(copy.doc.meta.title).not.toMatch(/[\ud800-\udbff]$/);
+  });
+
+  it("says so when the design is gone", async () => {
+    await expect(copyLocalDesign(memoryStore(), "missing")).rejects.toThrow("no longer in this browser");
   });
 });
 
