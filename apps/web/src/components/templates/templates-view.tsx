@@ -9,10 +9,13 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getTemplate, listTemplates, type TemplateItem, type TemplateSort } from "@/lib/api";
 import { galleryQuery, readGalleryParams } from "@/lib/gallery-params";
+import { masonry } from "@/lib/masonry";
 import { cn } from "@/lib/utils";
 import { DocPreview } from "./doc-preview";
 
-const CARD_BOX = { width: 260, height: 260 };
+const CARD_WIDTH = 320;
+/** A card's caption, as a share of the column width, for balancing the masonry columns. */
+const CAPTION = 0.22;
 
 export const formatLabel = (f: string) => (f in FORMATS ? FORMATS[f as keyof typeof FORMATS].label : "Custom size");
 
@@ -53,12 +56,8 @@ function TemplatePreview({ t }: { t: TemplateItem }) {
   }, [t.id]);
 
   return (
-    <div ref={box} className="flex aspect-square items-center justify-center rounded-[14px] bg-bg2 p-5">
-      {doc ? (
-        <DocPreview doc={doc} box={CARD_BOX} />
-      ) : (
-        <div aria-hidden className="max-h-full max-w-full rounded-[3px] bg-field" style={{ aspectRatio: `${t.width} / ${t.height}`, height: t.height >= t.width ? "100%" : undefined, width: t.width > t.height ? "100%" : undefined }} />
-      )}
+    <div ref={box} className="flex overflow-hidden rounded-[14px] bg-field shadow-[0_0_0_.5px_var(--line)]" style={{ aspectRatio: `${t.width} / ${t.height}` }}>
+      {doc && <DocPreview doc={doc} box={{ width: CARD_WIDTH, height: (CARD_WIDTH * t.height) / t.width }} className="rounded-none shadow-none" />}
     </div>
   );
 }
@@ -76,6 +75,32 @@ function TemplateCard({ t }: { t: TemplateItem }) {
         </span>
       </div>
     </Link>
+  );
+}
+
+/** Templates at their real shapes, in columns that fit the page (2 to 4), shortest column first. */
+function Masonry({ items }: { items: TemplateItem[] }) {
+  const box = useRef<HTMLDivElement>(null);
+  const [columns, setColumns] = useState(2);
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const fit = () => setColumns(el.clientWidth < 640 ? 2 : el.clientWidth < 960 ? 3 : 4);
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <div ref={box} className="flex items-start gap-4">
+      {masonry(items, columns, (t) => t.height / t.width + CAPTION).map((col, i) => (
+        <div key={i} className="flex min-w-0 flex-1 flex-col gap-6">
+          {col.map((t) => (
+            <TemplateCard key={t.id} t={t} />
+          ))}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -211,11 +236,7 @@ export function TemplatesView() {
       ) : items && items.length === 0 ? (
         <EmptyState icon={<LayoutTemplate aria-hidden />} title="No templates match" body="Try another word, or clear the size and category filters." />
       ) : (
-        <div className="grid grid-cols-2 gap-x-4 gap-y-6 md:grid-cols-3 xl:grid-cols-4">
-          {items?.map((t) => (
-            <TemplateCard key={t.id} t={t} />
-          ))}
-        </div>
+        items && <Masonry items={items} />
       )}
 
       {cursor && (

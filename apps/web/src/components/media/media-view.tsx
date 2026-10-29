@@ -59,6 +59,7 @@ export function MediaView() {
       setUrls((prev) => ({ ...prev, ...Object.fromEntries(assets.map((a) => [a.id, a.url])) }));
     } catch (err) {
       if (err instanceof ApiError && err.status === 503) setNoStorage(true);
+      else setError("Photo previews couldn't be loaded. Reload the page to try again.");
     }
   }
 
@@ -80,10 +81,14 @@ export function MediaView() {
 
   async function loadMore() {
     if (!cursor) return;
-    const page = await listPhotos(cursor);
-    setPhotos((prev) => [...(prev ?? []), ...page.items]);
-    setCursor(page.nextCursor);
-    void showUrls(page.items);
+    try {
+      const page = await listPhotos(cursor);
+      setPhotos((prev) => [...(prev ?? []), ...page.items]);
+      setCursor(page.nextCursor);
+      void showUrls(page.items);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "More photos couldn't be loaded. Try again.");
+    }
   }
 
   async function upload(files: FileList | File[]) {
@@ -159,10 +164,14 @@ export function MediaView() {
         />
       </div>
 
-      {session.status === "loading" ? null : !signedIn ? (
+      {session.status === "loading" ? null : session.status === "error" ? (
+        <p role="alert" className="text-sm text-danger">
+          {session.message}
+        </p>
+      ) : !signedIn ? (
         <EmptyState
           icon={<Images aria-hidden />}
-          title="Your photos live here"
+          title="Sign in to use your own photos"
           body="Sign in to upload photos and use them in your designs. They stay private to your account."
           action={<ButtonLink href="/signin">Sign in</ButtonLink>}
         />
@@ -221,7 +230,7 @@ export function MediaView() {
       )}
 
       <Dialog open={confirm !== null} onClose={() => setConfirm(null)} title="Delete this photo?">
-        <p className="text-sm text-muted">This canIt&apos;s removed from your media. Designs that use it will show an empty frame instead.apos;t be undone. Designs that use it will show It&apos;s removed from your media. Designs that use it will show an empty frame instead.ldquo;Photo unavailableIt&apos;s removed from your media. Designs that use it will show an empty frame instead.rdquo; where it was.</p>
+        <p className="text-sm text-muted">This can&apos;t be undone. Designs that use it will show &ldquo;Photo unavailable&rdquo; where it was.</p>
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={() => setConfirm(null)} disabled={deleting}>
             Cancel

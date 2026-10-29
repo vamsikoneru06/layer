@@ -69,7 +69,7 @@ export function TemplateDetail({ id, initial = null }: { id: string; initial?: T
     <div className="flex flex-col gap-6">
       {back}
       <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
-        <div className="flex aspect-square w-full max-w-[640px] items-center justify-center rounded-[20px] bg-bg2 p-6 sm:p-10">
+        <div className="flex aspect-square max-h-[58svh] w-full max-w-[640px] items-center justify-center rounded-[20px] bg-bg2 p-6 sm:p-10 lg:max-h-none">
           <DocPreview doc={template.doc} box={{ width: 720, height: 720 }} />
         </div>
         <div className="flex max-w-[400px] flex-col gap-5">
@@ -102,7 +102,7 @@ export function TemplateDetail({ id, initial = null }: { id: string; initial?: T
           )}
           {session.status === "loading" ? null : (
             <div className="flex flex-col gap-2">
-              <Button onClick={() => void use()} loading={using} className="w-full sm:w-fit">
+              <Button size="lg" onClick={() => void use()} loading={using} className="w-full sm:w-fit">
                 {using ? "Opening…" : "Use this template"}
               </Button>
               {session.status !== "user" && (

@@ -14,7 +14,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
       title="Something went wrong"
       body={
         <>
-          <p>This page hit an error. Your saved designs are safe. Try again, and if it keeps happening, reload the page.</p>
+          <p>This page hit an error. Try again, or reload the page if it keeps happening.</p>
           {error.digest ? <p className="mt-2 text-xs">Reference: {error.digest}</p> : null}
         </>
       }
