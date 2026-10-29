@@ -96,6 +96,9 @@ const EnvSchema = z
       if (isDirectNeonHost(env.DATABASE_URL)) {
         ctx.addIssue({ code: "custom", path: ["DATABASE_URL"], message: "use Neon's pooled connection string (host contains -pooler) in production" });
       }
+      if (usesExampleLogin(env.DATABASE_URL)) {
+        ctx.addIssue({ code: "custom", path: ["DATABASE_URL"], message: "uses the example login from .env.example; use the database's own credentials" });
+      }
       if (!env.CRON_SECRET) ctx.addIssue({ code: "custom", path: ["CRON_SECRET"], message: "required in production (scheduled cleanup)" });
       if (!env.RESEND_API_KEY && !env.GMAIL_USER) {
         ctx.addIssue({ code: "custom", path: ["RESEND_API_KEY"], message: "required in production unless GMAIL_USER is set" });
@@ -111,6 +114,16 @@ function isDirectNeonHost(databaseUrl: string): boolean {
   try {
     const host = new URL(databaseUrl).hostname;
     return host.endsWith(".neon.tech") && !host.split(".")[0]!.endsWith("-pooler");
+  } catch {
+    return false;
+  }
+}
+
+/** The throwaway local login in .env.example (postgres://vash:vash@localhost...). */
+function usesExampleLogin(databaseUrl: string): boolean {
+  try {
+    const u = new URL(databaseUrl);
+    return decodeURIComponent(u.username) === "vash" && decodeURIComponent(u.password) === "vash";
   } catch {
     return false;
   }

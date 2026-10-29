@@ -1,4 +1,4 @@
-import type { Doc } from "@vash/schema";
+import type { Doc, NodeId } from "@vash/schema";
 import { EditorCore, type EditorState } from "./editor-core";
 import { exportPng } from "./export";
 import { createFilterRenderer, type FilterFn } from "./filters";
@@ -8,6 +8,7 @@ import { renderOverlay } from "./overlay";
 import type { EditMode } from "./policy";
 import { renderScene, type ImageState } from "./render";
 import { hitTest } from "./hit-test";
+import { frameAt } from "./photos";
 import { handleKey } from "./shortcuts";
 import type { Measure } from "./text";
 import { textEditBox, type TextEditBox } from "./text-edit";
@@ -39,6 +40,11 @@ export interface Editor {
   exportPng(o: { scale: number; transparent: boolean }): Promise<Blob>;
   /** Placement of the on-canvas text box while a text layer is being edited. */
   textEditBox(): TextEditBox | null;
+  /**
+   * The frame a photo dropped at this point on screen would fill, outlined while dragging over it.
+   * Pass null when the drag leaves or ends to clear the outline.
+   */
+  dropTarget(at: { clientX: number; clientY: number } | null): NodeId | null;
   destroy(): void;
 }
 
@@ -50,8 +56,44 @@ function canvasMeasure(): Measure {
   };
 }
 
-const isTyping = (t: EventTarget | null) =>
-  t instanceof HTMLElement && (t.isContentEditable || t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT");
+/** The few element members the key guards read, so they run on plain objects in tests. */
+export interface KeyTarget {
+  isContentEditable?: boolean;
+  tagName?: string;
+  closest?: (selector: string) => unknown;
+}
+
+/** The element a mouse press last focused; anything inside it still counts as mouse-focused. */
+export interface PointerFocus {
+  contains(other: unknown): boolean;
+}
+
+const CONTROL = "button, a[href], [role=button], summary";
+
+/** Keys typed into a field, or pressed inside an open menu or dialog, belong to that field, menu or dialog. */
+export const isTyping = (t: KeyTarget | null) => {
+  if (!t || typeof t.closest !== "function") return false;
+  return !!t.isContentEditable || t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.closest("dialog") !== null || t.closest("[role=menu]") !== null;
+};
+
+/**
+ * Enter and Space on a button, link or summary that has keyboard focus activate it, so the canvas must
+ * not take them (Enter to edit text, Space to pan). Only for keyboard focus: after a mouse click focus
+ * stays on the clicked button, and the canvas shortcuts must keep working then. The editor tracks the
+ * mouse press itself (`pointerFocused`) because `:focus-visible` already reads true inside the first
+ * keydown after a click in Chromium.
+ */
+export function activatesFocusedControl(t: KeyTarget | null, key: string, pointerFocused: PointerFocus | null = null): boolean {
+  if ((key !== "Enter" && key !== " ") || !t || typeof t.closest !== "function") return false;
+  if (t.closest(CONTROL) === null) return false;
+  return !(pointerFocused && pointerFocused.contains(t));
+}
+
+/** Tab hands focus to the keyboard, so the mouse press no longer explains where focus is. */
+export const pointerFocusAfterKey = (p: PointerFocus | null, key: string): PointerFocus | null => (key === "Tab" ? null : p);
+
+/** Focus moving outside the pressed element is not the mouse press's doing either. */
+export const pointerFocusAfterFocusIn = (p: PointerFocus | null, target: unknown): PointerFocus | null => (p && p.contains(target) ? p : null);
 
 /**
  * Binds the engine to two stacked canvases: the design below, selection chrome above (which also
@@ -149,18 +191,37 @@ export function createEditor(o: EditorOptions): Editor {
   // Double-clicking text (even inside a group) starts typing into it.
   const onDoubleClick = (e: MouseEvent) => {
     const hit = hitTest(core.doc, toWorld(core.getState().viewport, input(e)));
-    if (hit && core.doc.nodes[hit]?.type === "text") core.startTextEdit(hit);
+    const type = hit ? core.doc.nodes[hit]?.type : undefined;
+    if (type === "text") core.startTextEdit(hit!);
+    // Double-clicking a photo lets you move and zoom it inside its frame.
+    else if (type === "frame") core.startCrop(hit!);
   };
   const onWheel = (e: WheelEvent) => {
     e.preventDefault();
     const r = o.overlay.getBoundingClientRect();
     ui.wheel({ x: e.clientX - r.left, y: e.clientY - r.top, deltaX: e.deltaX, deltaY: e.deltaY, zoom: e.ctrlKey || e.metaKey });
   };
+  // A press on a button focuses it without keyboard focus; remember it so Space and Enter still reach the canvas.
+  let pointerFocused: PointerFocus | null = null;
+  const onPointerDownCapture = (e: PointerEvent) => {
+    const t = e.target as (KeyTarget & Partial<PointerFocus>) | null;
+    pointerFocused = t && typeof t.contains === "function" ? (((t.closest?.(CONTROL) as PointerFocus | null | undefined) ?? t) as PointerFocus) : null;
+  };
+  const onFocusIn = (e: FocusEvent) => {
+    pointerFocused = pointerFocusAfterFocusIn(pointerFocused, e.target);
+  };
   const onKeyDown = (e: KeyboardEvent) => {
-    if (isTyping(e.target)) return;
+    pointerFocused = pointerFocusAfterKey(pointerFocused, e.key);
+    const target = e.target as KeyTarget | null;
+    if (isTyping(target) || activatesFocusedControl(target, e.key, pointerFocused)) return;
     if (e.key === " ") {
       ui.setSpace(true);
       invalidate();
+      e.preventDefault();
+      return;
+    }
+    if (core.getState().cropping && (e.key === "Enter" || e.key === "Escape")) {
+      core.endCrop();
       e.preventDefault();
       return;
     }
@@ -185,6 +246,8 @@ export function createEditor(o: EditorOptions): Editor {
   o.overlay.addEventListener("pointercancel", onCancel);
   o.overlay.addEventListener("dblclick", onDoubleClick);
   o.overlay.addEventListener("wheel", onWheel, { passive: false });
+  window.addEventListener("pointerdown", onPointerDownCapture, true);
+  window.addEventListener("focusin", onFocusIn);
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", onKeyUp);
   document.fonts?.addEventListener("loadingdone", onFonts);
@@ -202,6 +265,15 @@ export function createEditor(o: EditorOptions): Editor {
     zoomTo: (zoom) => core.setChrome({ viewport: zoomAt(core.getState().viewport, { x: size.width / 2, y: size.height / 2 }, zoom) }),
     invalidate,
     exportPng: (e) => exportPng(core.doc, { ...e, measure, image, imagesReady: o.imagesReady, filter }),
+    dropTarget: (at) => {
+      let id: NodeId | null = null;
+      if (at) {
+        const r = o.overlay.getBoundingClientRect();
+        id = frameAt(core.doc, toWorld(core.getState().viewport, { x: at.clientX - r.left, y: at.clientY - r.top }));
+      }
+      if (core.getState().hover !== id) core.setChrome({ hover: id });
+      return id;
+    },
     textEditBox: () => {
       const s = core.getState();
       return s.editing ? textEditBox(s.doc, s.editing, s.viewport, measure) : null;
@@ -217,6 +289,8 @@ export function createEditor(o: EditorOptions): Editor {
       o.overlay.removeEventListener("pointercancel", onCancel);
       o.overlay.removeEventListener("dblclick", onDoubleClick);
       o.overlay.removeEventListener("wheel", onWheel);
+      window.removeEventListener("pointerdown", onPointerDownCapture, true);
+      window.removeEventListener("focusin", onFocusIn);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       document.fonts?.removeEventListener("loadingdone", onFonts);
