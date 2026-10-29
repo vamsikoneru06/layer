@@ -1,6 +1,6 @@
 "use client";
 
-import { apply, checkPolicy, FILTER_PRESETS, isNeutral, presetFilters, rotation, type Command, type EditorCore, type EditorState, type FilterValues } from "@vash/engine";
+import { apply, checkPolicy, FILTER_PRESETS, isNeutral, presetFilters, removePhoto, rotation, zoomPhoto, type Command, type EditorCore, type EditorState, type FilterValues } from "@vash/engine";
 import { defaultFilters, FONT_FAMILIES, LIMITS, type FrameNode, type Node, type ShapeNode, type TextNode } from "@vash/schema";
 import {
   AlignCenter,
@@ -32,6 +32,7 @@ import { actionTitle, type Action, type ActionId } from "./editor-actions";
 import { FillField } from "./fill-field";
 import { FONT_FACES } from "./font-faces";
 import { IconButton } from "./icon-button";
+import { changeCase, presetPatch, TEXT_PRESETS, type Case } from "./text-tools";
 
 const TYPE_LABEL: Record<Node["type"], string> = { frame: "Photo frame", text: "Text", shape: "Shape", sticker: "Sticker", group: "Group" };
 
@@ -194,8 +195,9 @@ function PanelBody({ state, core, actions, mac }: { state: EditorState; core: Ed
         </div>
       )}
 
-      {node.type === "text" && <TextSection node={node} disabled={locked} update={update} />}
+      {node.type === "text" && <TextSection node={node} disabled={locked} update={update} artboard={doc.artboard} authoring={mode === "template"} />}
       {node.type === "shape" && <ShapeSection node={node} disabled={locked} update={update} />}
+      {node.type === "frame" && <PhotoSection node={node} disabled={locked} doc={doc} change={change} />}
       {node.type === "frame" && <FiltersSection node={node} disabled={locked} update={update} />}
 
       {actions && <ArrangeSection actions={actions} mac={mac} />}
@@ -237,7 +239,27 @@ const ALIGN = [
   { value: "justify", label: "Justify", icon: <AlignJustify aria-hidden /> },
 ] as const;
 
-function TextSection({ node, disabled, update }: { node: TextNode; disabled: boolean; update: Update }) {
+const CASES: readonly { value: Case; label: string; name: string }[] = [
+  { value: "upper", label: "AA", name: "Uppercase" },
+  { value: "title", label: "Aa", name: "Title case" },
+  { value: "lower", label: "aa", name: "Lowercase" },
+];
+
+function TextSection({
+  node,
+  disabled,
+  update,
+  artboard,
+  authoring,
+}: {
+  node: TextNode;
+  disabled: boolean;
+  update: Update;
+  artboard: { width: number; height: number };
+  /** Author Mode: the character limit is the author's to set. */
+  authoring: boolean;
+}) {
+  const limit = node.maxChars ?? LIMITS.textChars;
   const face = FONT_FACES[node.font.family] ?? { weights: [400], italic: false };
   const setFont = (patch: Partial<TextNode["font"]>) => {
     const font = { ...node.font, ...patch };
@@ -248,6 +270,20 @@ function TextSection({ node, disabled, update }: { node: TextNode; disabled: boo
 
   return (
     <Section title="Text">
+      <div role="group" aria-label="Text styles" className="grid grid-cols-3 gap-1.5">
+        {TEXT_PRESETS.map((p) => (
+          <button
+            key={p.name}
+            type="button"
+            disabled={disabled}
+            onClick={() => update(presetPatch(p, artboard))}
+            style={{ fontFamily: `"${p.family}"`, fontWeight: p.weight, fontStyle: p.style ?? "normal" }}
+            className="h-8 truncate rounded-lg bg-field px-1.5 text-[12px] transition hover:bg-line active:scale-[.97] disabled:opacity-45"
+          >
+            {p.name}
+          </button>
+        ))}
+      </div>
       <SelectField name="Font" value={node.font.family} disabled={disabled} onChange={(family) => setFont({ family })} style={{ fontFamily: `"${node.font.family}"` }}>
         {FONT_FAMILIES.map((f) => (
           <option key={f} value={f} style={{ fontFamily: `"${f}"` }}>
@@ -283,6 +319,46 @@ function TextSection({ node, disabled, update }: { node: TextNode; disabled: boo
         <NumberField label="↕" name="Line height" value={node.lineHeight} min={0.5} max={5} step={0.05} digits={2} disabled={disabled} onCommit={(lineHeight) => update({ lineHeight })} />
         <NumberField label="↔" name="Letter spacing" value={node.letterSpacing} min={-100} max={500} step={0.5} digits={1} disabled={disabled} onCommit={(letterSpacing) => update({ letterSpacing })} />
       </div>
+      <Row label="Case">
+        <div role="group" aria-label="Change case" className="flex gap-1">
+          {CASES.map((c) => (
+            <button
+              key={c.value}
+              type="button"
+              aria-label={c.name}
+              title={c.name}
+              disabled={disabled}
+              onClick={() => update({ content: changeCase(node.content, c.value).slice(0, limit) })}
+              className="h-7 w-9 rounded-md bg-field text-[12px] font-semibold transition hover:bg-line active:scale-95 disabled:opacity-45"
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+      </Row>
+      {authoring ? (
+        <Row label="Character limit">
+          <div className="flex items-center gap-2">
+            {node.maxChars !== null && (
+              <div className="w-[76px]">
+                <NumberField label="#" name="Character limit" value={node.maxChars} min={1} max={LIMITS.textChars} disabled={disabled} onCommit={(maxChars) => update({ maxChars, content: node.content.slice(0, maxChars) })} />
+              </div>
+            )}
+            <Switch
+              label="Limit characters"
+              checked={node.maxChars !== null}
+              disabled={disabled}
+              onChange={(on) => update({ maxChars: on ? Math.max(node.content.length, 1) : null })}
+            />
+          </div>
+        </Row>
+      ) : (
+        node.maxChars !== null && (
+          <p className="text-[12px] text-muted">
+            {node.content.length} of {node.maxChars} characters. The template sets this limit.
+          </p>
+        )
+      )}
       <Row label="Shrink text to fit">
         <Switch label="Shrink text to fit" checked={node.fit === "shrink"} disabled={disabled} onChange={(on) => update({ fit: on ? "shrink" : "none" })} />
       </Row>
@@ -353,6 +429,34 @@ const SLIDERS: readonly { key: keyof FilterValues; label: string; signed: boolea
   { key: "blur", label: "Blur", signed: false },
   { key: "sharpen", label: "Sharpen", signed: false },
 ];
+
+function PhotoSection({ node, disabled, doc, change }: { node: FrameNode; disabled: boolean; doc: EditorState["doc"]; change: (cmd: Command, final?: boolean) => void }) {
+  if (!node.content) {
+    return (
+      <Section title="Photo">
+        <p className="text-[12px] text-muted">Drop a photo onto this frame, or pick one in the Photos panel.</p>
+      </Section>
+    );
+  }
+  const zoom = (patch: Parameters<typeof zoomPhoto>[2], final = true) => {
+    const cmd = zoomPhoto(doc, node.id, patch);
+    if (cmd) change(cmd, final);
+  };
+  return (
+    <Section title="Photo">
+      <Slider label="Zoom" value={node.content.scale} min={1} max={4} disabled={disabled} onChange={(scale, final) => zoom({ scale }, final)} />
+      <p className="text-[12px] text-muted">Double-click the photo on the canvas to move it, or drag it onto another frame to swap.</p>
+      <div className="flex gap-2">
+        <Button variant="secondary" size="sm" disabled={disabled} onClick={() => zoom({ offsetX: 0, offsetY: 0 })}>
+          Centre photo
+        </Button>
+        <Button variant="secondary" size="sm" disabled={disabled} onClick={() => change(removePhoto(doc, node.id))}>
+          Remove photo
+        </Button>
+      </div>
+    </Section>
+  );
+}
 
 function FiltersSection({ node, disabled, update }: { node: FrameNode; disabled: boolean; update: Update }) {
   const f = node.filters;

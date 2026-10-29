@@ -129,6 +129,7 @@ describe("loadConfig", () => {
     ...base,
     ...storageEnv,
     NODE_ENV: "production",
+    DATABASE_URL: "postgres://u:p@ep-cool-1-pooler.ap-southeast-1.aws.neon.tech/vash?sslmode=require",
     APP_ORIGIN: "https://vash.vercel.app",
     TRUST_PROXY: "true",
     CRON_SECRET: "c".repeat(32),
@@ -138,6 +139,12 @@ describe("loadConfig", () => {
 
   it("accepts a complete production environment", () => {
     expect(loadConfig(production).isProduction).toBe(true);
+  });
+
+  it("refuses the example database login in production", () => {
+    const example = "postgres://vash:vash@db.example.com:5432/vash";
+    expect(errorOf({ ...production, DATABASE_URL: example })).toContain("DATABASE_URL: uses the example login");
+    expect(loadConfig({ ...base, DATABASE_URL: example }).databaseUrl).toBe(example);
   });
 
   it("requires Neon's pooled connection string in production, so serverless instances share connections", () => {
