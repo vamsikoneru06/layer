@@ -1,6 +1,7 @@
 import "server-only";
 import { adminHandlers } from "./admin/handlers";
 import { assetHandlers } from "./assets/handlers";
+import { brandKitHandlers } from "./brand-kit/handlers";
 import { createAuth, createAuthRoute } from "./auth/auth";
 import { createAuthenticator } from "./auth/current-user";
 import { consoleMailer, gmailMailer, resendMailer } from "./auth/mailer";
@@ -44,10 +45,11 @@ function build() {
     folders: folderHandlers(deps),
     designs: designHandlers(deps),
     me: meHandlers(deps),
+    brandKit: brandKitHandlers(deps),
     templates: templateHandlers(deps, storage),
     shares: shareHandlers(deps, storage),
     users: userHandlers(deps),
-    admin: adminHandlers(deps),
+    admin: adminHandlers(deps, storage),
     assets: assetHandlers(deps, storage),
     cron: cronHandlers(deps, storage, config.cronSecret, config.sentryDsn ? cronMonitor("cleanup", CLEANUP_SCHEDULE) : undefined),
     seo: seoHandlers(deps),

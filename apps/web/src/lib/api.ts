@@ -127,6 +127,11 @@ export const deleteFolder = (id: string) => request<void>(`/api/folders/${id}`, 
 
 export const updateMe = (patch: { name?: string }) => request<Me>("/api/me", { method: "PATCH", json: patch });
 
+/** Saved colours (#RRGGBB), fonts (from the font list) and a logo (one of the user's photos). */
+export type BrandKit = { colors: string[]; fonts: string[]; logoAssetId: string | null };
+export const getBrandKit = () => request<BrandKit>("/api/me/brand-kit");
+export const saveBrandKit = (kit: BrandKit) => request<BrandKit>("/api/me/brand-kit", { method: "PUT", json: kit });
+
 export const deleteMe = (confirm: string) => request<void>("/api/me", { method: "DELETE", json: { confirm } });
 
 /** Better Auth's two-factor routes, behind VASH's rules (server/auth/two-factor.ts). */

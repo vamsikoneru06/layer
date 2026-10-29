@@ -1,4 +1,5 @@
 import { and, asc, eq, inArray, or, sql } from "drizzle-orm";
+import { getBrandKit } from "../brand-kit/service";
 import { assets, auditLog, designs, folders, storageDeletions, templates, user } from "../db/schema";
 import { isUniqueViolation } from "../db/errors";
 import type { Db } from "../db/types";
@@ -90,7 +91,8 @@ export const EXPORT_PAGE_SIZE = 20;
  */
 export async function* exportAccount(db: Db, userId: string, now: Date): AsyncGenerator<string> {
   const profile = await getProfile(db, userId);
-  const [folderRows, assetRows, templateRows] = await Promise.all([
+  const [brandKit, folderRows, assetRows, templateRows] = await Promise.all([
+    getBrandKit(db, userId),
     db.select({ id: folders.id, name: folders.name, createdAt: folders.createdAt }).from(folders).where(eq(folders.ownerId, userId)).orderBy(asc(folders.createdAt)),
     db
       .select({ id: assets.id, kind: assets.kind, visibility: assets.visibility, mime: assets.mime, bytes: assets.bytes, width: assets.width, height: assets.height, createdAt: assets.createdAt })
@@ -101,7 +103,7 @@ export async function* exportAccount(db: Db, userId: string, now: Date): AsyncGe
       .from(templates)
       .where(eq(templates.authorId, userId)),
   ]);
-  const head = { exportedAt: now.toISOString(), profile: toProfile(profile), folders: folderRows, assets: assetRows, templates: templateRows };
+  const head = { exportedAt: now.toISOString(), profile: toProfile(profile), brandKit, folders: folderRows, assets: assetRows, templates: templateRows };
   yield `${JSON.stringify(head).slice(0, -1)},"designs":[`;
 
   let after: { createdAt: Date; id: string } | undefined;

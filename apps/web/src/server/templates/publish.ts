@@ -84,9 +84,11 @@ export async function publishTemplate(
   if (!parsed.ok) throw unprocessable("Fix the template's problems before publishing.", { issues: parsed.issues.slice(0, 50) });
   const doc = parsed.doc;
 
+  // A hidden template keeps every copy in private storage (moderation moves them back to public on restore).
+  const visibility = existing?.status === "hidden" ? ("private" as const) : ("public" as const);
   const objects: Copy[] = fresh.map((c) => ({
     from: { bucket: "private", key: c.source.storageKey },
-    to: { bucket: "public", key: keyOf(c.id) },
+    to: { bucket: visibility, key: keyOf(c.id) },
     assetId: c.id,
     bytes: c.source.bytes,
   }));
@@ -131,7 +133,7 @@ export async function publishTemplate(
             templateId: id,
             sourceAssetId: c.source.id,
             kind: c.source.kind,
-            visibility: "public" as const,
+            visibility,
             status: "ready" as const,
             storageKey: keyOf(c.id),
             mime: c.source.mime,

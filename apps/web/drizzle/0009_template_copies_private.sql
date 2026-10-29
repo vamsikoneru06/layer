@@ -1,0 +1,2 @@
+ALTER TABLE "assets" DROP CONSTRAINT "assets_template_copy_check";--> statement-breakpoint
+ALTER TABLE "assets" ADD CONSTRAINT "assets_template_copy_check" CHECK ("assets"."template_id" is null or "assets"."owner_id" is null);

@@ -13,6 +13,7 @@ import { createAutosaver, type Autosaver, type SaveStatus } from "@/lib/autosave
 import { createImageLoader } from "@/lib/images";
 import { BottomBar } from "./bottom-bar";
 import { DesignInfoDialog } from "./design-info-dialog";
+import { MakeSizesDialog } from "./make-sizes-dialog";
 import { ContextMenu } from "./context-menu";
 import { buildActions, CONTEXT_LAYOUTS, toMenuItems, type ActionHost } from "./editor-actions";
 import { EditorHeader } from "./editor-header";
@@ -57,6 +58,7 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
   const [conflictBusy, setConflictBusy] = useState(false);
   const [conflictError, setConflictError] = useState<string | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
+  const [sizesOpen, setSizesOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const state = useEditorState(editor);
   const toast = useToast();
@@ -267,6 +269,7 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
     newDesign: () => router.push("/home#create"),
     open: () => router.push("/designs"),
     makeCopy: () => void makeCopy(),
+    makeSizes: () => setSizesOpen(true),
     rename: () => setRenaming(true),
     moveToFolder: () => setMoveOpen(true),
     designInfo: () => setInfoOpen(true),
@@ -373,6 +376,7 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
       )}
       {actions && <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} actions={actions} mac={mac} />}
       <DesignInfoDialog open={infoOpen} onClose={() => setInfoOpen(false)} doc={state?.doc ?? design.doc} savedAt={savedAt} />
+      <MakeSizesDialog open={sizesOpen} onClose={() => setSizesOpen(false)} doc={state?.doc ?? design.doc} local={local} />
       <MoveDialog
         open={moveOpen}
         onClose={() => setMoveOpen(false)}

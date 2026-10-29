@@ -6,6 +6,7 @@ import { endpoint } from "../http/endpoint";
 import { parseId } from "../http/ids";
 import { notFound } from "../http/problem";
 import { RATE_LIMITS } from "../rate-limit/rules";
+import type { ObjectStorage } from "../storage/types";
 import { getTemplateCard, listTemplatesByStatus } from "../templates/repository";
 import { toTemplateJson } from "../templates/view";
 import { listReports, type ReportListRow } from "./repository";
@@ -29,7 +30,7 @@ const reportJson = (r: ReportListRow) => ({
   template: { id: r.templateId, title: r.templateTitle, status: r.templateStatus, featured: r.templateFeatured, authorHandle: r.authorHandle },
 });
 
-export function adminHandlers(deps: Deps) {
+export function adminHandlers(deps: Deps, storage: ObjectStorage) {
   return {
     reports: endpoint(deps, { auth: "admin", rateLimit: readLimit }, async ({ req }) => {
       const q = readQuery(req, ReportsQuery);
@@ -47,7 +48,7 @@ export function adminHandlers(deps: Deps) {
     moderate: endpoint(deps, { auth: "admin", rateLimit: writeLimit }, async ({ req, user, params }) => {
       const id = parseId(params.id);
       const { action } = await readJson(req, ModerateBody);
-      await moderateTemplate(deps.db, user, id, action, deps.now());
+      await moderateTemplate({ db: deps.db, storage }, user, id, action, deps.now());
       const card = await getTemplateCard(deps.db, id);
       if (!card) throw notFound();
       return Response.json(toTemplateJson(card));

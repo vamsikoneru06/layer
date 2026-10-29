@@ -6,6 +6,7 @@ import { AlignCenter, AlignJustify, AlignLeft, AlignRight, Lock } from "lucide-r
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { docColors } from "@/lib/color";
+import { ApplyBrandKit } from "./apply-brand-kit";
 import { DocColorsContext } from "./color-picker";
 import { ColorField, NumberField, Row, Section, Segmented, SelectField, Slider, Switch } from "./fields";
 import { FillField } from "./fill-field";
@@ -69,6 +70,7 @@ function PanelBody({ state, core }: { state: EditorState; core: EditorCore }) {
         <Section title="Background">
           <FillField name="Background" value={art.background} onChange={(background, final) => change({ type: "artboard", patch: { background } }, final)} />
         </Section>
+        <ApplyBrandKit core={core} mode={mode} />
       </div>
     );
   }

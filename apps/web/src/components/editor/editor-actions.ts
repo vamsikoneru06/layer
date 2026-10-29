@@ -30,6 +30,7 @@ export const ACTION_IDS = [
   "newDesign",
   "open",
   "makeCopy",
+  "makeSizes",
   "rename",
   "moveToFolder",
   "designInfo",
@@ -69,6 +70,7 @@ export interface ActionHost {
   newDesign(): void;
   open(): void;
   makeCopy(): void;
+  makeSizes(): void;
   rename(): void;
   moveToFolder(): void;
   designInfo(): void;
@@ -110,6 +112,7 @@ export function buildActions(state: EditorState, core: EditorCore, host: ActionH
     { id: "newDesign", label: "New design", run: host.newDesign },
     { id: "open", label: "Open", run: host.open },
     { id: "makeCopy", label: "Make a copy", run: host.makeCopy },
+    { id: "makeSizes", label: "Make other sizes", run: host.makeSizes },
     { id: "rename", label: "Rename", run: host.rename },
     { id: "moveToFolder", label: "Move to folder", disabled: host.local ? "Folders need an account. Use Save to account first." : undefined, run: host.moveToFolder },
     { id: "designInfo", label: "Design info", run: host.designInfo },
@@ -128,7 +131,7 @@ export function buildActions(state: EditorState, core: EditorCore, host: ActionH
 type Layout = readonly (ActionId | "separator")[];
 
 export const MENUS = {
-  file: ["newDesign", "open", "makeCopy", "separator", "rename", "moveToFolder", "designInfo", "separator", "save", "download"],
+  file: ["newDesign", "open", "makeCopy", "makeSizes", "separator", "rename", "moveToFolder", "designInfo", "separator", "save", "download"],
   edit: ["undo", "redo", "separator", "cut", "copy", "paste", "duplicate", "delete", "separator", "selectAll", "group", "ungroup"],
   view: ["zoomIn", "zoomOut", "fit", "separator", "fullscreen", "togglePanels"],
   help: ["shortcuts"],

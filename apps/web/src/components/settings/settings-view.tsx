@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/toast";
 import { deleteMe, updateMe, type Me } from "@/lib/api";
 import { currentTheme, setTheme, type Theme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
+import { BrandKitSection } from "./brand-kit-section";
 import { TwoFactorSection } from "./two-factor-section";
 
 function ProfileSection({ me }: { me: Me }) {
@@ -149,7 +150,7 @@ function DataSection() {
     <section className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
         <h2 className="text-lg font-semibold tracking-[-0.02em]">Your data</h2>
-        <p className="text-sm text-muted">Download a copy of your designs, folders, and profile as a JSON file.</p>
+        <p className="text-sm text-muted">Download a copy of your designs, folders, brand kit and profile as a JSON file.</p>
       </div>
       <div>
         <Button variant="secondary" onClick={downloadExport} loading={downloading} icon={<Download aria-hidden className="size-4" />}>
@@ -278,6 +279,8 @@ export function SettingsView() {
       <h1 className="text-[clamp(30px,5vw,40px)] leading-[1.02] font-bold tracking-[-0.035em]">Settings</h1>
       <div className="flex max-w-[560px] flex-col gap-8">
         <ProfileSection me={me} />
+        <Divider />
+        <BrandKitSection />
         <Divider />
         <AppearanceSection />
         <Divider />
