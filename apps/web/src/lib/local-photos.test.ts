@@ -1,6 +1,6 @@
 import { createEmptyDoc, type Doc } from "@vash/schema";
 import { describe, expect, it, vi } from "vitest";
-import { forgetUnusedPhotos, uploadDocPhotos, withUploadedPhotos, type LocalPhoto, type LocalPhotoStore } from "./local-photos";
+import { forgetUnusedPhotos, saveWithUploadedPhotos, uploadDocPhotos, withUploadedPhotos, type LocalPhoto, type LocalPhotoStore } from "./local-photos";
 
 function memoryStore(photos: LocalPhoto[] = []): LocalPhotoStore & { all: Map<string, LocalPhoto> } {
   const all = new Map(photos.map((p) => [p.id, p]));
@@ -103,13 +103,26 @@ describe("withUploadedPhotos", () => {
         first = false;
         throw new Error("network");
       }
-      return { id: "acct-1" };
+      return { id: "acct-1", version: 1, doc };
     });
     const wrapped = withUploadedPhotos(create, upload, store);
     await expect(wrapped(docWith("local-1"))).rejects.toThrow("network");
-    expect(await wrapped(docWith("local-1"))).toEqual({ id: "acct-1" });
+    expect(await wrapped(docWith("local-1"))).toEqual({ id: "acct-1", version: 1, doc: created[1] });
     expect(upload).toHaveBeenCalledTimes(1);
     expect(Object.keys(created[1]!.assets)).toEqual(["server-1"]);
+  });
+});
+
+describe("saveWithUploadedPhotos", () => {
+  it("uploads the device photos in a document before saving a new version of it", async () => {
+    const store = memoryStore([photo("local-1")]);
+    const upload = vi.fn(async () => ({ id: "server-1" }));
+    const save = vi.fn(async (_id: string, _doc: Doc, _version: number) => 3);
+    expect(await saveWithUploadedPhotos(save, upload, store)("acct-1", docWith("local-1"), 2)).toBe(3);
+    expect(save).toHaveBeenCalledTimes(1);
+    const [id, doc, version] = save.mock.calls[0]!;
+    expect([id, version]).toEqual(["acct-1", 2]);
+    expect(Object.keys(doc.assets)).toEqual(["server-1"]);
   });
 });
 

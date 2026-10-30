@@ -1,9 +1,9 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { createDesignFromDoc, getMe, uploadPhoto, type Me } from "@/lib/api";
+import { createDesignFromDoc, getMe, saveDesign, uploadPhoto, type Me } from "@/lib/api";
 import { localDesigns, moveToAccount } from "@/lib/local-designs";
-import { forgetUnusedPhotos, localPhotos, withUploadedPhotos } from "@/lib/local-photos";
+import { forgetUnusedPhotos, localPhotos, saveWithUploadedPhotos, withUploadedPhotos } from "@/lib/local-photos";
 
 /** `moved`: designs made in this browser before signing in, moved to the account when this session started. */
 export type Moved = { count: number; failed: number };
@@ -17,7 +17,7 @@ const moveLocalDesigns = () => (moving ??= moveAll().finally(() => (moving = nul
 async function moveAll(): Promise<Moved | undefined> {
   try {
     // Each design's photos on this device are uploaded with it; ones no remaining design uses are then removed.
-    const { moved, failed } = await moveToAccount(localDesigns, withUploadedPhotos(createDesignFromDoc, uploadPhoto));
+    const { moved, failed } = await moveToAccount(localDesigns, withUploadedPhotos(createDesignFromDoc, uploadPhoto), saveWithUploadedPhotos(saveDesign, uploadPhoto));
     await forgetUnusedPhotos(localPhotos, (await localDesigns.list()).map((d) => d.doc));
     return moved.length || failed ? { count: moved.length, failed } : undefined;
   } catch {

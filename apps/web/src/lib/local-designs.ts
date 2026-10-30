@@ -51,34 +51,58 @@ export async function copyLocalDesign(store: LocalDesignStore, id: string, now =
 /** Newest first, like the account's design list. */
 export const byUpdated = (a: LocalDesign, b: LocalDesign) => b.updatedAt.localeCompare(a.updatedAt);
 
-type Create = (doc: Doc, id?: string) => Promise<{ id: string }>;
+type Saved = { id: string; version: number; doc: Doc };
+type Create = (doc: Doc, id?: string) => Promise<Saved>;
+type Save = (id: string, doc: Doc, version: number) => Promise<number>;
+
+const statusOf = (err: unknown) => (err as { status?: number }).status;
+
+/** Compares two documents by content. Keys are sorted first, since the server may store them in another order. */
+function sameDoc(a: Doc, b: Doc): boolean {
+  const sorted = (v: unknown): unknown =>
+    Array.isArray(v) ? v.map(sorted) : v && typeof v === "object" ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, sorted((v as Record<string, unknown>)[k])])) : v;
+  return JSON.stringify(sorted(a)) === JSON.stringify(sorted(b));
+}
 
 /**
  * Moves one local design into the signed-in account and returns its id there. It keeps its id, so a move
- * cut short (a closed tab, a lost response) can run again without making a copy; the local copy is deleted
- * only once the account has it, and only if it still has the version that was sent. An edit made since
- * (another tab, the autosaver) keeps the local copy, and `kept` is true. If the id is taken (status 409),
- * the design is created under a new one.
+ * cut short (a closed tab, a lost response) can run again without making a copy. The account gets the
+ * device's document before the local copy is removed. If the account already has the id with another
+ * document (an earlier move kept the device copy, and the account copy has moved on since), the device's
+ * document is saved over it at the version the account returned. The local copy is deleted only if it still
+ * has the version that was sent: an edit made since (another tab, the autosaver) keeps it, and `kept` is true.
+ * If the id is taken (status 409), or the account copy changes before that save (also 409), the design is
+ * created under a new id instead.
  */
-export async function moveDesign(store: LocalDesignStore, design: LocalDesign, create: Create): Promise<{ id: string; kept: boolean }> {
-  let saved: { id: string };
+export async function moveDesign(store: LocalDesignStore, design: LocalDesign, create: Create, save: Save): Promise<{ id: string; kept: boolean }> {
+  let saved: Saved;
   try {
     saved = await create(design.doc, design.id);
   } catch (err) {
-    if ((err as { status?: number }).status !== 409) throw err;
+    if (statusOf(err) !== 409) throw err;
     saved = await create(design.doc);
+  }
+  // The device's document under the account's id (the same id, unless the account made a new one).
+  const doc = { ...design.doc, id: saved.id };
+  if (!sameDoc(saved.doc, doc)) {
+    try {
+      await save(saved.id, doc, saved.version);
+    } catch (err) {
+      if (statusOf(err) !== 409) throw err;
+      saved = await create(design.doc);
+    }
   }
   const deleted = await store.deleteIfVersion(design.id, design.version);
   return { id: saved.id, kept: !deleted };
 }
 
 /** Moves every local design, oldest first; any the account refuses stay on the device. */
-export async function moveToAccount(store: LocalDesignStore, create: Create): Promise<{ moved: { from: string; to: string }[]; failed: number }> {
+export async function moveToAccount(store: LocalDesignStore, create: Create, save: Save): Promise<{ moved: { from: string; to: string }[]; failed: number }> {
   const moved: { from: string; to: string }[] = [];
   let failed = 0;
   for (const design of (await store.list()).sort(byUpdated).reverse()) {
     try {
-      moved.push({ from: design.id, to: (await moveDesign(store, design, create)).id });
+      moved.push({ from: design.id, to: (await moveDesign(store, design, create, save)).id });
     } catch {
       failed++;
     }

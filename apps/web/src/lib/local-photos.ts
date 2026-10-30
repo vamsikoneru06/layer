@@ -101,7 +101,8 @@ export async function forgetUnusedPhotos(store: LocalPhotoStore, docs: readonly 
   for (const photo of await store.list()) if (photo.uploadedAs && !used.has(photo.id)) await store.delete(photo.id);
 }
 
-type Create = (doc: Doc, id?: string) => Promise<{ id: string }>;
+type Create = (doc: Doc, id?: string) => Promise<{ id: string; version: number; doc: Doc }>;
+type Save = (id: string, doc: Doc, version: number) => Promise<number>;
 /** Uploads a file to the account; with `id`, a repeat of the same upload returns the asset already stored. */
 type UploadFile = (file: File, id?: string) => Promise<{ id: string }>;
 
@@ -111,4 +112,9 @@ type UploadFile = (file: File, id?: string) => Promise<{ id: string }>;
  */
 export function withUploadedPhotos(create: Create, upload: UploadFile, store: LocalPhotoStore = localPhotos): Create {
   return async (doc, id) => create(await uploadDocPhotos(doc, store, upload), id);
+}
+
+/** The same for saving a new version of a design that is already in the account. */
+export function saveWithUploadedPhotos(save: Save, upload: UploadFile, store: LocalPhotoStore = localPhotos): Save {
+  return async (id, doc, version) => save(id, await uploadDocPhotos(doc, store, upload), version);
 }

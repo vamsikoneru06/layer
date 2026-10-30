@@ -145,6 +145,15 @@ export function Workspace({ design, local = false }: { design: Design; local?: b
     editor.core.setChrome({ notice: null });
   }, [notice, editor, toast]);
 
+  // "Save to account" kept this browser's copy (it was edited while saving): say so once, then drop the flag from the URL.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("notice") !== "kept") return;
+    url.searchParams.delete("notice");
+    window.history.replaceState(window.history.state, "", url);
+    toast({ message: "Saved to your account. You kept editing while it saved, so this browser still has your newest edits. Use Save to account to send them.", duration: 8000 });
+  }, [toast]);
+
   // A new conflict always shows the dialog again.
   useEffect(() => {
     if (status !== "conflict") return;
