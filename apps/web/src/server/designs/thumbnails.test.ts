@@ -5,7 +5,7 @@ import { createTestDb, type TestDb } from "../../../tests/support/db";
 import { testDeps } from "../../../tests/support/deps";
 import { createAsset, createDesign, createUser } from "../../../tests/support/factories";
 import { call } from "../../../tests/support/invoke";
-import { assets, designs } from "../db/schema";
+import { assets, designs, storageDeletions } from "../db/schema";
 import { databaseStorage } from "../storage/database";
 import { designHandlers } from "./handlers";
 
@@ -60,6 +60,33 @@ describe("PUT /api/designs/:id/thumbnail", () => {
     expect((await put(alice, a.id, (await thumb(alice.id)).id)).status).toBe(204);
     expect(await exists(shared.id)).toBe(true);
     expect(await thumbnailOf(b.id)).toBe(shared.id);
+  });
+
+  it("flushes the removed thumbnail's storage deletion before it returns", async () => {
+    const alice = await createUser(t.db);
+    const first = await thumb(alice.id);
+    const second = await thumb(alice.id);
+    const design = await createDesign(t.db, alice.id, doc(), { thumbnailAssetId: first.id });
+    expect((await put(alice, design.id, second.id)).status).toBe(204);
+    expect(await exists(first.id)).toBe(false);
+    expect(await t.db.select().from(storageDeletions).where(eq(storageDeletions.assetId, first.id))).toEqual([]);
+  });
+
+  it("two replacements at once keep one new thumbnail and remove the other and the original", async () => {
+    const alice = await createUser(t.db);
+    const original = await thumb(alice.id);
+    const design = await createDesign(t.db, alice.id, doc(), { thumbnailAssetId: original.id });
+    const a = await thumb(alice.id);
+    const b = await thumb(alice.id);
+    const statuses = (await Promise.all([put(alice, design.id, a.id), put(alice, design.id, b.id)])).map((r) => r.status);
+    expect(statuses).toEqual([204, 204]);
+    const current = await thumbnailOf(design.id);
+    const superseded = current === a.id ? b : a;
+    expect([a.id, b.id]).toContain(current);
+    expect(await exists(current!)).toBe(true);
+    expect(await exists(superseded.id)).toBe(false);
+    expect(await exists(original.id)).toBe(false);
+    expect(await t.db.select().from(storageDeletions).where(eq(storageDeletions.ownerId, alice.id))).toEqual([]);
   });
 });
 

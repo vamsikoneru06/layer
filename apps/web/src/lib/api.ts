@@ -191,7 +191,8 @@ export const resolveAssets = (ids: string[]) =>
 
 export const deleteAsset = (id: string) => request<void>(`/api/assets/${id}`, { method: "DELETE" });
 
-type UploadTicket = { asset: Photo; upload: { url: string; method: "PUT"; headers: Record<string, string> } };
+/** `upload` is null when the asset is already stored (a repeat of an upload that finished). */
+type UploadTicket = { asset: Photo; upload: { url: string; method: "PUT"; headers: Record<string, string> } | null };
 
 export const UPLOAD_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 export const UPLOAD_MAX_BYTES = 15 * 1024 * 1024;
@@ -245,24 +246,34 @@ export async function preparePhoto(file: File): Promise<{ blob: Blob; width: num
 
 /**
  * Uploads one photo: ask the API for a short-lived upload URL, send the file straight to storage,
- * then confirm it with its pixel size. Large photos are resized first. Throws an ApiError with a
- * readable message on any failure.
+ * then confirm it with its pixel size. Large photos are resized first. With `id`, a repeat of an
+ * upload that already reached the server returns that photo instead of storing a second copy.
+ * Throws an ApiError with a readable message on any failure.
  */
-export async function uploadPhoto(file: File): Promise<Photo> {
+export async function uploadPhoto(file: File, id?: string): Promise<Photo> {
   const { blob, width, height } = await preparePhoto(file);
-  return uploadAsset(blob, "photo", { width, height }, file.name);
+  try {
+    return await uploadAsset(blob, "photo", { width, height }, file.name, id);
+  } catch (err) {
+    // The id is taken (another account, or an upload whose object is already being removed): upload as a new asset.
+    if (!id || !(err instanceof ApiError) || err.status !== 409) throw err;
+    return uploadAsset(blob, "photo", { width, height }, file.name);
+  }
 }
 
 /** Sends a ready file to storage through a short-lived upload URL and confirms it with its pixel size. */
-async function uploadAsset(blob: Blob, kind: "photo" | "thumbnail", size: { width: number; height: number }, name = "The file"): Promise<Photo> {
-  const ticket = await request<UploadTicket>("/api/assets/uploads", { method: "POST", json: { kind, mime: blob.type, bytes: blob.size } });
-  let put: Response;
-  try {
-    put = await fetch(ticket.upload.url, { method: ticket.upload.method, headers: ticket.upload.headers, body: blob });
-  } catch {
-    throw new ApiError(0, `${name} couldn't be uploaded. Check your connection and try again.`);
+async function uploadAsset(blob: Blob, kind: "photo" | "thumbnail", size: { width: number; height: number }, name = "The file", id?: string): Promise<Photo> {
+  // JSON.stringify leaves out `id` when it is undefined.
+  const ticket = await request<UploadTicket>("/api/assets/uploads", { method: "POST", json: { id, kind, mime: blob.type, bytes: blob.size } });
+  if (ticket.upload) {
+    let put: Response;
+    try {
+      put = await fetch(ticket.upload.url, { method: ticket.upload.method, headers: ticket.upload.headers, body: blob });
+    } catch {
+      throw new ApiError(0, `${name} couldn't be uploaded. Check your connection and try again.`);
+    }
+    if (!put.ok) throw new ApiError(put.status, `${name} couldn't be uploaded (storage answered ${put.status}).`);
   }
-  if (!put.ok) throw new ApiError(put.status, `${name} couldn't be uploaded (storage answered ${put.status}).`);
   return request<Photo>(`/api/assets/${ticket.asset.id}/complete`, { method: "POST", json: size });
 }
 

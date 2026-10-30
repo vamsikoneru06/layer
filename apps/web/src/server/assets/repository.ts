@@ -72,6 +72,12 @@ export async function getOwnedAsset(db: Db, ownerId: string, id: string): Promis
   return row;
 }
 
+/** The asset with this id whoever owns it. Only for checking whether a client-chosen upload id is taken. */
+export async function findAssetById(db: Db, id: string): Promise<AssetRow | undefined> {
+  const [row] = await db.select().from(assets).where(eq(assets.id, id));
+  return row;
+}
+
 export async function markAssetReady(db: Db, ownerId: string, id: string, dims: { width: number; height: number }, now: Date): Promise<AssetRow | undefined> {
   const [row] = await db
     .update(assets)

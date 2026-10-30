@@ -97,23 +97,26 @@ export async function updateDesignMeta(
 }
 
 export async function duplicateDesign(ctx: ServiceContext, ownerId: string, id: string): Promise<repo.DesignRow> {
-  const source = await repo.getDesign(ctx.db, ownerId, id);
-  if (!source) throw notFound();
   const copyId = randomUUID();
-  const title = truncate(`Copy of ${source.title}`, LIMITS.titleChars);
   const now = ctx.now();
-  return insertWithinQuota(ctx.db, ownerId, "designs", (tx) =>
-    repo.insertDesign(tx, {
-      id: copyId,
-      ownerId,
-      folderId: source.folderId,
-      title,
-      doc: { ...source.doc, id: copyId, meta: { ...source.doc.meta, title } },
-      sourceTemplateId: source.sourceTemplateId,
-      sourceTemplateVersion: source.sourceTemplateVersion,
-      thumbnailAssetId: source.thumbnailAssetId,
-      createdAt: now,
-      updatedAt: now,
-    }),
-  );
+  return ctx.db.transaction(async (tx) => {
+    // The shared lock makes a concurrent thumbnail change or delete wait until this copy commits, so it sees the copy.
+    const source = await repo.getDesignForShare(tx, ownerId, id);
+    if (!source) throw notFound();
+    const title = truncate(`Copy of ${source.title}`, LIMITS.titleChars);
+    return insertWithinQuota(tx, ownerId, "designs", (within) =>
+      repo.insertDesign(within, {
+        id: copyId,
+        ownerId,
+        folderId: source.folderId,
+        title,
+        doc: { ...source.doc, id: copyId, meta: { ...source.doc.meta, title } },
+        sourceTemplateId: source.sourceTemplateId,
+        sourceTemplateVersion: source.sourceTemplateVersion,
+        thumbnailAssetId: source.thumbnailAssetId,
+        createdAt: now,
+        updatedAt: now,
+      }),
+    );
+  });
 }

@@ -58,6 +58,16 @@ describe("uploadDocPhotos", () => {
     expect(upload).toHaveBeenCalledTimes(1);
   });
 
+  it("passes the device photo's id as the upload id, so a retry after a lost response asks for the same asset", async () => {
+    const store = memoryStore([photo("local-1")]);
+    const upload = vi.fn(async (_file: File, id?: string) => ({ id: id ?? "no-id" }));
+    upload.mockRejectedValueOnce(new Error("response lost"));
+    await expect(uploadDocPhotos(docWith("local-1"), store, upload)).rejects.toThrow("response lost");
+    await uploadDocPhotos(docWith("local-1"), store, upload);
+    expect(upload.mock.calls.map((call) => call[1])).toEqual(["local-1", "local-1"]);
+    expect(store.all.get("local-1")?.uploadedAs).toBe("local-1");
+  });
+
   it("leaves account and sample photos alone", async () => {
     const store = memoryStore();
     const upload = vi.fn();

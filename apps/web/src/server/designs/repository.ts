@@ -47,6 +47,12 @@ export async function getDesign(db: Db, ownerId: string, id: string): Promise<De
   return row;
 }
 
+/** Reads a design and holds a shared row lock until the transaction ends, so a thumbnail change or delete waits for it. */
+export async function getDesignForShare(db: Db, ownerId: string, id: string): Promise<DesignRow | undefined> {
+  const [row] = await db.select().from(designs).where(owned(ownerId, id)).for("share");
+  return row;
+}
+
 export async function getDesignVersion(db: Db, ownerId: string, id: string): Promise<number | undefined> {
   const [row] = await db.select({ version: designs.version }).from(designs).where(owned(ownerId, id));
   return row?.version;

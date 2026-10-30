@@ -1,11 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
+import { isUniqueViolation } from "../db/errors";
 import { assets, storageDeletions, user } from "../db/schema";
 import type { Db } from "../db/types";
 import { conflict, notFound, unprocessable } from "../http/problem";
 import { processStorageDeletions } from "../storage/outbox";
 import type { ObjectStorage } from "../storage/types";
 import {
+  findAssetById,
   findResolvableAssets,
   getOwnedAsset,
   insertPendingAsset,
@@ -61,32 +63,77 @@ export const toAssetJson = (a: AssetRow) => ({
   createdAt: a.createdAt.toISOString(),
 });
 
-export async function requestUpload(ctx: AssetContext, ownerId: string, input: { kind: "photo" | "thumbnail"; mime: UploadMime; bytes: number }) {
-  const now = ctx.now();
-  const asset = await ctx.db.transaction(async (tx) => {
-    // Same row lock as quotas.ts, so two concurrent requests can't both fit under the quota.
-    await tx.select({ id: user.id }).from(user).where(eq(user.id, ownerId)).for("no key update");
-    const used = await storageUsedBytes(tx, ownerId);
-    const quota = quotaFor(ctx.storage);
-    if (used + input.bytes > quota) {
-      throw unprocessable(quotaMessage(quota, "This upload"), {
-        limitBytes: quota,
-        usedBytes: used,
+/** A client may choose the asset id (a device photo's id) so that a retry after a lost response finds the same asset. */
+export interface UploadRequest {
+  id?: string;
+  kind: "photo" | "thumbnail";
+  mime: UploadMime;
+  bytes: number;
+}
+
+const UPLOAD_ID_TAKEN = "That upload id is already in use.";
+
+/** The row a repeat of a client-chosen id gets back. Only the owner's own request for the same file matches. */
+function sameUpload(row: AssetRow, ownerId: string, input: UploadRequest): AssetRow {
+  if (row.ownerId !== ownerId) throw conflict(UPLOAD_ID_TAKEN);
+  if (row.kind !== input.kind || row.mime !== input.mime || row.bytes !== input.bytes) {
+    throw conflict("That upload id was already used for a different file.");
+  }
+  return row;
+}
+
+/**
+ * Inserts the pending asset and queues its staging object. With a client-chosen id, a repeat returns the row an
+ * earlier identical request made, without checking the quota or queueing anything again.
+ */
+async function claimUpload(ctx: AssetContext, ownerId: string, input: UploadRequest, now: Date): Promise<{ asset: AssetRow; created: boolean }> {
+  try {
+    // Lowercase like parseId, so the storage keys match the ones made from ids in paths.
+    const id = input.id?.toLowerCase();
+    return await ctx.db.transaction(async (tx) => {
+      // Same row lock as quotas.ts, so two concurrent requests can't both fit under the quota.
+      await tx.select({ id: user.id }).from(user).where(eq(user.id, ownerId)).for("no key update");
+      if (id) {
+        const existing = await findAssetById(tx, id);
+        if (existing) return { asset: sameUpload(existing, ownerId, input), created: false };
+      }
+      // An id whose object is still queued for deletion can't be reused: that delete would remove the new object.
+      if (id && (await tx.select({ id: storageDeletions.id }).from(storageDeletions).where(eq(storageDeletions.assetId, id)).limit(1)).length) {
+        throw conflict(UPLOAD_ID_TAKEN);
+      }
+      const used = await storageUsedBytes(tx, ownerId);
+      const quota = quotaFor(ctx.storage);
+      if (used + input.bytes > quota) {
+        throw unprocessable(quotaMessage(quota, "This upload"), {
+          limitBytes: quota,
+          usedBytes: used,
+        });
+      }
+      const row = await insertPendingAsset(tx, { id: id ?? randomUUID(), ownerId, kind: input.kind, mime: input.mime, bytes: input.bytes, now });
+      // Queued up front, so the staging object is always cleaned up and counts toward the quota once the asset is gone.
+      await tx.insert(storageDeletions).values({
+        bucket: "private",
+        storageKey: stagingKey(ownerId, row.id),
+        ownerId,
+        assetId: row.id,
+        bytes: input.bytes,
+        createdAt: now,
+        notBefore: new Date(now.getTime() + STAGING_LINGER_MS),
       });
-    }
-    const row = await insertPendingAsset(tx, { id: randomUUID(), ownerId, kind: input.kind, mime: input.mime, bytes: input.bytes, now });
-    // Queued up front, so the staging object is always cleaned up and counts toward the quota once the asset is gone.
-    await tx.insert(storageDeletions).values({
-      bucket: "private",
-      storageKey: stagingKey(ownerId, row.id),
-      ownerId,
-      assetId: row.id,
-      bytes: input.bytes,
-      createdAt: now,
-      notBefore: new Date(now.getTime() + STAGING_LINGER_MS),
+      return { asset: row, created: true };
     });
-    return row;
-  });
+  } catch (err) {
+    // Only a concurrent insert of this id by another owner gets here. Say nothing about whose it is.
+    if (input.id && isUniqueViolation(err)) throw conflict(UPLOAD_ID_TAKEN);
+    throw err;
+  }
+}
+
+export async function requestUpload(ctx: AssetContext, ownerId: string, input: UploadRequest) {
+  const now = ctx.now();
+  const { asset, created } = await claimUpload(ctx, ownerId, input, now);
+  // A ready asset needs no bytes. A pending one (a repeat of an unfinished upload) gets a fresh URL for its staging key.
+  if (asset.status === "ready") return { asset, upload: null, created };
   const url = await ctx.storage.presignUpload("private", stagingKey(ownerId, asset.id), {
     contentType: input.mime,
     contentLength: input.bytes,
@@ -94,6 +141,7 @@ export async function requestUpload(ctx: AssetContext, ownerId: string, input: {
   });
   return {
     asset,
+    created,
     upload: {
       url,
       method: "PUT" as const,
@@ -104,17 +152,27 @@ export async function requestUpload(ctx: AssetContext, ownerId: string, input: {
 }
 
 /**
- * Deletes the row and queues its object in one transaction, then removes whatever of this asset is
- * already due. Anything storage refuses, and a staging object whose URL may still be live, is left
- * for the cron.
+ * Deletes the row and queues its object. Run it inside the caller's transaction, then call
+ * flushAssetDeletion once that transaction has committed.
  */
+export async function queueAssetDeletion(db: Db, asset: AssetRow, now: Date): Promise<void> {
+  await db.delete(assets).where(eq(assets.id, asset.id));
+  await db.insert(storageDeletions).values(objectDeletion(asset, now));
+}
+
+/**
+ * Removes whatever of this asset is already due. Anything storage refuses, and a staging object whose
+ * URL may still be live, is left for the cron. Call it outside any transaction.
+ */
+export async function flushAssetDeletion(ctx: AssetContext, assetId: string, now: Date): Promise<void> {
+  await processStorageDeletions(ctx.db, ctx.storage, now, { assetId });
+}
+
+/** Deletes the row and queues its object in one transaction, then removes whatever of this asset is already due. */
 export async function discardAsset(ctx: AssetContext, asset: AssetRow): Promise<void> {
   const now = ctx.now();
-  await ctx.db.transaction(async (tx) => {
-    await tx.delete(assets).where(eq(assets.id, asset.id));
-    await tx.insert(storageDeletions).values(objectDeletion(asset, now));
-  });
-  await processStorageDeletions(ctx.db, ctx.storage, now, { assetId: asset.id });
+  await ctx.db.transaction((tx) => queueAssetDeletion(tx, asset, now));
+  await flushAssetDeletion(ctx, asset.id, now);
 }
 
 export async function completeUpload(ctx: AssetContext, ownerId: string, id: string, dims: { width: number; height: number }): Promise<AssetRow> {

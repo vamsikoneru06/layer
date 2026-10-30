@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestDb, type TestDb } from "../../../tests/support/db";
@@ -9,6 +10,7 @@ import { assets, storageDeletions } from "../db/schema";
 import { processStorageDeletions } from "../storage/outbox";
 import type { ObjectRef } from "../storage/types";
 import { assetHandlers } from "./handlers";
+import { storageUsedBytes } from "./repository";
 import { UPLOAD_LIMITS } from "./service";
 
 let t: TestDb;
@@ -102,6 +104,75 @@ describe("POST /api/assets/uploads", () => {
     const alice = await createUser(t.db);
     const res = await call(assetHandlers(testDeps(t.db), null).requestUpload, { method: "POST", as: alice, body: { kind: "photo", mime: "image/png", bytes: 8 } });
     expect(res.status).toBe(503);
+  });
+});
+
+describe("POST /api/assets/uploads with a client-chosen id", () => {
+  it("gives a repeat the same asset, and counts its bytes once", async () => {
+    const alice = await createUser(t.db);
+    const id = randomUUID();
+    const body = { id, kind: "photo", mime: "image/png", bytes: 64 };
+    expect((await requestUpload(alice, body)).status).toBe(201);
+    const repeat = await requestUpload(alice, body);
+    expect(repeat.status).toBe(200);
+    expect(repeat.body.asset).toMatchObject({ id, status: "pending" });
+    expect(repeat.body.upload).toMatchObject({ method: "PUT" });
+    expect(await t.db.select().from(assets).where(eq(assets.id, id))).toHaveLength(1);
+    expect(await t.db.select().from(storageDeletions).where(eq(storageDeletions.assetId, id))).toHaveLength(1);
+    expect(await storageUsedBytes(t.db, alice.id)).toBe(64);
+  });
+
+  it("tells another owner the id is taken, and leaves the first owner's asset alone", async () => {
+    const alice = await createUser(t.db);
+    const bob = await createUser(t.db);
+    const id = randomUUID();
+    const body = { id, kind: "photo", mime: "image/png", bytes: 64 };
+    expect((await requestUpload(alice, body)).status).toBe(201);
+    const res = await requestUpload(bob, body);
+    expect(res.status).toBe(409);
+    expect(res.body.detail).toBe("That upload id is already in use.");
+    expect(JSON.stringify(res.body)).not.toContain(alice.id);
+    const [row] = await t.db.select().from(assets).where(eq(assets.id, id));
+    expect(row).toMatchObject({ ownerId: alice.id, bytes: 64, status: "pending" });
+  });
+
+  it("refuses an id that was used for a different file", async () => {
+    const alice = await createUser(t.db);
+    const id = randomUUID();
+    expect((await requestUpload(alice, { id, kind: "photo", mime: "image/png", bytes: 64 })).status).toBe(201);
+    const res = await requestUpload(alice, { id, kind: "photo", mime: "image/png", bytes: 65 });
+    expect(res.status).toBe(409);
+    expect(res.body.detail).toBe("That upload id was already used for a different file.");
+  });
+
+  it("won't reuse an id whose object is still queued for deletion, since that delete would remove the new object", async () => {
+    const alice = await createUser(t.db);
+    const id = randomUUID();
+    const body = { id, kind: "photo", mime: "image/png", bytes: 64 };
+    expect((await requestUpload(alice, body)).status).toBe(201);
+    await t.db.delete(assets).where(eq(assets.id, id));
+    const res = await requestUpload(alice, body);
+    expect(res.status).toBe(409);
+    expect(await t.db.select().from(assets).where(eq(assets.id, id))).toHaveLength(0);
+  });
+
+  it("hands back a ready asset with no upload URL and queues nothing more", async () => {
+    const alice = await createUser(t.db);
+    const id = randomUUID();
+    const body = { id, kind: "photo", mime: "image/png", bytes: 64 };
+    expect((await requestUpload(alice, body)).status).toBe(201);
+    storage.put("private", stagingOf(alice.id, id), file(64));
+    expect((await complete(alice, id)).status).toBe(200);
+    const queued = await t.db.select().from(storageDeletions).where(eq(storageDeletions.assetId, id));
+    const repeat = await requestUpload(alice, body);
+    expect(repeat.status).toBe(200);
+    expect(repeat.body).toMatchObject({ asset: { id, status: "ready" }, upload: null });
+    expect(await t.db.select().from(storageDeletions).where(eq(storageDeletions.assetId, id))).toHaveLength(queued.length);
+  });
+
+  it("rejects an id that isn't a UUID with 400", async () => {
+    const alice = await createUser(t.db);
+    expect((await requestUpload(alice, { id: "not-a-uuid", kind: "photo", mime: "image/png", bytes: 64 })).status).toBe(400);
   });
 });
 

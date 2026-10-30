@@ -14,6 +14,7 @@ import * as service from "./service";
 
 const UploadBody = z
   .object({
+    id: z.uuid().optional(),
     kind: z.enum(["photo", "thumbnail"]),
     mime: z.enum(service.UPLOAD_MIMES),
     bytes: z.number().int().min(1).max(service.UPLOAD_LIMITS.maxBytes),
@@ -36,8 +37,8 @@ export function assetHandlers(deps: Deps, storage: ObjectStorage | null) {
     requestUpload: endpoint(deps, { auth: "user", rateLimit: { name: "uploadUrl", rule: RATE_LIMITS.uploadUrl, by: "user" } }, async ({ req, user }) => {
       const c = ctx();
       const body = await readJson(req, UploadBody);
-      const { asset, upload } = await service.requestUpload(c, user.id, body);
-      return Response.json({ asset: service.toAssetJson(asset), upload }, { status: 201 });
+      const { asset, upload, created } = await service.requestUpload(c, user.id, body);
+      return Response.json({ asset: service.toAssetJson(asset), upload }, { status: created ? 201 : 200 });
     }),
 
     complete: endpoint(deps, { auth: "user", rateLimit: writeLimit }, async ({ req, user, params }) => {
